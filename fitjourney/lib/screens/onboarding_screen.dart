@@ -14,7 +14,7 @@ class OnboardingPageData {
 }
 
 class OnboardingScreen extends StatefulWidget {
-  const OnboardingScreen({Key? key}) : super(key: key);
+  const OnboardingScreen({super.key});
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -28,18 +28,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final List<OnboardingPageData> pages = [
     OnboardingPageData(
       image: 'assets/images/onboarding1.png',
-      title: 'Stay Home',
-      description: 'Lorem ipsum dolor sit amet,\nconsectetur adipiscing elit!',
+      title: 'Welcome To FitJourney',
+      description: "Your all-in-one fitness companion. Let's get you started on a healthier, stronger path!",
     ),
     OnboardingPageData(
       image: 'assets/images/onboarding2.png',
-      title: 'Sport App',
-      description: 'Lorem ipsum dolor sit amet,\nconsectetur adipiscing elit!',
+      title: 'Track Your Progress',
+      description: "Effortlessly log workouts, monitor results, celebrate milestones and watch your performance improve day by day.",
     ),
     OnboardingPageData(
-      image: 'assets/images/onboarding3.png',
-      title: 'Stay Active',
-      description: 'Lorem ipsum dolor sit amet,\nconsectetur adipiscing elit!',
+      image: 'assets/images/onboarding4.png',
+      title: 'Consistency is Key',
+      description: "Set goals, build healthy habits, stay motivated and never lose momentum on your journey to peak fitness",
     ),
   ];
 
@@ -171,6 +171,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             // Circle with illustration
             Container(
@@ -212,7 +213,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               textAlign: TextAlign.center,
             ),
           ],
-          mainAxisAlignment: MainAxisAlignment.center,
         ),
       ),
     );
