@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
-// Simple model class for each onboarding page
+/// Model class representing a single onboarding page.
 class OnboardingPageData {
   final String image;
   final String title;
   final String description;
 
+  /// Constructor for OnboardingPageData
   OnboardingPageData({
     required this.image,
     required this.title,
@@ -13,6 +14,7 @@ class OnboardingPageData {
   });
 }
 
+/// Stateful widget that manages the onboarding screen.
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -21,10 +23,10 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
-  final PageController _pageController = PageController();
-  int currentIndex = 0;
+  final PageController _pageController = PageController(); // Controller for PageView
+  int currentIndex = 0; // Tracks the current page index
 
-  // Example data — replace with your images & text
+  /// List of onboarding pages with associated images, titles, and descriptions.
   final List<OnboardingPageData> pages = [
     OnboardingPageData(
       image: 'assets/images/onboarding1.png',
@@ -37,14 +39,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       description: "Effortlessly log workouts, monitor results, celebrate milestones and watch your performance improve day by day.",
     ),
     OnboardingPageData(
-      image: 'assets/images/onboarding4.png',
+      image: 'assets/images/onboarding3.png',
       title: 'Consistency is Key',
-      description: "Set goals, build healthy habits, stay motivated and never lose momentum on your journey to peak fitness",
+      description: "Set goals, build healthy habits, stay motivated and never lose momentum on your journey to peak fitness.",
     ),
   ];
 
+  /// Skips the onboarding flow by jumping directly to the last page.
   void _onSkipPressed() {
-    // Jump to the last page
     _pageController.animateToPage(
       pages.length - 1,
       duration: const Duration(milliseconds: 300),
@@ -52,15 +54,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
+  /// Moves to the next page or navigates to the sign-up screen if on the last page.
   void _onNextPressed() {
     if (currentIndex < pages.length - 1) {
-      // Go to next page
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
     } else {
-      // Last page => Navigate to signup/home
+      // Last page => Navigate to the sign-up or home screen
       Navigator.pushReplacementNamed(context, '/signup');
     }
   }
@@ -68,12 +70,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Pastel green background
-      backgroundColor: const Color(0xFFE0F7FA),
+      backgroundColor: const Color(0xFFE0F7FA), // Light pastel background
       body: SafeArea(
         child: Column(
           children: [
-            // Top row with Skip (only if not on last page)
+            /// Top row with the 'Skip' button (only visible if not on the last page)
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -92,7 +93,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ],
             ),
 
-            // PageView
+            /// Main PageView widget for onboarding slides
             Expanded(
               child: PageView.builder(
                 controller: _pageController,
@@ -108,12 +109,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
             ),
 
-            // Dots Indicator + Next / Get Started Button
+            /// Page indicator (dots) and Next/Get Started button
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 16),
               child: Column(
                 children: [
-                  // Dot indicators
+                  /// Dot indicators to represent current onboarding step
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(
@@ -125,19 +126,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         height: currentIndex == index ? 12 : 8,
                         decoration: BoxDecoration(
                           color: currentIndex == index
-                              ? Colors.pinkAccent
-                              : Colors.grey,
+                              ? Colors.pinkAccent // Active dot color
+                              : Colors.grey, // Inactive dot color
                           shape: BoxShape.circle,
                         ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 16),
-                  // Next / Get Started Button
+
+                  /// Next / Get Started button
                   ElevatedButton(
                     onPressed: _onNextPressed,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.pinkAccent,
+                      backgroundColor: Colors.pinkAccent, // Button color
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
@@ -147,9 +149,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ),
                     ),
                     child: Text(
-                      currentIndex == pages.length - 1
-                          ? 'Get Started'
-                          : 'Next',
+                      currentIndex == pages.length - 1 ? 'Get Started' : 'Next',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 16,
@@ -165,7 +165,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  // Single onboarding page
+  /// Builds a single onboarding page with an image, title, and description.
   Widget _buildOnboardingPage(OnboardingPageData data) {
     return Center(
       child: Padding(
@@ -173,7 +173,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Circle with illustration
+            /// Circular container to display onboarding images
             Container(
               width: 180,
               height: 180,
@@ -191,7 +191,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
             const SizedBox(height: 24),
 
-            // Title
+            /// Title text
             Text(
               data.title,
               style: const TextStyle(
@@ -203,7 +203,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Description
+            /// Description text
             Text(
               data.description,
               style: const TextStyle(
