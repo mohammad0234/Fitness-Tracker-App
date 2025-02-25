@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'screens/onboarding_screen.dart';
+import 'screens/signup_page.dart'; // Import your SignUpPage
 
 void main() {
   runApp(const MyApp());
@@ -12,16 +13,11 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'FitJourney',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
-        useMaterial3: true,
-      ),
-      home: const OnboardingScreen(),
+      debugShowCheckedModeBanner: false,
+      initialRoute: '/', // Start at the onboarding screen
       routes: {
-        // Example route after finishing onboarding
-        '/signup': (context) => const Placeholder(
-              child: Center(child: Text('Sign Up Screen Placeholder')),
-            ),
+        '/': (context) => const OnboardingScreen(),
+        '/signup': (context) => const SignUpPage(),
       },
     );
   }

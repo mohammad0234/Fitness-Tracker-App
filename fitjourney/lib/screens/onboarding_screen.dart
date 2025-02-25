@@ -62,16 +62,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   /// Advances to the next onboarding page or navigates to the sign-up screen on the last page.
   void _onNextPressed() {
-    if (currentIndex < pages.length - 1) {
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    } else {
-      // Navigates to the sign-up screen once onboarding is complete
-      Navigator.pushReplacementNamed(context, '/signup');
+  if (currentIndex < pages.length - 1) {
+    _pageController.nextPage(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  } else {
+    // On the last page, navigate to the sign-up screen
+    Navigator.pushReplacementNamed(context, '/signup');
     }
+    
   }
+
 
   @override
   Widget build(BuildContext context) {
