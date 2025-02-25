@@ -1,22 +1,16 @@
 import 'package:flutter/material.dart';
 
-class SignUpPage extends StatefulWidget {
-  const SignUpPage({super.key});
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
 
   @override
-  State<SignUpPage> createState() => _SignUpPageState();
+  State<LoginPage> createState() => _LoginPageState();
 }
 
-class _SignUpPageState extends State<SignUpPage> {
-  /// Controllers to retrieve text input values
-  final TextEditingController _firstNameController = TextEditingController();
-  final TextEditingController _lastNameController = TextEditingController();
+class _LoginPageState extends State<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-
-  /// Toggles the visibility of the password field
   bool _obscurePassword = true;
-  bool _acceptTerms = false;
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +22,7 @@ class _SignUpPageState extends State<SignUpPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              /// Header text: "Hey there," and "Create an Account"
+              /// Header text: "Hey there," and "Welcome Back"
               Text(
                 'Hey there,',
                 style: TextStyle(
@@ -39,7 +33,7 @@ class _SignUpPageState extends State<SignUpPage> {
               ),
               const SizedBox(height: 6),
               const Text(
-                'Create an Account',
+                'Welcome Back',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -47,44 +41,6 @@ class _SignUpPageState extends State<SignUpPage> {
                 ),
               ),
               const SizedBox(height: 25),
-
-              /// FIRST NAME FIELD
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: TextField(
-                  controller: _firstNameController,
-                  decoration: InputDecoration(
-                    prefixIcon: Icon(Icons.person_outline, color: Colors.grey.shade600),
-                    hintText: 'First Name',
-                    hintStyle: TextStyle(color: Colors.grey.shade500),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 15),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              /// LAST NAME FIELD
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: TextField(
-                  controller: _lastNameController,
-                  decoration: InputDecoration(
-                    prefixIcon: Icon(Icons.person_outline, color: Colors.grey.shade600),
-                    hintText: 'Last Name',
-                    hintStyle: TextStyle(color: Colors.grey.shade500),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 15),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
 
               /// EMAIL FIELD
               Container(
@@ -135,76 +91,73 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
-
-              /// PRIVACY POLICY & TERMS
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: Checkbox(
-                      value: _acceptTerms,
-                      onChanged: (val) {
-                        setState(() {
-                          _acceptTerms = val ?? false;
-                        });
-                      },
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      side: BorderSide(color: Colors.grey.shade400),
+              
+              /// Forgot Password Link
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () {
+                    // Handle forgot password
+                  },
+                  style: TextButton.styleFrom(
+                    minimumSize: Size.zero,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: Text(
+                    'Forgot your password?',
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: 14,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      "By continuing you accept our Privacy Policy and Terms of Use",
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
-              const SizedBox(height: 45),
+              
+              const SizedBox(height: 120), // Spacer to push login button down
 
-              /// REGISTER BUTTON
+              /// LOGIN BUTTON
               SizedBox(
                 width: double.infinity,
                 height: 55,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF8AB4F8),  // Light blue color from image
+                    backgroundColor: const Color(0xFF8AB4F8),  // Light blue color
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(28),
                     ),
                   ),
                   onPressed: () {
-                    // TODO: Implement sign-up logic here
-                    debugPrint("Register tapped");
+                    // TODO: Implement login logic
+                    debugPrint("Login tapped");
                   },
-                  child: const Text(
-                    'Register',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.login, color: Colors.white, size: 20),
+                      SizedBox(width: 8),
+                      Text(
+                        'Login',
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
               
-              // Add "Already have an account?" text with Login button
               const SizedBox(height: 25),
+              
+              // Add "Don't have an account?" text with Sign Up button
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    "Already have an account? ",
+                    "Don't have an account? ",
                     style: TextStyle(
                       color: Colors.grey.shade600,
                       fontSize: 14,
@@ -212,10 +165,10 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                   GestureDetector(
                     onTap: () {
-                      Navigator.pushNamed(context, '/login');
+                      Navigator.pushNamed(context, '/signup');
                     },
                     child: const Text(
-                      "Login",
+                      "Sign Up",
                       style: TextStyle(
                         color: Color(0xFF8AB4F8),
                         fontWeight: FontWeight.bold,
