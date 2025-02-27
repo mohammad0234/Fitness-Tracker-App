@@ -1,22 +1,77 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
-
+  
   @override
   State<SignUpPage> createState() => _SignUpPageState();
 }
 
 class _SignUpPageState extends State<SignUpPage> {
-  /// Controllers to retrieve text input values
+  // Controllers for text fields
   final TextEditingController _firstNameController = TextEditingController();
-  final TextEditingController _lastNameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _lastNameController  = TextEditingController();
+  final TextEditingController _emailController     = TextEditingController();
+  final TextEditingController _passwordController  = TextEditingController();
 
-  /// Toggles the visibility of the password field
+  // UI state variables
   bool _obscurePassword = true;
   bool _acceptTerms = false;
+
+  // FirebaseAuth instance
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  /// Attempts to sign up the user using Firebase Authentication.
+  Future<void> _signUp() async {
+    final String firstName = _firstNameController.text.trim();
+    final String lastName  = _lastNameController.text.trim();
+    final String email     = _emailController.text.trim();
+    final String password  = _passwordController.text.trim();
+
+    // Basic validation checks.
+    if (firstName.isEmpty || lastName.isEmpty) {
+      _showError("Please enter your first and last name.");
+      return;
+    }
+    if (email.isEmpty || password.isEmpty) {
+      _showError("Email and password cannot be empty.");
+      return;
+    }
+    if (!_acceptTerms) {
+      _showError("You must accept the Privacy Policy and Terms of Use.");
+      return;
+    }
+
+    try {
+      // Create a new user with email and password.
+      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      // Optionally update the user's displayName.
+      await userCredential.user?.updateDisplayName("$firstName $lastName");
+
+      // Inform the user and navigate to HomePage.
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Account created successfully!")),
+      );
+      Navigator.pushReplacementNamed(context, '/home');
+      
+    } on FirebaseAuthException catch (e) {
+      _showError(e.message ?? "An error occurred during sign up.");
+    } catch (e) {
+      _showError(e.toString());
+    }
+  }
+
+  /// Displays an error message in a SnackBar.
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +83,7 @@ class _SignUpPageState extends State<SignUpPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              /// Header text: "Hey there," and "Create an Account"
+              // Header text
               Text(
                 'Hey there,',
                 style: TextStyle(
@@ -48,7 +103,7 @@ class _SignUpPageState extends State<SignUpPage> {
               ),
               const SizedBox(height: 25),
 
-              /// FIRST NAME FIELD
+              // First Name Field
               Container(
                 decoration: BoxDecoration(
                   color: Colors.grey.shade100,
@@ -67,7 +122,7 @@ class _SignUpPageState extends State<SignUpPage> {
               ),
               const SizedBox(height: 16),
 
-              /// LAST NAME FIELD
+              // Last Name Field
               Container(
                 decoration: BoxDecoration(
                   color: Colors.grey.shade100,
@@ -86,7 +141,7 @@ class _SignUpPageState extends State<SignUpPage> {
               ),
               const SizedBox(height: 16),
 
-              /// EMAIL FIELD
+              // Email Field
               Container(
                 decoration: BoxDecoration(
                   color: Colors.grey.shade100,
@@ -106,7 +161,7 @@ class _SignUpPageState extends State<SignUpPage> {
               ),
               const SizedBox(height: 16),
 
-              /// PASSWORD FIELD
+              // Password Field
               Container(
                 decoration: BoxDecoration(
                   color: Colors.grey.shade100,
@@ -137,7 +192,7 @@ class _SignUpPageState extends State<SignUpPage> {
               ),
               const SizedBox(height: 20),
 
-              /// PRIVACY POLICY & TERMS
+              // Privacy Policy & Terms Checkbox
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -171,21 +226,20 @@ class _SignUpPageState extends State<SignUpPage> {
               ),
               const SizedBox(height: 45),
 
-              /// REGISTER BUTTON
+              // Register Button
               SizedBox(
                 width: double.infinity,
                 height: 55,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF8AB4F8),  // Light blue color from image
+                    backgroundColor: const Color(0xFF8AB4F8),
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(28),
                     ),
                   ),
-                  onPressed: () {
-                    // TODO: Implement sign-up logic here
-                    debugPrint("Register tapped");
+                  onPressed: () async {
+                    await _signUp();
                   },
                   child: const Text(
                     'Register',
@@ -197,9 +251,9 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                 ),
               ),
-              
-              // Add "Already have an account?" text with Login button
               const SizedBox(height: 25),
+
+              // Login Navigation
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

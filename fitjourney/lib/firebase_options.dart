@@ -79,4 +79,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'fitjourney-f4a76.firebasestorage.app',
     measurementId: 'G-NKZJY2PLTH',
   );
+
 }
