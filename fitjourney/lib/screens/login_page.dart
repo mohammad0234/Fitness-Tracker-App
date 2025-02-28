@@ -29,27 +29,56 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       // Sign in with email and password
-      UserCredential userCredential = await FirebaseAuth.instance
-          .signInWithEmailAndPassword(email: email, password: password);
+      await FirebaseAuth.instance.signInWithEmailAndPassword(email: email, password: password);
 
-      // Optionally: show a success message
+      // Show a success message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Login successful!")),
       );
 
-      // Navigate to the home screen (make sure a route for '/home' exists)
+      // Navigate to the home screen and replace the current page
       Navigator.pushReplacementNamed(context, '/home');
     } on FirebaseAuthException catch (e) {
-      _showError(e.message ?? "An error occurred during login.");
+      if (e.code == 'user-not-found') {
+        _showError("No account found with this email.");
+      } else if (e.code == 'wrong-password') {
+        _showError("Incorrect password. Try again.");
+      } else if (e.code == 'invalid-email') {
+        _showError("Invalid email format.");
+      } else {
+        _showError(e.message ?? "Login failed. Please try again.");
+      }
     } catch (e) {
       _showError(e.toString());
+    }
+  }
+
+  /// Sends a password reset email to the user.
+  void _resetPassword() async {
+    final String email = _emailController.text.trim();
+
+    if (email.isEmpty) {
+      _showError("Enter your email to reset password.");
+      return;
+    }
+
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Password reset email sent! Check your inbox.")),
+      );
+    } on FirebaseAuthException catch (e) {
+      _showError(e.message ?? "Password reset failed.");
     }
   }
 
   /// Displays an error message using a SnackBar.
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
+      SnackBar(
+        content: Text(message, style: const TextStyle(color: Colors.white)),
+        backgroundColor: Colors.red,
+      ),
     );
   }
 
@@ -63,7 +92,7 @@ class _LoginPageState extends State<LoginPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header text: "Hey there," and "Welcome Back"
+              // Header texts
               Text(
                 'Hey there,',
                 style: TextStyle(
@@ -83,7 +112,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 25),
 
-              // EMAIL FIELD
+              // Email Field
               Container(
                 decoration: BoxDecoration(
                   color: Colors.grey.shade100,
@@ -103,7 +132,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 16),
 
-              // PASSWORD FIELD
+              // Password Field
               Container(
                 decoration: BoxDecoration(
                   color: Colors.grey.shade100,
@@ -133,13 +162,11 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
 
-              // Forgot Password Link (optional)
+              // Forgot Password Link
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
-                  onPressed: () {
-                    // Handle forgot password if desired.
-                  },
+                  onPressed: _resetPassword,
                   style: TextButton.styleFrom(
                     minimumSize: Size.zero,
                     padding: const EdgeInsets.symmetric(vertical: 8),
@@ -157,23 +184,23 @@ class _LoginPageState extends State<LoginPage> {
 
               const SizedBox(height: 120), // Spacer to push login button down
 
-              // LOGIN BUTTON
+              // Login Button
               SizedBox(
                 width: double.infinity,
                 height: 55,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF8AB4F8),  // Light blue color
+                    backgroundColor: const Color(0xFF8AB4F8),
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(28),
                     ),
                   ),
-                  onPressed: _login, // Call the login function
+                  onPressed: _login,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.login, color: Colors.white, size: 20),
+                      const Icon(Icons.login, color: Colors.white, size: 20),
                       const SizedBox(width: 8),
                       const Text(
                         'Login',
@@ -190,7 +217,7 @@ class _LoginPageState extends State<LoginPage> {
 
               const SizedBox(height: 25),
 
-              // "Don't have an account?" with Sign Up button
+              // "Don't have an account?" with Sign Up navigation
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -203,7 +230,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   GestureDetector(
                     onTap: () {
-                      Navigator.pushNamed(context, '/signup');
+                      Navigator.pushReplacementNamed(context, '/signup');
                     },
                     child: const Text(
                       "Sign Up",

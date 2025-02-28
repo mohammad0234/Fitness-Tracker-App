@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-/// Model class representing the data structure for each onboarding page.
-/// Each page consists of an image, title, and description.
+/// Model class representing the data for each onboarding page.
 class OnboardingPageData {
   final String image;
   final String title;
   final String description;
 
-  /// Constructor for the OnboardingPageData model.
-  /// The `required` keyword ensures that all fields must be provided when creating an instance.
   OnboardingPageData({
     required this.image,
     required this.title,
@@ -16,7 +14,7 @@ class OnboardingPageData {
   });
 }
 
-/// The main onboarding screen that displays a series of onboarding pages.
+/// The main onboarding screen that displays a series of pages.
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -24,15 +22,14 @@ class OnboardingScreen extends StatefulWidget {
   State<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-/// The state class that manages the behavior and UI of the onboarding screen.
 class _OnboardingScreenState extends State<OnboardingScreen> {
-  /// PageController to handle page transitions within the PageView.
+  /// Controller for handling page transitions.
   final PageController _pageController = PageController();
 
-  /// Tracks the index of the currently displayed onboarding page.
+  /// Current index of the onboarding page.
   int currentIndex = 0;
 
-  /// List of onboarding pages containing their respective image, title, and description.
+  /// List of onboarding pages.
   final List<OnboardingPageData> pages = [
     OnboardingPageData(
       image: 'assets/images/onboarding1.png',
@@ -51,7 +48,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     ),
   ];
 
-  /// Skips directly to the last onboarding page when "Skip" is pressed.
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  /// Navigates directly to the last onboarding page.
   void _onSkipPressed() {
     _pageController.animateToPage(
       pages.length - 1,
@@ -60,123 +63,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  /// Advances to the next onboarding page or navigates to the sign-up screen on the last page.
-  void _onNextPressed() {
-  if (currentIndex < pages.length - 1) {
-    _pageController.nextPage(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
-  } else {
-    // On the last page, navigate to the sign-up screen
-    Navigator.pushReplacementNamed(context, '/signup');
+  /// Advances to the next onboarding page or completes onboarding.
+  void _onNextPressed() async {
+    if (currentIndex < pages.length - 1) {
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    } else {
+      // Set the flag indicating onboarding has been seen.
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('seenOnboarding', true);
+      // Navigate to the sign-up screen (or directly to home if desired)
+      Navigator.pushReplacementNamed(context, '/signup');
     }
-    
   }
 
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      /// Background color of the onboarding screen.
-      backgroundColor: const Color(0xFFE0F7FA),
-      body: SafeArea(
-        child: Column(
-          children: [
-            /// Top row containing the "Skip" button.
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                // Only show the Skip button if we are not on the last page
-                if (currentIndex < pages.length - 1)
-                  TextButton(
-                    onPressed: _onSkipPressed,
-                    child: const Text(
-                      'Skip',
-                      style: TextStyle(
-                        color: Colors.black54,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                const SizedBox(width: 16),
-              ],
-            ),
-
-            /// PageView to display onboarding pages with horizontal scrolling.
-            Expanded(
-              child: PageView.builder(
-                controller: _pageController, // Controller for page transitions
-                itemCount: pages.length, // Number of pages in onboarding
-                onPageChanged: (index) {
-                  setState(() {
-                    currentIndex = index; // Updates the current index for indicators
-                  });
-                },
-                itemBuilder: (context, index) {
-                  return _buildOnboardingPage(pages[index]);
-                },
-              ),
-            ),
-
-            /// Page indicator dots and navigation button (Next / Get Started).
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Column(
-                children: [
-                  /// Dots to indicate the current page position.
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(
-                      pages.length,
-                      (index) => AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        width: currentIndex == index ? 12 : 8,
-                        height: currentIndex == index ? 12 : 8,
-                        decoration: BoxDecoration(
-                          color: currentIndex == index
-                              ? Colors.pinkAccent // Active dot color
-                              : Colors.grey, // Inactive dot color
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  /// Navigation button that changes behavior on the last page.
-                  ElevatedButton(
-                    onPressed: _onNextPressed,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.pinkAccent, // Button color
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 40,
-                        vertical: 14,
-                      ),
-                    ),
-                    child: Text(
-                      // Changes text to "Get Started" on the last page
-                      currentIndex == pages.length - 1 ? 'Get Started' : 'Next',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Builds a single onboarding page with an image, title, and description.
+  /// Builds a single onboarding page.
   Widget _buildOnboardingPage(OnboardingPageData data) {
     return Center(
       child: Padding(
@@ -184,7 +87,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            /// Circular container to display the onboarding image.
+            // Circular container with the onboarding image.
             Container(
               width: 180,
               height: 180,
@@ -197,12 +100,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 child: Image.asset(
                   data.image,
                   fit: BoxFit.contain,
+                  semanticLabel: data.title, // Accessibility support
                 ),
               ),
             ),
             const SizedBox(height: 24),
-
-            /// Title of the onboarding page.
+            // Title text.
             Text(
               data.title,
               style: const TextStyle(
@@ -213,8 +116,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-
-            /// Description of the onboarding page.
+            // Description text.
             Text(
               data.description,
               style: const TextStyle(
@@ -222,6 +124,98 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 color: Colors.black54,
               ),
               textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFE0F7FA),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Top row with the "Skip" button.
+            Padding(
+              padding: const EdgeInsets.only(top: 16, right: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  if (currentIndex < pages.length - 1)
+                    TextButton(
+                      onPressed: _onSkipPressed,
+                      child: const Text(
+                        'Skip',
+                        style: TextStyle(
+                          color: Colors.black54,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            // PageView for displaying onboarding pages.
+            Expanded(
+              child: PageView.builder(
+                controller: _pageController,
+                itemCount: pages.length,
+                onPageChanged: (index) {
+                  setState(() {
+                    currentIndex = index;
+                  });
+                },
+                itemBuilder: (context, index) {
+                  return _buildOnboardingPage(pages[index]);
+                },
+              ),
+            ),
+            // Dots indicator and navigation button.
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Column(
+                children: [
+                  // Dots indicator.
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(
+                      pages.length,
+                      (index) => AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        width: currentIndex == index ? 12 : 8,
+                        height: currentIndex == index ? 12 : 8,
+                        decoration: BoxDecoration(
+                          color: currentIndex == index ? Colors.pinkAccent : Colors.grey,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Next/Get Started button.
+                  ElevatedButton(
+                    onPressed: _onNextPressed,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.pinkAccent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+                    ),
+                    child: Text(
+                      currentIndex == pages.length - 1 ? 'Get Started' : 'Next',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),

@@ -22,6 +22,12 @@ class _SignUpPageState extends State<SignUpPage> {
   // FirebaseAuth instance
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
+  /// Checks if the password meets the strength requirements.
+  bool isValidPassword(String password) {
+    // Requires at least 8 characters and one special character
+    return password.length >= 8 && RegExp(r'(?=.*?[#?!@$%^&*-])').hasMatch(password);
+  }
+
   /// Attempts to sign up the user using Firebase Authentication.
   Future<void> _signUp() async {
     final String firstName = _firstNameController.text.trim();
@@ -38,6 +44,10 @@ class _SignUpPageState extends State<SignUpPage> {
       _showError("Email and password cannot be empty.");
       return;
     }
+    if (!isValidPassword(password)) {
+      _showError("Password must be at least 8 characters and include a special character.");
+      return;
+    }
     if (!_acceptTerms) {
       _showError("You must accept the Privacy Policy and Terms of Use.");
       return;
@@ -50,7 +60,7 @@ class _SignUpPageState extends State<SignUpPage> {
         password: password,
       );
 
-      // Optionally update the user's displayName.
+      // Optionally update the user's display name.
       await userCredential.user?.updateDisplayName("$firstName $lastName");
 
       // Inform the user and navigate to HomePage.
@@ -60,16 +70,25 @@ class _SignUpPageState extends State<SignUpPage> {
       Navigator.pushReplacementNamed(context, '/home');
       
     } on FirebaseAuthException catch (e) {
-      _showError(e.message ?? "An error occurred during sign up.");
+      if (e.code == 'email-already-in-use') {
+        _showError("This email is already registered. Try logging in.");
+      } else if (e.code == 'weak-password') {
+        _showError("Choose a stronger password.");
+      } else {
+        _showError(e.message ?? "An error occurred during sign up.");
+      }
     } catch (e) {
       _showError(e.toString());
     }
   }
 
-  /// Displays an error message in a SnackBar.
+  /// Displays an error message using a SnackBar.
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
+      SnackBar(
+        content: Text(message, style: const TextStyle(color: Colors.white)),
+        backgroundColor: Colors.red,
+      ),
     );
   }
 
@@ -83,7 +102,7 @@ class _SignUpPageState extends State<SignUpPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header text
+              // Header texts
               Text(
                 'Hey there,',
                 style: TextStyle(
@@ -238,9 +257,7 @@ class _SignUpPageState extends State<SignUpPage> {
                       borderRadius: BorderRadius.circular(28),
                     ),
                   ),
-                  onPressed: () async {
-                    await _signUp();
-                  },
+                  onPressed: _signUp,
                   child: const Text(
                     'Register',
                     style: TextStyle(
@@ -253,7 +270,7 @@ class _SignUpPageState extends State<SignUpPage> {
               ),
               const SizedBox(height: 25),
 
-              // Login Navigation
+              // "Already have an account?" with Login navigation
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -266,7 +283,7 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                   GestureDetector(
                     onTap: () {
-                      Navigator.pushNamed(context, '/login');
+                      Navigator.pushReplacementNamed(context, '/login');
                     },
                     child: const Text(
                       "Login",
