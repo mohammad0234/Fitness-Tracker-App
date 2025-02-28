@@ -1,16 +1,57 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
-
+  
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
 
 class _LoginPageState extends State<LoginPage> {
+  // Controllers for email and password input fields
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+
+  // Controls whether the password is obscured
   bool _obscurePassword = true;
+
+  /// Attempts to sign in the user using Firebase Authentication.
+  Future<void> _login() async {
+    final String email = _emailController.text.trim();
+    final String password = _passwordController.text.trim();
+
+    // Validate inputs
+    if (email.isEmpty || password.isEmpty) {
+      _showError("Email and password cannot be empty.");
+      return;
+    }
+
+    try {
+      // Sign in with email and password
+      UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(email: email, password: password);
+
+      // Optionally: show a success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Login successful!")),
+      );
+
+      // Navigate to the home screen (make sure a route for '/home' exists)
+      Navigator.pushReplacementNamed(context, '/home');
+    } on FirebaseAuthException catch (e) {
+      _showError(e.message ?? "An error occurred during login.");
+    } catch (e) {
+      _showError(e.toString());
+    }
+  }
+
+  /// Displays an error message using a SnackBar.
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +63,7 @@ class _LoginPageState extends State<LoginPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              /// Header text: "Hey there," and "Welcome Back"
+              // Header text: "Hey there," and "Welcome Back"
               Text(
                 'Hey there,',
                 style: TextStyle(
@@ -42,7 +83,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 25),
 
-              /// EMAIL FIELD
+              // EMAIL FIELD
               Container(
                 decoration: BoxDecoration(
                   color: Colors.grey.shade100,
@@ -62,7 +103,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 16),
 
-              /// PASSWORD FIELD
+              // PASSWORD FIELD
               Container(
                 decoration: BoxDecoration(
                   color: Colors.grey.shade100,
@@ -91,13 +132,13 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
               ),
-              
-              /// Forgot Password Link
+
+              // Forgot Password Link (optional)
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: () {
-                    // Handle forgot password
+                    // Handle forgot password if desired.
                   },
                   style: TextButton.styleFrom(
                     minimumSize: Size.zero,
@@ -113,10 +154,10 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 120), // Spacer to push login button down
 
-              /// LOGIN BUTTON
+              // LOGIN BUTTON
               SizedBox(
                 width: double.infinity,
                 height: 55,
@@ -128,16 +169,13 @@ class _LoginPageState extends State<LoginPage> {
                       borderRadius: BorderRadius.circular(28),
                     ),
                   ),
-                  onPressed: () {
-                    // TODO: Implement login logic
-                    debugPrint("Login tapped");
-                  },
+                  onPressed: _login, // Call the login function
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.login, color: Colors.white, size: 20),
-                      SizedBox(width: 8),
-                      Text(
+                      const SizedBox(width: 8),
+                      const Text(
                         'Login',
                         style: TextStyle(
                           fontSize: 18,
@@ -149,10 +187,10 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 25),
-              
-              // Add "Don't have an account?" text with Sign Up button
+
+              // "Don't have an account?" with Sign Up button
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
