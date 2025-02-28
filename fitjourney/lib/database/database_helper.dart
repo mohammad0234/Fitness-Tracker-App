@@ -202,7 +202,8 @@ class DatabaseHelper {
   //   }
   // }
 
-  /// Example method to drop all tables for testing or resetting
+  /// Example method to drop all tables for testing or resetting 
+  /*
   Future<void> dropAllTables() async {
     final db = await database;
     // Make sure foreign_keys are off if you're dropping everything
@@ -224,4 +225,5 @@ class DatabaseHelper {
     // Re-enable foreign keys
     await db.execute('PRAGMA foreign_keys = ON');
   }
+  */
 }
