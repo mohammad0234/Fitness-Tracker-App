@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:fitjourney/database/database_helper.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -12,33 +13,37 @@ class _LoginPageState extends State<LoginPage> {
   // Controllers for email and password input fields
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-
-  // Controls whether the password is obscured
+  
   bool _obscurePassword = true;
-
-  /// Attempts to sign in the user using Firebase Authentication.
+  final firebase_auth.FirebaseAuth _auth = firebase_auth.FirebaseAuth.instance;
+  
+  /// Attempts to sign in the user using Firebase Authentication
+  /// and updates the user's last login timestamp in SQLite.
   Future<void> _login() async {
     final String email = _emailController.text.trim();
     final String password = _passwordController.text.trim();
-
-    // Validate inputs
+    
     if (email.isEmpty || password.isEmpty) {
       _showError("Email and password cannot be empty.");
       return;
     }
-
+    
     try {
-      // Sign in with email and password
-      await FirebaseAuth.instance.signInWithEmailAndPassword(email: email, password: password);
-
-      // Show a success message
+      // Sign in with Firebase Authentication
+      firebase_auth.UserCredential userCredential = 
+          await _auth.signInWithEmailAndPassword(email: email, password: password);
+      
+      // Retrieve the Firebase UID
+      String firebaseUID = userCredential.user!.uid;
+      
+      // Update the last login timestamp in the local SQLite database
+      await DatabaseHelper.instance.updateUserLastLogin(firebaseUID);
+      
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Login successful!")),
       );
-
-      // Navigate to the home screen and replace the current page
       Navigator.pushReplacementNamed(context, '/home');
-    } on FirebaseAuthException catch (e) {
+    } on firebase_auth.FirebaseAuthException catch (e) {
       if (e.code == 'user-not-found') {
         _showError("No account found with this email.");
       } else if (e.code == 'wrong-password') {
@@ -52,26 +57,25 @@ class _LoginPageState extends State<LoginPage> {
       _showError(e.toString());
     }
   }
-
-  /// Sends a password reset email to the user.
+  
+  /// Sends a password reset email.
   void _resetPassword() async {
     final String email = _emailController.text.trim();
-
     if (email.isEmpty) {
       _showError("Enter your email to reset password.");
       return;
     }
-
+    
     try {
-      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      await _auth.sendPasswordResetEmail(email: email);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Password reset email sent! Check your inbox.")),
       );
-    } on FirebaseAuthException catch (e) {
+    } on firebase_auth.FirebaseAuthException catch (e) {
       _showError(e.message ?? "Password reset failed.");
     }
   }
-
+  
   /// Displays an error message using a SnackBar.
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -81,7 +85,7 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
   }
-
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -92,7 +96,6 @@ class _LoginPageState extends State<LoginPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header texts
               Text(
                 'Hey there,',
                 style: TextStyle(
@@ -111,7 +114,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               const SizedBox(height: 25),
-
+              
               // Email Field
               Container(
                 decoration: BoxDecoration(
@@ -121,6 +124,8 @@ class _LoginPageState extends State<LoginPage> {
                 child: TextField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
+                  // Provide autofill hint for email (or set to null to disable autofill)
+                  autofillHints: const [AutofillHints.username],
                   decoration: InputDecoration(
                     prefixIcon: Icon(Icons.email_outlined, color: Colors.grey.shade600),
                     hintText: 'Email',
@@ -131,7 +136,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               const SizedBox(height: 16),
-
+              
               // Password Field
               Container(
                 decoration: BoxDecoration(
@@ -141,6 +146,8 @@ class _LoginPageState extends State<LoginPage> {
                 child: TextField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
+                  // Provide autofill hint for password (or set to null to disable autofill)
+                  autofillHints: const [AutofillHints.password],
                   decoration: InputDecoration(
                     prefixIcon: Icon(Icons.lock_outline, color: Colors.grey.shade600),
                     hintText: 'Password',
@@ -161,7 +168,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
               ),
-
+              
               // Forgot Password Link
               Align(
                 alignment: Alignment.centerRight,
@@ -181,9 +188,8 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
               ),
-
-              const SizedBox(height: 120), // Spacer to push login button down
-
+              const SizedBox(height: 120),
+              
               // Login Button
               SizedBox(
                 width: double.infinity,
@@ -214,9 +220,8 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 25),
-
+              
               // "Don't have an account?" with Sign Up navigation
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,

@@ -3,45 +3,45 @@ import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
+// Import your local user model (named AppUser)
+import 'package:fitjourney/database_models/user.dart';
+
 class DatabaseHelper {
-  // Singleton pattern
+  // Singleton instance
   static final DatabaseHelper instance = DatabaseHelper._internal();
   static Database? _database;
 
   DatabaseHelper._internal();
 
-  // Access the database via this getter
+  // Getter for the database instance
   Future<Database> get database async {
     if (_database != null) return _database!;
     _database = await _initDB();
     return _database!;
   }
 
-  /// Initialize or open the database
+  // Initialize or open the database file
   Future<Database> _initDB() async {
-    // Get the application documents directory
     Directory documentsDirectory = await getApplicationDocumentsDirectory();
-    // Name the database file 'myfitness.db'
     final path = join(documentsDirectory.path, 'myfitness.db');
-
-    // Open the database
+    print("Database Path: $path"); // Debug print
     return await openDatabase(
       path,
-      version: 1, // Increment if you add migrations later
+      version: 1, // Increment for migrations
       onConfigure: _onConfigure,
       onCreate: _onCreate,
-      // onUpgrade: _onUpgrade, // If you need migrations
+      onOpen: (db) => print("Database Opened!"),
     );
   }
 
-  /// Enable foreign key support
+  // Enable foreign key constraints
   Future<void> _onConfigure(Database db) async {
     await db.execute('PRAGMA foreign_keys = ON');
   }
 
-  /// Create all tables in onCreate
+  // Create all tables
   Future<void> _onCreate(Database db, int version) async {
-    // USERS
+    // USERS table
     await db.execute('''
       CREATE TABLE IF NOT EXISTS users (
         user_id           TEXT PRIMARY KEY,
@@ -53,7 +53,7 @@ class DatabaseHelper {
       );
     ''');
 
-    // USER_METRICS
+    // USER_METRICS table
     await db.execute('''
       CREATE TABLE IF NOT EXISTS user_metrics (
         metric_id   INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -64,7 +64,7 @@ class DatabaseHelper {
       );
     ''');
 
-    // EXERCISE
+    // EXERCISE table
     await db.execute('''
       CREATE TABLE IF NOT EXISTS exercise (
         exercise_id  INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -74,7 +74,7 @@ class DatabaseHelper {
       );
     ''');
 
-    // WORKOUT
+    // WORKOUT table
     await db.execute('''
       CREATE TABLE IF NOT EXISTS workout (
         workout_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -86,18 +86,18 @@ class DatabaseHelper {
       );
     ''');
 
-    // WORKOUT_EXERCISE
+    // WORKOUT_EXERCISE table
     await db.execute('''
       CREATE TABLE IF NOT EXISTS workout_exercise (
         workout_exercise_id INTEGER PRIMARY KEY AUTOINCREMENT,
         workout_id          INTEGER NOT NULL,
         exercise_id         INTEGER NOT NULL,
-        FOREIGN KEY (workout_id)  REFERENCES workout(workout_id),
+        FOREIGN KEY (workout_id) REFERENCES workout(workout_id),
         FOREIGN KEY (exercise_id) REFERENCES exercise(exercise_id)
       );
     ''');
 
-    // WORKOUT_SET
+    // WORKOUT_SET table
     await db.execute('''
       CREATE TABLE IF NOT EXISTS workout_set (
         workout_set_id       INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -109,7 +109,7 @@ class DatabaseHelper {
       );
     ''');
 
-    // GOAL
+    // GOAL table
     await db.execute('''
       CREATE TABLE IF NOT EXISTS goal (
         goal_id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -121,16 +121,16 @@ class DatabaseHelper {
         end_date         DATE NOT NULL,
         achieved         BOOLEAN DEFAULT FALSE,
         current_progress REAL DEFAULT 0,
-        FOREIGN KEY (user_id)     REFERENCES users(user_id),
+        FOREIGN KEY (user_id) REFERENCES users(user_id),
         FOREIGN KEY (exercise_id) REFERENCES exercise(exercise_id),
         CHECK (
-          (type = 'ExerciseTarget'    AND exercise_id IS NOT NULL) OR
-          (type = 'WorkoutFrequency'  AND exercise_id IS NULL)
+          (type = 'ExerciseTarget' AND exercise_id IS NOT NULL) OR
+          (type = 'WorkoutFrequency' AND exercise_id IS NULL)
         )
       );
     ''');
 
-    // DAILY_LOG
+    // DAILY_LOG table
     await db.execute('''
       CREATE TABLE IF NOT EXISTS daily_log (
         daily_log_id  INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -142,7 +142,7 @@ class DatabaseHelper {
       );
     ''');
 
-    // STREAK
+    // STREAK table
     await db.execute('''
       CREATE TABLE IF NOT EXISTS streak (
         user_id            TEXT PRIMARY KEY,
@@ -153,7 +153,7 @@ class DatabaseHelper {
       );
     ''');
 
-    // NOTIFICATION
+    // NOTIFICATION table
     await db.execute('''
       CREATE TABLE IF NOT EXISTS notification (
         notification_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -166,7 +166,7 @@ class DatabaseHelper {
       );
     ''');
 
-    // MILESTONE
+    // MILESTONE table
     await db.execute('''
       CREATE TABLE IF NOT EXISTS milestone (
         milestone_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -175,12 +175,12 @@ class DatabaseHelper {
         exercise_id  INTEGER,
         value        REAL,
         date         DATE NOT NULL,
-        FOREIGN KEY (user_id)     REFERENCES users(user_id),
+        FOREIGN KEY (user_id) REFERENCES users(user_id),
         FOREIGN KEY (exercise_id) REFERENCES exercise(exercise_id)
       );
     ''');
 
-    // PERSONAL_BEST
+    // PERSONAL_BEST table
     await db.execute('''
       CREATE TABLE IF NOT EXISTS personal_best (
         personal_best_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -188,42 +188,50 @@ class DatabaseHelper {
         exercise_id      INTEGER NOT NULL,
         max_weight       REAL,
         date             DATE NOT NULL,
-        FOREIGN KEY (user_id)     REFERENCES users(user_id),
+        FOREIGN KEY (user_id) REFERENCES users(user_id),
         FOREIGN KEY (exercise_id) REFERENCES exercise(exercise_id)
       );
     ''');
   }
 
-  // If you need to handle database migrations (changing schemas, etc.) in the future,
-  // implement a method like this:
-  // Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-  //   if (oldVersion < newVersion) {
-  //     // e.g., add a column, create new tables, etc.
-  //   }
-  // }
+  // -------------------------
+  // CRUD Operations
+  // -------------------------
 
-  /// Example method to drop all tables for testing or resetting 
-  /*
-  Future<void> dropAllTables() async {
+  // Insert a new user into the 'users' table
+  Future<void> insertUser(AppUser user) async {
     final db = await database;
-    // Make sure foreign_keys are off if you're dropping everything
-    await db.execute('PRAGMA foreign_keys = OFF');
-
-    await db.execute('DROP TABLE IF EXISTS personal_best');
-    await db.execute('DROP TABLE IF EXISTS milestone');
-    await db.execute('DROP TABLE IF EXISTS notification');
-    await db.execute('DROP TABLE IF EXISTS streak');
-    await db.execute('DROP TABLE IF EXISTS daily_log');
-    await db.execute('DROP TABLE IF EXISTS goal');
-    await db.execute('DROP TABLE IF EXISTS workout_set');
-    await db.execute('DROP TABLE IF EXISTS workout_exercise');
-    await db.execute('DROP TABLE IF EXISTS workout');
-    await db.execute('DROP TABLE IF EXISTS exercise');
-    await db.execute('DROP TABLE IF EXISTS user_metrics');
-    await db.execute('DROP TABLE IF EXISTS users');
-
-    // Re-enable foreign keys
-    await db.execute('PRAGMA foreign_keys = ON');
+    await db.insert(
+      'users',
+      user.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
-  */
+
+  // Retrieve a user by user_id
+  Future<AppUser?> getUserById(String userId) async {
+    final db = await database;
+    final result = await db.query(
+      'users',
+      where: 'user_id = ?',
+      whereArgs: [userId],
+    );
+    if (result.isNotEmpty) {
+      return AppUser.fromMap(result.first);
+    }
+    return null;
+  }
+
+  // Update the last_login timestamp for a user
+  Future<void> updateUserLastLogin(String userId) async {
+    final db = await database;
+    await db.update(
+      'users',
+      {'last_login': DateTime.now().toIso8601String()},
+      where: 'user_id = ?',
+      whereArgs: [userId],
+    );
+  }
+
+  // You can add additional CRUD methods for other tables as needed.
 }

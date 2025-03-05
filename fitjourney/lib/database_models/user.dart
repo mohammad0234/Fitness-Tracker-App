@@ -1,4 +1,4 @@
-class User {
+class AppUser {
   final String userId;
   final String firstName;
   final String lastName;
@@ -6,7 +6,7 @@ class User {
   final DateTime? registrationDate;
   final DateTime? lastLogin;
 
-  User({
+  AppUser({
     required this.userId,
     required this.firstName,
     required this.lastName,
@@ -15,14 +15,18 @@ class User {
     this.lastLogin,
   });
 
-  factory User.fromMap(Map<String, dynamic> map) {
-    return User(
+  factory AppUser.fromMap(Map<String, dynamic> map) {
+    return AppUser(
       userId: map['user_id'],
       firstName: map['first_name'],
       lastName: map['last_name'],
-      heightCm: map['height_cm'] != null ? (map['height_cm'] as num).toDouble() : null,
-      registrationDate: map['registration_date'] != null ? DateTime.parse(map['registration_date']) : null,
-      lastLogin: map['last_login'] != null ? DateTime.parse(map['last_login']) : null,
+      heightCm: map['height_cm'],
+      registrationDate: map['registration_date'] != null
+          ? DateTime.parse(map['registration_date'])
+          : null,
+      lastLogin: map['last_login'] != null
+          ? DateTime.parse(map['last_login'])
+          : null,
     );
   }
 

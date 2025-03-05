@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:fitjourney/database/database_helper.dart';
+import 'package:fitjourney/database_models/user.dart'; // This should define AppUser
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -15,27 +17,20 @@ class _SignUpPageState extends State<SignUpPage> {
   final TextEditingController _emailController     = TextEditingController();
   final TextEditingController _passwordController  = TextEditingController();
 
-  // UI state variables
   bool _obscurePassword = true;
   bool _acceptTerms = false;
 
-  // FirebaseAuth instance
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final firebase_auth.FirebaseAuth _auth = firebase_auth.FirebaseAuth.instance;
 
-  /// Checks if the password meets the strength requirements.
-  bool isValidPassword(String password) {
-    // Requires at least 8 characters and one special character
-    return password.length >= 8 && RegExp(r'(?=.*?[#?!@$%^&*-])').hasMatch(password);
-  }
-
-  /// Attempts to sign up the user using Firebase Authentication.
+  /// Attempts to sign up the user using Firebase Authentication
+  /// and inserts the user into the local SQLite database.
   Future<void> _signUp() async {
     final String firstName = _firstNameController.text.trim();
     final String lastName  = _lastNameController.text.trim();
     final String email     = _emailController.text.trim();
     final String password  = _passwordController.text.trim();
 
-    // Basic validation checks.
+    // Basic validations
     if (firstName.isEmpty || lastName.isEmpty) {
       _showError("Please enter your first and last name.");
       return;
@@ -44,32 +39,40 @@ class _SignUpPageState extends State<SignUpPage> {
       _showError("Email and password cannot be empty.");
       return;
     }
-    if (!isValidPassword(password)) {
-      _showError("Password must be at least 8 characters and include a special character.");
-      return;
-    }
     if (!_acceptTerms) {
       _showError("You must accept the Privacy Policy and Terms of Use.");
       return;
     }
 
     try {
-      // Create a new user with email and password.
-      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      // Create user in Firebase
+      final firebase_auth.UserCredential userCredential =
+          await _auth.createUserWithEmailAndPassword(email: email, password: password);
 
-      // Optionally update the user's display name.
+      // Optionally update the display name
       await userCredential.user?.updateDisplayName("$firstName $lastName");
 
-      // Inform the user and navigate to HomePage.
+      // Retrieve the Firebase UID
+      String firebaseUID = userCredential.user!.uid;
+
+      // Create a new AppUser object for local storage
+      final newUser = AppUser(
+        userId: firebaseUID,
+        firstName: firstName,
+        lastName: lastName,
+        heightCm: null, // Set if available
+        registrationDate: DateTime.now(),
+        lastLogin: DateTime.now(),
+      );
+
+      // Insert the new user into SQLite
+      await DatabaseHelper.instance.insertUser(newUser);
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Account created successfully!")),
       );
       Navigator.pushReplacementNamed(context, '/home');
-      
-    } on FirebaseAuthException catch (e) {
+    } on firebase_auth.FirebaseAuthException catch (e) {
       if (e.code == 'email-already-in-use') {
         _showError("This email is already registered. Try logging in.");
       } else if (e.code == 'weak-password') {
@@ -85,10 +88,7 @@ class _SignUpPageState extends State<SignUpPage> {
   /// Displays an error message using a SnackBar.
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message, style: const TextStyle(color: Colors.white)),
-        backgroundColor: Colors.red,
-      ),
+      SnackBar(content: Text(message)),
     );
   }
 
@@ -102,7 +102,6 @@ class _SignUpPageState extends State<SignUpPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header texts
               Text(
                 'Hey there,',
                 style: TextStyle(
@@ -130,6 +129,8 @@ class _SignUpPageState extends State<SignUpPage> {
                 ),
                 child: TextField(
                   controller: _firstNameController,
+                  // Autofill hint for given name; set to null to disable autofill
+                  autofillHints: const [AutofillHints.givenName],
                   decoration: InputDecoration(
                     prefixIcon: Icon(Icons.person_outline, color: Colors.grey.shade600),
                     hintText: 'First Name',
@@ -149,6 +150,8 @@ class _SignUpPageState extends State<SignUpPage> {
                 ),
                 child: TextField(
                   controller: _lastNameController,
+                  // Autofill hint for family name; set to null to disable autofill
+                  autofillHints: const [AutofillHints.familyName],
                   decoration: InputDecoration(
                     prefixIcon: Icon(Icons.person_outline, color: Colors.grey.shade600),
                     hintText: 'Last Name',
@@ -169,6 +172,8 @@ class _SignUpPageState extends State<SignUpPage> {
                 child: TextField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
+                  // Autofill hint for email
+                  autofillHints: const [AutofillHints.email],
                   decoration: InputDecoration(
                     prefixIcon: Icon(Icons.email_outlined, color: Colors.grey.shade600),
                     hintText: 'Email',
@@ -189,6 +194,8 @@ class _SignUpPageState extends State<SignUpPage> {
                 child: TextField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
+                  // Autofill hint for new password
+                  autofillHints: const [AutofillHints.newPassword],
                   decoration: InputDecoration(
                     prefixIcon: Icon(Icons.lock_outline, color: Colors.grey.shade600),
                     hintText: 'Password',
