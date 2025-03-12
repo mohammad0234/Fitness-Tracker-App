@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:fitjourney/database/database_helper.dart';
-import 'package:fitjourney/database_models/user.dart'; // This file defines AppUser
+import 'package:fitjourney/database_models/user.dart'; 
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});

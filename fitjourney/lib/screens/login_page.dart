@@ -15,6 +15,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _passwordController = TextEditingController();
   
   bool _obscurePassword = true;
+  bool _isLoggingIn = false;
   final firebase_auth.FirebaseAuth _auth = firebase_auth.FirebaseAuth.instance;
   
   /// Attempts to sign in the user using Firebase Authentication
@@ -28,10 +29,26 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
     
+    setState(() {
+      _isLoggingIn = true;
+    });
+    
     try {
       // Sign in with Firebase Authentication
       firebase_auth.UserCredential userCredential = 
           await _auth.signInWithEmailAndPassword(email: email, password: password);
+      
+      // Check if email is verified
+      if (userCredential.user != null && !userCredential.user!.emailVerified) {
+        _showError("Please verify your email before logging in.");
+        // Navigate to verification pending page
+        Navigator.pushReplacementNamed(
+          context, 
+          '/verification-pending', 
+          arguments: email
+        );
+        return;
+      }
       
       // Retrieve the Firebase UID
       String firebaseUID = userCredential.user!.uid;
@@ -55,6 +72,10 @@ class _LoginPageState extends State<LoginPage> {
       }
     } catch (e) {
       _showError(e.toString());
+    } finally {
+      setState(() {
+        _isLoggingIn = false;
+      });
     }
   }
   
@@ -124,7 +145,6 @@ class _LoginPageState extends State<LoginPage> {
                 child: TextField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  // Provide autofill hint for email (or set to null to disable autofill)
                   autofillHints: const [AutofillHints.username],
                   decoration: InputDecoration(
                     prefixIcon: Icon(Icons.email_outlined, color: Colors.grey.shade600),
@@ -146,8 +166,6 @@ class _LoginPageState extends State<LoginPage> {
                 child: TextField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
-                  // Provide autofill hint for password (or set to null to disable autofill)
-                  autofillHints: const [AutofillHints.password],
                   decoration: InputDecoration(
                     prefixIcon: Icon(Icons.lock_outline, color: Colors.grey.shade600),
                     hintText: 'Password',
@@ -202,22 +220,24 @@ class _LoginPageState extends State<LoginPage> {
                       borderRadius: BorderRadius.circular(28),
                     ),
                   ),
-                  onPressed: _login,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.login, color: Colors.white, size: 20),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'Login',
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.white,
-                          fontWeight: FontWeight.w500,
+                  onPressed: _isLoggingIn ? null : _login,
+                  child: _isLoggingIn
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.login, color: Colors.white, size: 20),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Login',
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
                 ),
               ),
               const SizedBox(height: 25),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:fitjourney/database/database_helper.dart';
 import 'package:fitjourney/database_models/user.dart'; // This should define AppUser
@@ -17,8 +18,12 @@ class _SignUpPageState extends State<SignUpPage> {
   final TextEditingController _emailController     = TextEditingController();
   final TextEditingController _passwordController  = TextEditingController();
 
+  // State variables
   bool _obscurePassword = true;
   bool _acceptTerms = false;
+  bool _hasViewedPrivacyPolicy = false;
+  bool _hasViewedTerms = false;
+  bool _isRegistering = false;
 
   final firebase_auth.FirebaseAuth _auth = firebase_auth.FirebaseAuth.instance;
 
@@ -39,10 +44,25 @@ class _SignUpPageState extends State<SignUpPage> {
       _showError("Email and password cannot be empty.");
       return;
     }
+    
+    // Check if user has viewed both documents
+    if (!_hasViewedPrivacyPolicy || !_hasViewedTerms) {
+      _showDialog(
+        "Please Review Documents",
+        "You must review both the Privacy Policy and Terms of Use before continuing."
+      );
+      return;
+    }
+    
     if (!_acceptTerms) {
       _showError("You must accept the Privacy Policy and Terms of Use.");
       return;
     }
+    
+    // Show loading state
+    setState(() {
+      _isRegistering = true;
+    });
 
     try {
       // Create user in Firebase
@@ -51,6 +71,9 @@ class _SignUpPageState extends State<SignUpPage> {
 
       // Optionally update the display name
       await userCredential.user?.updateDisplayName("$firstName $lastName");
+      
+      // Send email verification
+      await userCredential.user?.sendEmailVerification();
 
       // Retrieve the Firebase UID
       String firebaseUID = userCredential.user!.uid;
@@ -69,9 +92,11 @@ class _SignUpPageState extends State<SignUpPage> {
       await DatabaseHelper.instance.insertUser(newUser);
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Account created successfully!")),
+        const SnackBar(content: Text("Account created successfully! Please verify your email.")),
       );
-      Navigator.pushReplacementNamed(context, '/home');
+      
+      // Navigate to verification pending screen
+      Navigator.pushReplacementNamed(context, '/verification-pending', arguments: email);
     } on firebase_auth.FirebaseAuthException catch (e) {
       if (e.code == 'email-already-in-use') {
         _showError("This email is already registered. Try logging in.");
@@ -82,7 +107,61 @@ class _SignUpPageState extends State<SignUpPage> {
       }
     } catch (e) {
       _showError(e.toString());
+    } finally {
+      // Hide loading state
+      setState(() {
+        _isRegistering = false;
+      });
     }
+  }
+
+  /// Navigate to the Privacy Policy page
+  void _navigateToPrivacyPolicy() async {
+    final result = await Navigator.push(
+      context, 
+      MaterialPageRoute(builder: (context) => const PrivacyPolicyPage())
+    );
+    
+    // Update flag when returned from the page
+    if (result == true) {
+      setState(() {
+        _hasViewedPrivacyPolicy = true;
+      });
+    }
+  }
+
+  /// Navigate to the Terms of Use page
+  void _navigateToTermsOfUse() async {
+    final result = await Navigator.push(
+      context, 
+      MaterialPageRoute(builder: (context) => const TermsOfUsePage())
+    );
+    
+    // Update flag when returned from the page
+    if (result == true) {
+      setState(() {
+        _hasViewedTerms = true;
+      });
+    }
+  }
+
+  /// Show a dialog with a message
+  void _showDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(title),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("OK"),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   /// Displays an error message using a SnackBar.
@@ -129,7 +208,6 @@ class _SignUpPageState extends State<SignUpPage> {
                 ),
                 child: TextField(
                   controller: _firstNameController,
-                  // Autofill hint for given name; set to null to disable autofill
                   autofillHints: const [AutofillHints.givenName],
                   decoration: InputDecoration(
                     prefixIcon: Icon(Icons.person_outline, color: Colors.grey.shade600),
@@ -150,7 +228,6 @@ class _SignUpPageState extends State<SignUpPage> {
                 ),
                 child: TextField(
                   controller: _lastNameController,
-                  // Autofill hint for family name; set to null to disable autofill
                   autofillHints: const [AutofillHints.familyName],
                   decoration: InputDecoration(
                     prefixIcon: Icon(Icons.person_outline, color: Colors.grey.shade600),
@@ -172,7 +249,6 @@ class _SignUpPageState extends State<SignUpPage> {
                 child: TextField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  // Autofill hint for email
                   autofillHints: const [AutofillHints.email],
                   decoration: InputDecoration(
                     prefixIcon: Icon(Icons.email_outlined, color: Colors.grey.shade600),
@@ -194,8 +270,6 @@ class _SignUpPageState extends State<SignUpPage> {
                 child: TextField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
-                  // Autofill hint for new password
-                  autofillHints: const [AutofillHints.newPassword],
                   decoration: InputDecoration(
                     prefixIcon: Icon(Icons.lock_outline, color: Colors.grey.shade600),
                     hintText: 'Password',
@@ -218,7 +292,7 @@ class _SignUpPageState extends State<SignUpPage> {
               ),
               const SizedBox(height: 20),
 
-              // Privacy Policy & Terms Checkbox
+              // Privacy Policy & Terms Checkbox with Clickable Links
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -240,11 +314,36 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text(
-                      "By continuing you accept our Privacy Policy and Terms of Use",
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey.shade600,
+                    child: RichText(
+                      text: TextSpan(
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade600,
+                        ),
+                        children: [
+                          const TextSpan(text: "By continuing you accept our "),
+                          TextSpan(
+                            text: "Privacy Policy",
+                            style: const TextStyle(
+                              color: Color(0xFF8AB4F8),
+                              fontWeight: FontWeight.bold,
+                              decoration: TextDecoration.underline,
+                            ),
+                            recognizer: TapGestureRecognizer()
+                              ..onTap = _navigateToPrivacyPolicy,
+                          ),
+                          const TextSpan(text: " and "),
+                          TextSpan(
+                            text: "Terms of Use",
+                            style: const TextStyle(
+                              color: Color(0xFF8AB4F8),
+                              fontWeight: FontWeight.bold,
+                              decoration: TextDecoration.underline,
+                            ),
+                            recognizer: TapGestureRecognizer()
+                              ..onTap = _navigateToTermsOfUse,
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -264,15 +363,17 @@ class _SignUpPageState extends State<SignUpPage> {
                       borderRadius: BorderRadius.circular(28),
                     ),
                   ),
-                  onPressed: _signUp,
-                  child: const Text(
-                    'Register',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
+                  onPressed: _isRegistering ? null : _signUp,
+                  child: _isRegistering 
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text(
+                      'Register',
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                  ),
                 ),
               ),
               const SizedBox(height: 25),
@@ -303,6 +404,238 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                 ],
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Page that displays the Privacy Policy
+class PrivacyPolicyPage extends StatelessWidget {
+  const PrivacyPolicyPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return WillPopScope(
+      onWillPop: () async {
+        // Return true value before allowing the pop
+        Navigator.of(context).pop(true);
+        return false; // We're handling the pop ourselves
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text("Privacy Policy"),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              // Return true to indicate the user has viewed this page
+              Navigator.of(context).pop(true);
+            },
+          ),
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Privacy Policy for FitJourney",
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                "Last Updated: March 12, 2025",
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey,
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                "1. Introduction",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "Welcome to FitJourney. We respect your privacy and are committed to protecting your personal data. This Privacy Policy explains how we collect, use, and safeguard your information when you use our mobile application.",
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey.shade800,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                "2. Information We Collect",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "We collect the following information:\n\n• Personal Information: Name, email address, and optional height measurements.\n• Workout Data: Exercise types, repetitions, sets, weights used, and workout duration.\n• Usage Information: How you interact with the app, including features used and time spent.",
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey.shade800,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                "3. How We Use Your Information",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "We use your information to:\n\n• Provide and improve our services\n• Track your fitness progress\n• Personalize your experience\n• Communicate with you about app updates",
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey.shade800,
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                "4. Data Storage",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "Your workout data is stored locally on your device using SQLite. Your authentication information is securely managed by Firebase Authentication.",
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey.shade800,
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Page that displays the Terms of Use
+class TermsOfUsePage extends StatelessWidget {
+  const TermsOfUsePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return WillPopScope(
+      onWillPop: () async {
+        // Return true value before allowing the pop
+        Navigator.of(context).pop(true);
+        return false; // We're handling the pop ourselves
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text("Terms of Use"),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              // Return true to indicate the user has viewed this page
+              Navigator.of(context).pop(true);
+            },
+          ),
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Terms of Use for FitJourney",
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                "Last Updated: March 12, 2025",
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey,
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                "1. Acceptance of Terms",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "By accessing or using FitJourney, you agree to be bound by these Terms of Use. If you do not agree to these Terms, you should not use the application.",
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey.shade800,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                "2. User Accounts",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account. You agree to notify us immediately of any unauthorized use of your account.",
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey.shade800,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                "3. Fitness Disclaimer",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "FitJourney is designed for tracking fitness progress only. It is not a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition.",
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey.shade800,
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                "4. User Data",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "You retain ownership of all workout and personal data you enter into the application. By using FitJourney, you grant us permission to store and process this data as described in our Privacy Policy.",
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey.shade800,
+                ),
+              ),
+              const SizedBox(height: 24),
             ],
           ),
         ),

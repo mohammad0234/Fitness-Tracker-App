@@ -3,7 +3,7 @@ import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
-// Import your local user model (named AppUser)
+// Import local user model
 import 'package:fitjourney/database_models/user.dart';
 
 class DatabaseHelper {
@@ -20,14 +20,14 @@ class DatabaseHelper {
     return _database!;
   }
 
-  // Initialize or open the database file
+  // Initialise or open the database file
   Future<Database> _initDB() async {
     Directory documentsDirectory = await getApplicationDocumentsDirectory();
     final path = join(documentsDirectory.path, 'myfitness.db');
     print("Database Path: $path"); // Debug print
     return await openDatabase(
       path,
-      version: 1, // Increment for migrations
+      version: 1, 
       onConfigure: _onConfigure,
       onCreate: _onCreate,
       onOpen: (db) => print("Database Opened!"),
@@ -233,5 +233,5 @@ class DatabaseHelper {
     );
   }
 
-  // You can add additional CRUD methods for other tables as needed.
+  // additional CRUD methods for other tables as needed.
 }
