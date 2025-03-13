@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:fitjourney/database/database_helper.dart';
 import 'package:fitjourney/database_models/user.dart';
+import 'package:fitjourney/screens/signup_page.dart'; // For privacy and terms pages
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -13,6 +14,7 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   AppUser? _currentUser;
   bool _isLoading = true;
+  bool _isDeleting = false;
 
   @override
   void initState() {
@@ -36,6 +38,22 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  // Navigate to the Privacy Policy page
+  void _navigateToPrivacyPolicy() async {
+    await Navigator.push(
+      context, 
+      MaterialPageRoute(builder: (context) => const PrivacyPolicyPage())
+    );
+  }
+
+  // Navigate to the Terms of Use page
+  void _navigateToTermsOfUse() async {
+    await Navigator.push(
+      context, 
+      MaterialPageRoute(builder: (context) => const TermsOfUsePage())
+    );
+  }
+
   Future<void> _signOut() async {
     try {
       await firebase_auth.FirebaseAuth.instance.signOut();
@@ -47,17 +65,94 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  Future<void> _deleteAccount() async {
+    // Confirm deletion
+    final bool confirmDelete = await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Delete Account'),
+          content: const Text(
+            'Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently deleted.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('CANCEL'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text(
+                'DELETE',
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+          ],
+        );
+      },
+    ) ?? false;
+
+    if (!confirmDelete) return;
+
+    setState(() {
+      _isDeleting = true;
+    });
+
+    try {
+      final firebase_auth.User? user = firebase_auth.FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        //final String uid = user.uid; //TODO
+        
+        // Delete user data from SQLite (this would need to be expanded to delete all related data)
+        // This is a placeholder for actual implementation
+        // Need to implement cascade deletion for all user-related data
+        
+        // Delete the user from Firebase Authentication
+        await user.delete();
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Account deleted successfully')),
+        );
+        
+        Navigator.pushReplacementNamed(context, '/login');
+      }
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      setState(() {
+        _isDeleting = false;
+      });
+      
+      if (e.code == 'requires-recent-login') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please log in again before deleting your account for security reasons.'),
+          ),
+        );
+        await _signOut();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error deleting account: ${e.message}')),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isDeleting = false;
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error deleting account: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     return Scaffold(
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -69,8 +164,10 @@ class _ProfilePageState extends State<ProfilePage> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
+              
               if (_currentUser != null) ...[
+                // Profile header with avatar and name
                 Center(
                   child: Column(
                     children: [
@@ -104,26 +201,99 @@ class _ProfilePageState extends State<ProfilePage> {
                     ],
                   ),
                 ),
+                
+                const SizedBox(height: 32),
+                
+                // Settings section
+                const Text(
+                  'Settings',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                
+                // Privacy & Legal section
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: Column(
+                    children: [
+                      // Privacy Policy
+                      ListTile(
+                        title: const Text('Privacy Policy'),
+                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                        onTap: _navigateToPrivacyPolicy,
+                      ),
+                      Divider(height: 1, color: Colors.grey.shade200),
+                      
+                      // Terms of Use
+                      ListTile(
+                        title: const Text('Terms of Use'),
+                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                        onTap: _navigateToTermsOfUse,
+                      ),
+                    ],
+                  ),
+                ),
+                
+                const SizedBox(height: 32),
+                
+                // Account section
+                const Text(
+                  'Account',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                
+                // Sign Out button
+                Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: Column(
+                    children: [
+                      ListTile(
+                        title: const Text('Sign Out'),
+                        trailing: const Icon(Icons.logout, size: 20),
+                        onTap: _signOut,
+                      ),
+                      Divider(height: 1, color: Colors.grey.shade200),
+                      
+                      // Delete Account
+                      ListTile(
+                        title: const Text(
+                          'Delete Account',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                        trailing: _isDeleting 
+                          ? const SizedBox(
+                              width: 20, 
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.delete_forever, color: Colors.red, size: 20),
+                        onTap: _isDeleting ? null : _deleteAccount,
+                      ),
+                    ],
+                  ),
+                ),
               ] else ...[
                 const Center(
                   child: Text('User profile not available'),
                 ),
               ],
-              const Spacer(),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red.shade400,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                  onPressed: _signOut,
-                  child: const Text(
-                    'Sign Out',
-                    style: TextStyle(fontSize: 16, color: Colors.white),
-                  ),
-                ),
-              ),
+              const SizedBox(height: 20),
             ],
           ),
         ),
