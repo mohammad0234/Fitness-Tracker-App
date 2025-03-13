@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'home_page.dart';
-import 'progress_page.dart';
 import 'workouts_page.dart';
+import 'progress_page.dart';
 import 'goals_page.dart';
 import 'profile_page.dart';
 
@@ -18,8 +18,8 @@ class _MainScaffoldState extends State<MainScaffold> {
   // List of screens to navigate between
   final List<Widget> _screens = [
     const HomePage(),
-    const ProgressPage(),
     const WorkoutsPage(),
+    const ProgressPage(),
     const GoalsPage(),
     const ProfilePage(),
   ];
@@ -32,14 +32,14 @@ class _MainScaffoldState extends State<MainScaffold> {
       label: 'Home',
     ),
     const BottomNavigationBarItem(
-      icon: Icon(Icons.bar_chart_outlined),
-      activeIcon: Icon(Icons.bar_chart),
-      label: 'Progress',
-    ),
-    const BottomNavigationBarItem(
       icon: Icon(Icons.fitness_center_outlined),
       activeIcon: Icon(Icons.fitness_center),
       label: 'Workouts',
+    ),
+    const BottomNavigationBarItem(
+      icon: Icon(Icons.bar_chart_outlined),
+      activeIcon: Icon(Icons.bar_chart),
+      label: 'Progress',
     ),
     const BottomNavigationBarItem(
       icon: Icon(Icons.flag_outlined),
