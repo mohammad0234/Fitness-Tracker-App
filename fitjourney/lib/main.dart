@@ -6,7 +6,7 @@ import 'firebase_options.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/signup_page.dart';
 import 'screens/login_page.dart';
-import 'screens/home_page.dart';
+import 'screens/main_scaffold.dart';
 import 'screens/verification_page.dart';
 
 Future<void> main() async {
@@ -32,12 +32,17 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'FitJourney',
       debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        primaryColor: Colors.blue,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        useMaterial3: true,
+      ),
       initialRoute: seenOnboarding ? '/login' : '/',
       routes: {
         '/': (context) => const OnboardingScreen(),
         '/signup': (context) => const SignUpPage(),
         '/login': (context) => const LoginPage(),
-        '/home': (context) => const HomePage(),
+        '/home': (context) => const MainScaffold(), // Changed from HomePage to MainScaffold
         '/verification-pending': (context) => const VerificationPendingPage(),
       },
     );
