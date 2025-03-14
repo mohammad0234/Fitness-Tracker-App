@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:fitjourney/database/database_helper.dart';
 import 'package:fitjourney/database_models/user.dart';
+import 'log_workout_flow.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -260,7 +261,10 @@ class _HomePageState extends State<HomePage> {
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed: () {
-                      // TODO: Implement workout logging
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const LogWorkoutFlow()),
+                        );
                     },
                     icon: const Icon(Icons.add),
                     label: const Text('Log Workout'),

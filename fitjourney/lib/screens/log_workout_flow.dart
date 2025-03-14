@@ -343,234 +343,239 @@ class _SetEntryScreenState extends State<SetEntryScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Column(
-        children: [
-          // Exercise info card
-          Container(
-            padding: const EdgeInsets.all(16),
-            margin: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.blue.shade50,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.blue.shade100),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.fitness_center,
-                  color: Colors.blue.shade700,
-                  size: 30,
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.exerciseName,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        'Muscle Group: ${widget.muscleGroup}',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
-          // Weight unit selector
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                const Text('Unit:'),
-                const SizedBox(width: 8),
-                SegmentedButton<bool>(
-                  segments: const [
-                    ButtonSegment<bool>(
-                      value: true,
-                      label: Text('kg'),
-                    ),
-                    ButtonSegment<bool>(
-                      value: false,
-                      label: Text('lbs'),
-                    ),
-                  ],
-                  selected: {_isMetric},
-                  onSelectionChanged: (Set<bool> newSelection) {
-                    setState(() {
-                      _isMetric = newSelection.first;
-                    });
-                  },
-                  style: const ButtonStyle(
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
-          // Header
-          Padding(
-            padding: const EdgeInsets.all(16).copyWith(bottom: 0),
-            child: Row(
-              children: [
-                const SizedBox(width: 50, child: Text('SET', style: TextStyle(fontWeight: FontWeight.bold))),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    _isMetric ? 'WEIGHT (kg)' : 'WEIGHT (lbs)',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                const Expanded(
-                  child: Text('REPS', style: TextStyle(fontWeight: FontWeight.bold)),
-                ),
-                const SizedBox(width: 48), // For delete button
-              ],
-            ),
-          ),
-          
-          // Set rows
-          Expanded(
-            child: ListView.builder(
-              itemCount: _sets.length,
+      // Updated to use SingleChildScrollView with keyboard inset padding
+      body: SingleChildScrollView(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+        ),
+        child: Column(
+          children: [
+            // Exercise info card
+            Container(
               padding: const EdgeInsets.all(16),
-              itemBuilder: (context, index) {
-                final set = _sets[index];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Row(
-                    children: [
-                      // Set number
-                      SizedBox(
-                        width: 50,
-                        child: Text(
-                          set['setNumber'].toString(),
+              margin: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.blue.shade100),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.fitness_center,
+                    color: Colors.blue.shade700,
+                    size: 30,
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.exerciseName,
                           style: const TextStyle(
+                            fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            fontSize: 16,
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 16),
-                      
-                      // Weight input
-                      Expanded(
-                        child: TextField(
-                          controller: set['weightController'],
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        Text(
+                          'Muscle Group: ${widget.muscleGroup}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade700,
                           ),
-                          onChanged: (value) {
-                            set['weight'] = value;
-                          },
                         ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            // Weight unit selector
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  const Text('Unit:'),
+                  const SizedBox(width: 8),
+                  SegmentedButton<bool>(
+                    segments: const [
+                      ButtonSegment<bool>(
+                        value: true,
+                        label: Text('kg'),
                       ),
-                      const SizedBox(width: 16),
-                      
-                      // Reps input
-                      Expanded(
-                        child: TextField(
-                          controller: set['repsController'],
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          ),
-                          onChanged: (value) {
-                            set['reps'] = value;
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      
-                      // Delete button
-                      SizedBox(
-                        width: 40,
-                        child: IconButton(
-                          icon: const Icon(Icons.delete_outline),
-                          onPressed: _sets.length > 1 ? () => _removeSet(index) : null,
-                          color: Colors.red.shade400,
-                        ),
+                      ButtonSegment<bool>(
+                        value: false,
+                        label: Text('lbs'),
                       ),
                     ],
+                    selected: {_isMetric},
+                    onSelectionChanged: (Set<bool> newSelection) {
+                      setState(() {
+                        _isMetric = newSelection.first;
+                      });
+                    },
+                    style: const ButtonStyle(
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
                   ),
-                );
-              },
-            ),
-          ),
-          
-          // Add set button
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: OutlinedButton.icon(
-              onPressed: _addSet,
-              icon: const Icon(Icons.add),
-              label: const Text('Add Set'),
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size.fromHeight(50),
+                ],
               ),
             ),
-          ),
-          
-          // Notes
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: TextField(
-              decoration: InputDecoration(
-                labelText: 'Notes (optional)',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+            
+            // Header
+            Padding(
+              padding: const EdgeInsets.all(16).copyWith(bottom: 0),
+              child: Row(
+                children: [
+                  const SizedBox(width: 50, child: Text('SET', style: TextStyle(fontWeight: FontWeight.bold))),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      _isMetric ? 'WEIGHT (kg)' : 'WEIGHT (lbs)',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  const Expanded(
+                    child: Text('REPS', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                  const SizedBox(width: 48), // For delete button
+                ],
+              ),
+            ),
+            
+            // Set rows (now directly in ScrollView instead of a nested ListView)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: _sets.map((set) {
+                  final index = _sets.indexOf(set);
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Row(
+                      children: [
+                        // Set number
+                        SizedBox(
+                          width: 50,
+                          child: Text(
+                            set['setNumber'].toString(),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        
+                        // Weight input
+                        Expanded(
+                          child: TextField(
+                            controller: set['weightController'],
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            ),
+                            onChanged: (value) {
+                              set['weight'] = value;
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        
+                        // Reps input
+                        Expanded(
+                          child: TextField(
+                            controller: set['repsController'],
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            ),
+                            onChanged: (value) {
+                              set['reps'] = value;
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        
+                        // Delete button
+                        SizedBox(
+                          width: 40,
+                          child: IconButton(
+                            icon: const Icon(Icons.delete_outline),
+                            onPressed: _sets.length > 1 ? () => _removeSet(index) : null,
+                            color: Colors.red.shade400,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+            
+            // Add set button
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: OutlinedButton.icon(
+                onPressed: _addSet,
+                icon: const Icon(Icons.add),
+                label: const Text('Add Set'),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(50),
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               ),
-              maxLines: 2,
             ),
-          ),
-          
-          // Save button
-          Padding(
-            padding: const EdgeInsets.all(16).copyWith(top: 0),
-            child: ElevatedButton(
-              onPressed: () {
-                // TODO: Save workout data to database
-                // Show success message
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Exercise added to your workout!'),
-                    backgroundColor: Colors.green,
+            
+            // Notes
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: TextField(
+                decoration: InputDecoration(
+                  labelText: 'Notes (optional)',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                );
-                // Return to exercise selection
-                Navigator.pop(context);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-                minimumSize: const Size.fromHeight(50),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+                maxLines: 2,
               ),
-              child: const Text('Save Exercise', style: TextStyle(fontSize: 16)),
             ),
-          ),
-        ],
+            
+            // Save button
+            Padding(
+              padding: const EdgeInsets.all(16).copyWith(top: 0),
+              child: ElevatedButton(
+                onPressed: () {
+                  // TODO: Save workout data to database
+                  // Show success message
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Exercise added to your workout!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                  // Return to exercise selection
+                  Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size.fromHeight(50),
+                ),
+                child: const Text('Save Exercise', style: TextStyle(fontSize: 16)),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
