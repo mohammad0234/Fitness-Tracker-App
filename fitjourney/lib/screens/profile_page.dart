@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:fitjourney/database/database_helper.dart';
 import 'package:fitjourney/database_models/user.dart';
 import 'package:fitjourney/screens/signup_page.dart'; // For privacy and terms pages
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -26,11 +27,63 @@ class _ProfilePageState extends State<ProfilePage> {
     final firebase_auth.User? user = firebase_auth.FirebaseAuth.instance.currentUser;
     if (user != null) {
       final uid = user.uid;
+      
+      // Try SQLite first
       final dbUser = await DatabaseHelper.instance.getUserById(uid);
-      setState(() {
-        _currentUser = dbUser;
-        _isLoading = false;
-      });
+      
+      if (dbUser == null) {
+        // If not in SQLite, try Firestore
+        try {
+          final docSnapshot = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(uid)
+              .collection('profile')
+              .doc(uid)
+              .get();
+              
+          if (docSnapshot.exists) {
+            final userData = docSnapshot.data();
+            if (userData != null) {
+              final appUser = AppUser(
+                userId: uid,
+                firstName: userData['first_name'] ?? userData['firstName'],
+                lastName: userData['last_name'] ?? userData['lastName'],
+                heightCm: userData['height_cm'] ?? userData['heightCm'],
+                registrationDate: userData['registration_date'] != null 
+                    ? DateTime.parse(userData['registration_date']) 
+                    : (userData['registrationDate'] != null 
+                        ? DateTime.parse(userData['registrationDate']) 
+                        : null),
+                lastLogin: userData['last_login'] != null 
+                    ? DateTime.parse(userData['last_login']) 
+                    : (userData['lastLogin'] != null 
+                        ? DateTime.parse(userData['lastLogin']) 
+                        : null),
+              );
+              
+              // Save to SQLite for future use
+              await DatabaseHelper.instance.insertUser(appUser);
+              
+              setState(() {
+                _currentUser = appUser;
+                _isLoading = false;
+              });
+              return;
+            }
+          }
+        } catch (e) {
+          print('Error fetching from Firestore: $e');
+        }
+        
+        setState(() {
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _currentUser = dbUser;
+          _isLoading = false;
+        });
+      }
     } else {
       setState(() {
         _isLoading = false;
@@ -101,7 +154,9 @@ class _ProfilePageState extends State<ProfilePage> {
     try {
       final firebase_auth.User? user = firebase_auth.FirebaseAuth.instance.currentUser;
       if (user != null) {
-        //final String uid = user.uid; //TODO
+        //final String uid = user.uid;
+        
+        // TODO: Also delete data from Firestore
         
         // Delete user data from SQLite (this would need to be expanded to delete all related data)
         // This is a placeholder for actual implementation

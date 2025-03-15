@@ -3,6 +3,7 @@ import 'package:flutter/gestures.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:fitjourney/database/database_helper.dart';
 import 'package:fitjourney/database_models/user.dart'; // This should define AppUser
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -90,6 +91,14 @@ class _SignUpPageState extends State<SignUpPage> {
 
       // Insert the new user into SQLite
       await DatabaseHelper.instance.insertUser(newUser);
+
+      await FirebaseFirestore.instance
+      .collection('users')
+      .doc(firebaseUID)
+      .collection('profile')
+      .doc(firebaseUID)
+      .set(newUser.toMap());
+
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Account created successfully! Please verify your email.")),

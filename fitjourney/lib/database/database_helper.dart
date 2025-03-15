@@ -24,6 +24,14 @@ class DatabaseHelper {
   Future<Database> _initDB() async {
     Directory documentsDirectory = await getApplicationDocumentsDirectory();
     final path = join(documentsDirectory.path, 'myfitness.db');
+
+
+  //   final dbFile = File(path);
+  //   if (await dbFile.exists()) {
+  //     await dbFile.delete();
+  //     print("Deleted existing database");
+  // }
+
     print("Database Path: $path"); // Debug print
     return await openDatabase(
       path,
@@ -33,6 +41,24 @@ class DatabaseHelper {
       onOpen: (db) => print("Database Opened!"),
     );
   }
+
+//   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+//   if (oldVersion < 2) {
+//     print("Upgrading database from version $oldVersion to $newVersion");
+//     // Create sync_queue table when upgrading to version 2
+//     await db.execute('''
+//       CREATE TABLE IF NOT EXISTS sync_queue (
+//         id INTEGER PRIMARY KEY AUTOINCREMENT,
+//         table_name TEXT NOT NULL,
+//         record_id TEXT NOT NULL,
+//         operation TEXT NOT NULL,
+//         timestamp INTEGER NOT NULL,
+//         synced BOOLEAN DEFAULT FALSE,
+//         UNIQUE(table_name, record_id, operation)
+//       );
+//     ''');
+//   }
+// }
 
   // Enable foreign key constraints
   Future<void> _onConfigure(Database db) async {
@@ -192,13 +218,43 @@ class DatabaseHelper {
         FOREIGN KEY (exercise_id) REFERENCES exercise(exercise_id)
       );
     ''');
+    
+    // SYNC_QUEUE table
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS sync_queue (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        table_name TEXT NOT NULL,
+        record_id TEXT NOT NULL,
+        operation TEXT NOT NULL,
+        timestamp INTEGER NOT NULL,
+        synced BOOLEAN DEFAULT FALSE,
+        UNIQUE(table_name, record_id, operation)
+      );
+    ''');
   }
 
   // -------------------------
   // CRUD Operations
   // -------------------------
 
-  // Insert a new user into the 'users' table
+  // Mark a record for sync
+  Future<void> markForSync(String tableName, String recordId, String operation) async {
+    final db = await database;
+    
+    await db.insert(
+      'sync_queue',
+      {
+        'table_name': tableName,
+        'record_id': recordId,
+        'operation': operation,
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+        'synced': 0,
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  // Insert a new user into the 'users' table and mark for sync
   Future<void> insertUser(AppUser user) async {
     final db = await database;
     await db.insert(
@@ -206,6 +262,8 @@ class DatabaseHelper {
       user.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+    
+    await markForSync('users', user.userId, 'INSERT');
   }
 
   // Retrieve a user by user_id
@@ -231,7 +289,9 @@ class DatabaseHelper {
       where: 'user_id = ?',
       whereArgs: [userId],
     );
+    
+    await markForSync('users', userId, 'UPDATE');
   }
 
-  // additional CRUD methods for other tables as needed.
+  // Additional CRUD methods for other tables as needed.
 }
