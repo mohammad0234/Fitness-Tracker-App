@@ -3,6 +3,6 @@ FitJourney is a mobile application designed to help users log workouts, track pr
 
 Tech Stack
 Frontend: Flutter (Dart)
-Backend: Firebase Authentication, Firestore
+Backend: Firebase Authentication
 Database: SQLite (for local workout storage)
 Data Visualization: fl_chart
