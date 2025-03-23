@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:fitjourney/services/workout_service.dart';
+import 'package:fitjourney/database_models/workout.dart';
+import 'package:fitjourney/screens/workout_detail_screen.dart';
 import 'log_workout_flow.dart';
-//import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:intl/intl.dart';
 
 class WorkoutsPage extends StatefulWidget {
   const WorkoutsPage({super.key});
@@ -10,6 +13,8 @@ class WorkoutsPage extends StatefulWidget {
 }
 
 class _WorkoutsPageState extends State<WorkoutsPage> {
+  final WorkoutService _workoutService = WorkoutService.instance;
+  
   // Filter options
   String _selectedFilter = 'All Workouts';
   final List<String> _filterOptions = ['All Workouts', 'Upper Body', 'Lower Body'];
@@ -18,26 +23,71 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
   String _dateFilter = 'All Time';
   final List<String> _dateFilterOptions = ['All Time', 'This Week', 'This Month', 'Last 3 Months'];
   
-  // Placeholder workout data
-  final List<Map<String, dynamic>> _workouts = [
-    {
-      'name': 'Upper Body Workout',
-      'date': DateTime.now(),
-      'duration': 45,
-      'exercises': 8,
-      'time': '9:30 AM',
-      'muscles': ['Chest', 'Arms'],
-    },
-    {
-      'name': 'Leg Day',
-      'date': DateTime.now().subtract(const Duration(days: 1)),
-      'duration': 60,
-      'exercises': 8,
-      'time': '2:15 PM',
-      'muscles': ['Legs', 'Core'],
-    },
-    // Add more placeholder workouts if needed
-  ];
+  List<Workout> _workouts = [];
+  List<Map<String, dynamic>> _workoutDetails = [];
+  bool _isLoading = true;
+  
+  @override
+  void initState() {
+    super.initState();
+    _loadWorkouts();
+  }
+  
+  Future<void> _loadWorkouts() async {
+    setState(() {
+      _isLoading = true;
+    });
+    
+    try {
+      // Get all workouts for the current user
+      final workouts = await _workoutService.getUserWorkouts();
+      
+      // Get detailed information for each workout
+      final workoutDetails = await Future.wait(
+        workouts.map((workout) async {
+          try {
+            // Get details including exercises
+            final details = await _workoutService.getWorkoutDetails(workout.workoutId!);
+            
+            // Calculate total exercises
+            final exerciseCount = (details['exercises'] as List).length;
+            
+            // Extract muscle groups for this workout
+            final muscleGroups = (details['exercises'] as List)
+                .map((e) => e['muscle_group'] as String)
+                .toSet()
+                .toList();
+            
+            return {
+              'workout': workout,
+              'exerciseCount': exerciseCount,
+              'muscleGroups': muscleGroups,
+            };
+          } catch (e) {
+            print('Error loading workout details: $e');
+            return {
+              'workout': workout,
+              'exerciseCount': 0,
+              'muscleGroups': <String>[],
+            };
+          }
+        }),
+      );
+      
+      setState(() {
+        _workouts = workouts;
+        _workoutDetails = workoutDetails;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error loading workouts: $e');
+      setState(() {
+        _workouts = [];
+        _workoutDetails = [];
+        _isLoading = false;
+      });
+    }
+  }
 
   void _showFilterDialog() {
     showModalBottomSheet(
@@ -169,12 +219,11 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
                         onPressed: _showFilterDialog,
                         tooltip: 'Filter workouts',
                       ),
-                      // Notification bell
+                      // Refresh button
                       IconButton(
-                        icon: const Icon(Icons.notifications_outlined),
-                        onPressed: () {
-                          // TODO: Handle notifications
-                        },
+                        icon: const Icon(Icons.refresh),
+                        onPressed: _loadWorkouts,
+                        tooltip: 'Refresh workouts',
                       ),
                     ],
                   ),
@@ -261,11 +310,13 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
               
               // Workout history - grouped by date
               Expanded(
-                child: _workouts.isEmpty 
-                  ? _buildEmptyState()
-                  : ListView(
-                      children: _buildWorkoutGroups(),
-                    ),
+                child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _filterWorkouts().isEmpty 
+                    ? _buildEmptyState()
+                    : ListView(
+                        children: _buildWorkoutGroups(),
+                      ),
               ),
             ],
           ),
@@ -276,7 +327,7 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const LogWorkoutFlow()),
-          );
+          ).then((_) => _loadWorkouts()); // Reload workouts when returning from logging
         },
         backgroundColor: Colors.blue,
         child: const Icon(Icons.add, color: Colors.white),
@@ -316,54 +367,101 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
     );
   }
   
+  // Filter workouts based on selected filters
+  List<Map<String, dynamic>> _filterWorkouts() {
+    if (_workoutDetails.isEmpty) return [];
+    
+    return _workoutDetails.where((workoutDetail) {
+      final workout = workoutDetail['workout'] as Workout;
+      final muscleGroups = workoutDetail['muscleGroups'] as List<String>;
+      
+      // Apply date filter
+      bool passesDateFilter = true;
+      if (_dateFilter == 'This Week') {
+        final now = DateTime.now();
+        final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+        passesDateFilter = workout.date.isAfter(startOfWeek.subtract(const Duration(days: 1)));
+      } else if (_dateFilter == 'This Month') {
+        final now = DateTime.now();
+        passesDateFilter = workout.date.month == now.month && workout.date.year == now.year;
+      } else if (_dateFilter == 'Last 3 Months') {
+        final threeMonthsAgo = DateTime.now().subtract(const Duration(days: 90));
+        passesDateFilter = workout.date.isAfter(threeMonthsAgo);
+      }
+      
+      // Apply type filter
+      bool passesTypeFilter = _selectedFilter == 'All Workouts';
+      if (_selectedFilter == 'Upper Body') {
+        passesTypeFilter = muscleGroups.any((group) => 
+          ['Chest', 'Back', 'Shoulders', 'Biceps', 'Triceps'].contains(group));
+      } else if (_selectedFilter == 'Lower Body') {
+        passesTypeFilter = muscleGroups.any((group) => 
+          ['Legs', 'Calves', 'Glutes'].contains(group));
+      }
+      
+      return passesDateFilter && passesTypeFilter;
+    }).toList();
+  }
+  
   List<Widget> _buildWorkoutGroups() {
     // Group workouts by date
     Map<String, List<Map<String, dynamic>>> groupedWorkouts = {};
     
-    for (var workout in _workouts) {
-      final DateTime date = workout['date'] as DateTime;
+    final filteredWorkouts = _filterWorkouts();
+    
+    for (var workoutDetail in filteredWorkouts) {
+      final workout = workoutDetail['workout'] as Workout;
+      final date = workout.date;
+      
       final String groupKey = _isToday(date) 
           ? 'TODAY' 
           : _isYesterday(date) 
               ? 'YESTERDAY' 
-              : '${date.month}/${date.day}/${date.year}';
+              : DateFormat('MMMM d, yyyy').format(date);
       
       if (!groupedWorkouts.containsKey(groupKey)) {
         groupedWorkouts[groupKey] = [];
       }
       
-      // Apply filters
-      bool passesTypeFilter = _selectedFilter == 'All Workouts' || 
-                             (workout['name'] as String).contains(_selectedFilter);
-      
-      bool passesDateFilter = true;  // Default
-      if (_dateFilter == 'This Week') {
-        final now = DateTime.now();
-        final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-        passesDateFilter = date.isAfter(startOfWeek.subtract(const Duration(days: 1)));
-      } else if (_dateFilter == 'This Month') {
-        final now = DateTime.now();
-        passesDateFilter = date.month == now.month && date.year == now.year;
-      } else if (_dateFilter == 'Last 3 Months') {
-        final threeMonthsAgo = DateTime.now().subtract(const Duration(days: 90));
-        passesDateFilter = date.isAfter(threeMonthsAgo);
-      }
-      
-      if (passesTypeFilter && passesDateFilter) {
-        groupedWorkouts[groupKey]!.add(workout);
-      }
+      groupedWorkouts[groupKey]!.add(workoutDetail);
     }
     
     // Build UI for each group
     List<Widget> groups = [];
     
-    groupedWorkouts.forEach((date, workouts) {
+    // Sort the keys to ensure dates are in order (most recent first)
+    final sortedKeys = groupedWorkouts.keys.toList()
+      ..sort((a, b) {
+        if (a == 'TODAY') return -1;
+        if (b == 'TODAY') return 1;
+        if (a == 'YESTERDAY') return -1;
+        if (b == 'YESTERDAY') return 1;
+        
+        // Parse the dates for comparison
+        final dateA = a == 'TODAY' 
+            ? DateTime.now() 
+            : a == 'YESTERDAY'
+                ? DateTime.now().subtract(const Duration(days: 1))
+                : DateFormat('MMMM d, yyyy').parse(a);
+        
+        final dateB = b == 'TODAY' 
+            ? DateTime.now() 
+            : b == 'YESTERDAY'
+                ? DateTime.now().subtract(const Duration(days: 1))
+                : DateFormat('MMMM d, yyyy').parse(b);
+        
+        return dateB.compareTo(dateA); // Most recent first
+      });
+    
+    for (var dateKey in sortedKeys) {
+      final workouts = groupedWorkouts[dateKey]!;
+      
       if (workouts.isNotEmpty) {
         groups.add(
           Padding(
             padding: const EdgeInsets.only(bottom: 8.0),
             child: Text(
-              date,
+              dateKey,
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
@@ -373,100 +471,115 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
           ),
         );
         
-        workouts.forEach((workout) {
-          groups.add(_buildWorkoutCard(workout));
+        workouts.forEach((workoutDetail) {
+          groups.add(_buildWorkoutCard(workoutDetail));
         });
         
         groups.add(const SizedBox(height: 16));
       }
-    });
+    }
     
     return groups;
   }
   
-  Widget _buildWorkoutCard(Map<String, dynamic> workout) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12.0),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
-      child: InkWell(
-        onTap: () {
-          // TODO: Navigate to workout details
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    workout['name'] as String,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    workout['time'] as String,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade700,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Icon(Icons.timer_outlined, size: 16, color: Colors.grey),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${workout['duration']} minutes',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade700,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  const Icon(Icons.fitness_center, size: 16, color: Colors.grey),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${workout['exercises']} exercises',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade700,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                children: (workout['muscles'] as List<String>).map((muscle) {
-                  return Chip(
-                    label: Text(
-                      muscle,
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                    backgroundColor: Colors.grey.shade100,
-                    padding: EdgeInsets.zero,
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    visualDensity: VisualDensity.compact,
-                  );
-                }).toList(),
-              ),
-            ],
+  Widget _buildWorkoutCard(Map<String, dynamic> workoutDetail) {
+  final workout = workoutDetail['workout'] as Workout;
+  final exerciseCount = workoutDetail['exerciseCount'] as int;
+  final muscleGroups = workoutDetail['muscleGroups'] as List<String>;
+  
+  return Card(
+    margin: const EdgeInsets.only(bottom: 12.0),
+    elevation: 0,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12),
+      side: BorderSide(color: Colors.grey.shade200),
+    ),
+    child: InkWell(
+      onTap: () {
+        // Navigate to workout details
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => WorkoutDetailScreen(workoutId: workout.workoutId!),
           ),
+        ).then((result) {
+          // If workout was deleted, refresh the list
+          if (result == true) {
+            _loadWorkouts();
+          }
+        });
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  workout.notes ?? 'Workout ${DateFormat('MM/dd').format(workout.date)}',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  DateFormat('h:mm a').format(workout.date),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(Icons.timer_outlined, size: 16, color: Colors.grey),
+                const SizedBox(width: 4),
+                Text(
+                  '${workout.duration ?? 0} minutes',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                const Icon(Icons.fitness_center, size: 16, color: Colors.grey),
+                const SizedBox(width: 4),
+                Text(
+                  '$exerciseCount exercises',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              children: muscleGroups.map((muscle) {
+                return Chip(
+                  label: Text(
+                    muscle,
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                  backgroundColor: Colors.grey.shade100,
+                  padding: EdgeInsets.zero,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  visualDensity: VisualDensity.compact,
+                );
+              }).toList(),
+            ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
   
   bool _isToday(DateTime date) {
     final now = DateTime.now();

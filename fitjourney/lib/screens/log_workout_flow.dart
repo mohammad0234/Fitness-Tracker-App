@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:fitjourney/services/workout_service.dart';
+import 'package:fitjourney/database_models/exercise.dart';
+
+import 'dart:async';
 
 // Main entry point for the workout logging flow
 class LogWorkoutFlow extends StatefulWidget {
@@ -9,30 +13,75 @@ class LogWorkoutFlow extends StatefulWidget {
 }
 
 class _LogWorkoutFlowState extends State<LogWorkoutFlow> {
+  final WorkoutService _workoutService = WorkoutService.instance;
+  DateTime _startTime = DateTime.now();
+  Timer? _workoutTimer;
+  
+  @override
+  void initState() {
+    super.initState();
+    // Just track time for duration calculation later
+    _workoutTimer = Timer.periodic(const Duration(seconds: 60), (timer) {
+      // Empty - duration will be calculated when saving
+    });
+  }
+  
+  @override
+  void dispose() {
+    _workoutTimer?.cancel();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     // Start with the muscle group selection
-    return const MuscleGroupSelectionScreen();
+    return MuscleGroupSelectionScreen(
+      startTime: _startTime,
+    );
   }
 }
 
 // First screen: Muscle Group Selection
-class MuscleGroupSelectionScreen extends StatelessWidget {
-  const MuscleGroupSelectionScreen({super.key});
+class MuscleGroupSelectionScreen extends StatefulWidget {
+  final DateTime startTime;
+  
+  const MuscleGroupSelectionScreen({
+    super.key,
+    required this.startTime,
+  });
+
+  @override
+  State<MuscleGroupSelectionScreen> createState() => _MuscleGroupSelectionScreenState();
+}
+
+class _MuscleGroupSelectionScreenState extends State<MuscleGroupSelectionScreen> {
+  final WorkoutService _workoutService = WorkoutService.instance;
+  List<String> _muscleGroups = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMuscleGroups();
+  }
+  
+  Future<void> _loadMuscleGroups() async {
+    try {
+      final muscleGroups = await _workoutService.getAllMuscleGroups();
+      setState(() {
+        _muscleGroups = muscleGroups;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      print('Error loading muscle groups: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Placeholder data for muscle groups
-    final List<String> muscleGroups = [
-      'Abs',
-      'Back',
-      'Biceps',
-      'Chest',
-      'Legs',
-      'Shoulders',
-      'Triceps',
-    ];
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Select Muscle Group'),
@@ -47,106 +96,87 @@ class MuscleGroupSelectionScreen extends StatelessWidget {
               // TODO: Implement search functionality
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () {
-              // TODO: Implement add custom muscle group
-            },
-          ),
         ],
       ),
-      body: ListView.builder(
-        itemCount: muscleGroups.length,
-        itemBuilder: (context, index) {
-          return ListTile(
-            title: Text(
-              muscleGroups[index],
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ExerciseSelectionScreen(
-                    muscleGroup: muscleGroups[index],
-                  ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _muscleGroups.isEmpty
+              ? const Center(child: Text('No muscle groups found'))
+              : ListView.builder(
+                  itemCount: _muscleGroups.length,
+                  itemBuilder: (context, index) {
+                    return ListTile(
+                      title: Text(
+                        _muscleGroups[index],
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ExerciseSelectionScreen(
+                              muscleGroup: _muscleGroups[index],
+                              startTime: widget.startTime,
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
                 ),
-              );
-            },
-          );
-        },
-      ),
     );
   }
 }
 
 // Second screen: Exercise Selection
-class ExerciseSelectionScreen extends StatelessWidget {
+class ExerciseSelectionScreen extends StatefulWidget {
   final String muscleGroup;
+  final DateTime startTime;
   
   const ExerciseSelectionScreen({
     super.key, 
     required this.muscleGroup,
+    required this.startTime,
   });
 
   @override
+  State<ExerciseSelectionScreen> createState() => _ExerciseSelectionScreenState();
+}
+
+class _ExerciseSelectionScreenState extends State<ExerciseSelectionScreen> {
+  final WorkoutService _workoutService = WorkoutService.instance;
+  List<Exercise> _exercises = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadExercises();
+  }
+  
+  Future<void> _loadExercises() async {
+    try {
+      final exercises = await _workoutService.getExercisesByMuscleGroup(widget.muscleGroup);
+      setState(() {
+        _exercises = exercises;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      print('Error loading exercises: $e');
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Placeholder data for exercises based on muscle group
-    final Map<String, List<Map<String, dynamic>>> exercisesByMuscle = {
-      'Chest': [
-        {'name': 'Bench Press', 'hasInfo': true},
-        {'name': 'Cable Crossovers', 'hasInfo': true},
-        {'name': 'Dumbbell Press', 'hasInfo': true},
-        {'name': 'Dumbbell Flies', 'hasInfo': true},
-        {'name': 'Decline Bench Press', 'hasInfo': true},
-        {'name': 'Incline Dumbbell Press', 'hasInfo': true},
-      ],
-      'Back': [
-        {'name': 'Pull-ups', 'hasInfo': true},
-        {'name': 'Deadlift', 'hasInfo': true},
-        {'name': 'Bent Over Row', 'hasInfo': true},
-        {'name': 'Lat Pulldown', 'hasInfo': true},
-      ],
-      'Legs': [
-        {'name': 'Squats', 'hasInfo': true},
-        {'name': 'Leg Press', 'hasInfo': true},
-        {'name': 'Leg Extensions', 'hasInfo': true},
-        {'name': 'Hamstring Curls', 'hasInfo': true},
-        {'name': 'Calf Raises', 'hasInfo': true},
-      ],
-      // Add placeholder data for other muscle groups
-      'Abs': [
-        {'name': 'Crunches', 'hasInfo': true},
-        {'name': 'Leg Raises', 'hasInfo': true},
-        {'name': 'Planks', 'hasInfo': true},
-      ],
-      'Biceps': [
-        {'name': 'Bicep Curls', 'hasInfo': true},
-        {'name': 'Hammer Curls', 'hasInfo': true},
-        {'name': 'Preacher Curls', 'hasInfo': true},
-      ],
-      'Triceps': [
-        {'name': 'Tricep Pushdowns', 'hasInfo': true},
-        {'name': 'Skull Crushers', 'hasInfo': true},
-        {'name': 'Dips', 'hasInfo': true},
-      ],
-      'Shoulders': [
-        {'name': 'Shoulder Press', 'hasInfo': true},
-        {'name': 'Lateral Raises', 'hasInfo': true},
-        {'name': 'Front Raises', 'hasInfo': true},
-        {'name': 'Shrugs', 'hasInfo': true},
-      ],
-    };
-
-    // Default to an empty list if the muscle group isn't in our map
-    final exercises = exercisesByMuscle[muscleGroup] ?? [];
-
     return Scaffold(
       appBar: AppBar(
-        title: Text(muscleGroup),
+        title: Text(widget.muscleGroup),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
@@ -158,59 +188,56 @@ class ExerciseSelectionScreen extends StatelessWidget {
               // TODO: Implement search functionality
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () {
-              // TODO: Implement add custom exercise
-            },
-          ),
         ],
       ),
-      body: exercises.isEmpty
-          ? const Center(
-              child: Text('No exercises found for this muscle group'),
-            )
-          : ListView.builder(
-              itemCount: exercises.length,
-              itemBuilder: (context, index) {
-                final exercise = exercises[index];
-                return ListTile(
-                  title: Text(
-                    exercise['name'] as String,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  leading: exercise['hasInfo'] == true
-                      ? IconButton(
-                          icon: const Icon(Icons.info_outline),
-                          onPressed: () {
-                            // Show exercise info dialog
-                            showDialog(
-                              context: context,
-                              builder: (context) => ExerciseInfoDialog(
-                                exerciseName: exercise['name'] as String,
-                              ),
-                            );
-                          },
-                        )
-                      : null,
-                  trailing: const Icon(Icons.more_vert),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => SetEntryScreen(
-                          muscleGroup: muscleGroup,
-                          exerciseName: exercise['name'] as String,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _exercises.isEmpty
+              ? const Center(child: Text('No exercises found for this muscle group'))
+              : ListView.builder(
+                  itemCount: _exercises.length,
+                  itemBuilder: (context, index) {
+                    final exercise = _exercises[index];
+                    return ListTile(
+                      title: Text(
+                        exercise.name,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
+                      leading: exercise.description != null
+                          ? IconButton(
+                              icon: const Icon(Icons.info_outline),
+                              onPressed: () {
+                                // Show exercise info dialog
+                                showDialog(
+                                  context: context,
+                                  builder: (context) => ExerciseInfoDialog(
+                                    exerciseName: exercise.name,
+                                    description: exercise.description ?? '',
+                                  ),
+                                );
+                              },
+                            )
+                          : null,
+                      trailing: const Icon(Icons.more_vert),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => SetEntryScreen(
+                              exerciseId: exercise.exerciseId!,
+                              muscleGroup: widget.muscleGroup,
+                              exerciseName: exercise.name,
+                              startTime: widget.startTime,
+                            ),
+                          ),
+                        );
+                      },
                     );
                   },
-                );
-              },
-            ),
+                ),
     );
   }
 }
@@ -218,8 +245,13 @@ class ExerciseSelectionScreen extends StatelessWidget {
 // Exercise info dialog
 class ExerciseInfoDialog extends StatelessWidget {
   final String exerciseName;
+  final String description;
   
-  const ExerciseInfoDialog({super.key, required this.exerciseName});
+  const ExerciseInfoDialog({
+    super.key, 
+    required this.exerciseName,
+    required this.description,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -248,25 +280,9 @@ class ExerciseInfoDialog extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              '1. Start position: Lorem ipsum dolor sit amet\n'
-              '2. Movement: Consectetur adipiscing elit\n'
-              '3. End position: Sed do eiusmod tempor incididunt\n\n'
-              'Tips: Ut labore et dolore magna aliqua.',
-              style: TextStyle(fontSize: 14),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Target Muscles:',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Primary: Pectoralis Major\nSecondary: Anterior Deltoids, Triceps',
-              style: TextStyle(fontSize: 14),
+            Text(
+              description,
+              style: const TextStyle(fontSize: 14),
             ),
           ],
         ),
@@ -283,13 +299,17 @@ class ExerciseInfoDialog extends StatelessWidget {
 
 // Third screen: Set Entry
 class SetEntryScreen extends StatefulWidget {
+  final int exerciseId;
   final String muscleGroup;
   final String exerciseName;
+  final DateTime startTime;
   
   const SetEntryScreen({
     super.key, 
+    required this.exerciseId,
     required this.muscleGroup, 
     required this.exerciseName,
+    required this.startTime,
   });
 
   @override
@@ -297,14 +317,28 @@ class SetEntryScreen extends StatefulWidget {
 }
 
 class _SetEntryScreenState extends State<SetEntryScreen> {
+  final WorkoutService _workoutService = WorkoutService.instance;
   final List<Map<String, dynamic>> _sets = [];
   bool _isMetric = true; // kg vs lbs
+  final TextEditingController _notesController = TextEditingController();
+  bool _isSaving = false;
   
   @override
   void initState() {
     super.initState();
     // Add the first set automatically
     _addSet();
+  }
+  
+  @override
+  void dispose() {
+    _notesController.dispose();
+    // Dispose all set controllers
+    for (var set in _sets) {
+      set['weightController'].dispose();
+      set['repsController'].dispose();
+    }
+    super.dispose();
   }
   
   void _addSet() {
@@ -325,12 +359,92 @@ class _SetEntryScreenState extends State<SetEntryScreen> {
   
   void _removeSet(int index) {
     setState(() {
+      // Dispose controllers for the removed set
+      _sets[index]['weightController'].dispose();
+      _sets[index]['repsController'].dispose();
+      
       _sets.removeAt(index);
       // Update set numbers
       for (int i = 0; i < _sets.length; i++) {
         _sets[i]['setNumber'] = i + 1;
       }
     });
+  }
+  
+  Future<void> _saveExercise() async {
+    // Validate inputs
+    bool hasEmptyFields = false;
+    for (var set in _sets) {
+      if (set['weight'].toString().isEmpty || set['reps'].toString().isEmpty) {
+        hasEmptyFields = true;
+        break;
+      }
+    }
+    
+    if (hasEmptyFields) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in all weight and rep values')),
+      );
+      return;
+    }
+    
+    setState(() {
+      _isSaving = true;
+    });
+    
+    try {
+      // 1. Create the workout only now when user is saving
+      final durationInMinutes = DateTime.now().difference(widget.startTime).inMinutes;
+      
+      // Create a new workout
+      final workoutId = await _workoutService.createWorkout(
+        date: widget.startTime,
+        duration: durationInMinutes,
+        notes: _notesController.text.isEmpty ? null : _notesController.text,
+      );
+      
+      // 2. Add the exercise to the workout
+      final workoutExerciseId = await _workoutService.addExerciseToWorkout(
+        workoutId: workoutId,
+        exerciseId: widget.exerciseId,
+      );
+      
+      // 3. Save each set to the database
+      for (var set in _sets) {
+        await _workoutService.addSetToWorkoutExercise(
+          workoutExerciseId: workoutExerciseId,
+          setNumber: set['setNumber'],
+          reps: int.tryParse(set['reps'].toString()) ?? 0,
+          weight: double.tryParse(set['weight'].toString()) ?? 0.0,
+        );
+      }
+      
+      if (!mounted) return;
+      
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Exercise added to your workout!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      
+      // Pop back to exercise selection
+      Navigator.pop(context);
+    } catch (e) {
+      print('Error saving workout: $e');
+      if (!mounted) return;
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error saving exercise: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
   }
 
   @override
@@ -447,7 +561,7 @@ class _SetEntryScreenState extends State<SetEntryScreen> {
               ),
             ),
             
-            // Set rows (now directly in ScrollView instead of a nested ListView)
+            // Set rows
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -539,6 +653,7 @@ class _SetEntryScreenState extends State<SetEntryScreen> {
             Padding(
               padding: const EdgeInsets.all(16),
               child: TextField(
+                controller: _notesController,
                 decoration: InputDecoration(
                   labelText: 'Notes (optional)',
                   border: OutlineInputBorder(
@@ -554,24 +669,15 @@ class _SetEntryScreenState extends State<SetEntryScreen> {
             Padding(
               padding: const EdgeInsets.all(16).copyWith(top: 0),
               child: ElevatedButton(
-                onPressed: () {
-                  // TODO: Save workout data to database
-                  // Show success message
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Exercise added to your workout!'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                  // Return to exercise selection
-                  Navigator.pop(context);
-                },
+                onPressed: _isSaving ? null : _saveExercise,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,
                   foregroundColor: Colors.white,
                   minimumSize: const Size.fromHeight(50),
                 ),
-                child: const Text('Save Exercise', style: TextStyle(fontSize: 16)),
+                child: _isSaving
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text('Save Exercise', style: TextStyle(fontSize: 16)),
               ),
             ),
           ],

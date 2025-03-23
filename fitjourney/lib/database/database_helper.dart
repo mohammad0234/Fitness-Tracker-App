@@ -3,8 +3,12 @@ import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
-// Import local user model
+// Import local database models
 import 'package:fitjourney/database_models/user.dart';
+import 'package:fitjourney/database_models/workout.dart';
+import 'package:fitjourney/database_models/exercise.dart';
+import 'package:fitjourney/database_models/workout_set.dart';
+import 'package:fitjourney/database_models/workout_exercise.dart';
 
 class DatabaseHelper {
   // Singleton instance
@@ -292,6 +296,424 @@ class DatabaseHelper {
     
     await markForSync('users', userId, 'UPDATE');
   }
+
+  // ----- Workout CRUD Operations -----
+
+// Insert a new workout and mark for sync
+Future<int> insertWorkout(Workout workout) async {
+  final db = await database;
+  final workoutId = await db.insert(
+    'workout',
+    workout.toMap(),
+    conflictAlgorithm: ConflictAlgorithm.replace,
+  );
+  
+  await markForSync('workout', workoutId.toString(), 'INSERT');
+  return workoutId;
+}
+
+// Get a workout by id
+Future<Workout?> getWorkoutById(int workoutId) async {
+  final db = await database;
+  final result = await db.query(
+    'workout',
+    where: 'workout_id = ?',
+    whereArgs: [workoutId],
+  );
+  
+  if (result.isNotEmpty) {
+    return Workout.fromMap(result.first);
+  }
+  return null;
+}
+
+// Get all workouts for a user
+Future<List<Workout>> getWorkoutsForUser(String userId) async {
+  final db = await database;
+  final result = await db.query(
+    'workout',
+    where: 'user_id = ?',
+    whereArgs: [userId],
+    orderBy: 'date DESC',
+  );
+  
+  return result.map((map) => Workout.fromMap(map)).toList();
+}
+
+// Update a workout
+Future<void> updateWorkout(Workout workout) async {
+  final db = await database;
+  await db.update(
+    'workout',
+    workout.toMap(),
+    where: 'workout_id = ?',
+    whereArgs: [workout.workoutId],
+  );
+  
+  await markForSync('workout', workout.workoutId.toString(), 'UPDATE');
+}
+
+// Delete a workout
+Future<void> deleteWorkout(int workoutId) async {
+  final db = await database;
+  
+  // Use a transaction to ensure all related data is deleted
+  await db.transaction((txn) async {
+    // First, get all workout_exercise records
+    final workoutExercises = await txn.query(
+      'workout_exercise',
+      where: 'workout_id = ?',
+      whereArgs: [workoutId],
+    );
+    
+    // Delete associated sets for each workout_exercise
+    for (var exercise in workoutExercises) {
+      final workoutExerciseId = exercise['workout_exercise_id'] as int;
+      await txn.delete(
+        'workout_set',
+        where: 'workout_exercise_id = ?',
+        whereArgs: [workoutExerciseId],
+      );
+    }
+    
+    // Delete workout_exercise records
+    await txn.delete(
+      'workout_exercise',
+      where: 'workout_id = ?',
+      whereArgs: [workoutId],
+    );
+    
+    // Delete the workout record
+    await txn.delete(
+      'workout',
+      where: 'workout_id = ?',
+      whereArgs: [workoutId],
+    );
+  });
+  
+  await markForSync('workout', workoutId.toString(), 'DELETE');
+}
+
+// ----- Exercise CRUD Operations -----
+
+// Insert a pre-defined exercise
+Future<int> insertExercise(Exercise exercise) async {
+  final db = await database;
+  final exerciseId = await db.insert(
+    'exercise',
+    exercise.toMap(),
+    conflictAlgorithm: ConflictAlgorithm.replace,
+  );
+  
+  return exerciseId;
+}
+
+// Get all exercises
+Future<List<Exercise>> getAllExercises() async {
+  final db = await database;
+  final result = await db.query('exercise');
+  
+  return result.map((map) => Exercise.fromMap(map)).toList();
+}
+
+// Get exercises by muscle group
+Future<List<Exercise>> getExercisesByMuscleGroup(String muscleGroup) async {
+  final db = await database;
+  final result = await db.query(
+    'exercise',
+    where: 'muscle_group = ?',
+    whereArgs: [muscleGroup],
+    orderBy: 'name ASC',
+  );
+  
+  return result.map((map) => Exercise.fromMap(map)).toList();
+}
+
+// Get an exercise by id
+Future<Exercise?> getExerciseById(int exerciseId) async {
+  final db = await database;
+  final result = await db.query(
+    'exercise',
+    where: 'exercise_id = ?',
+    whereArgs: [exerciseId],
+  );
+  
+  if (result.isNotEmpty) {
+    return Exercise.fromMap(result.first);
+  }
+  return null;
+}
+
+// ----- WorkoutExercise CRUD Operations -----
+
+// Insert a workout exercise
+Future<int> insertWorkoutExercise(WorkoutExercise workoutExercise) async {
+  final db = await database;
+  final workoutExerciseId = await db.insert(
+    'workout_exercise',
+    workoutExercise.toMap(),
+    conflictAlgorithm: ConflictAlgorithm.replace,
+  );
+  
+  return workoutExerciseId;
+}
+
+// Get all exercises for a workout
+Future<List<Map<String, dynamic>>> getExercisesForWorkout(int workoutId) async {
+  final db = await database;
+  
+  // Join workout_exercise with exercise to get exercise details
+  final result = await db.rawQuery('''
+    SELECT we.workout_exercise_id, we.workout_id, e.* 
+    FROM workout_exercise we
+    JOIN exercise e ON we.exercise_id = e.exercise_id
+    WHERE we.workout_id = ?
+    ORDER BY we.workout_exercise_id ASC
+  ''', [workoutId]);
+  
+  return result;
+}
+
+// ----- WorkoutSet CRUD Operations -----
+
+// Insert a workout set
+Future<int> insertWorkoutSet(WorkoutSet workoutSet) async {
+  final db = await database;
+  final workoutSetId = await db.insert(
+    'workout_set',
+    workoutSet.toMap(),
+    conflictAlgorithm: ConflictAlgorithm.replace,
+  );
+  
+  return workoutSetId;
+}
+
+// Get all sets for a workout exercise
+Future<List<WorkoutSet>> getSetsForWorkoutExercise(int workoutExerciseId) async {
+  final db = await database;
+  final result = await db.query(
+    'workout_set',
+    where: 'workout_exercise_id = ?',
+    whereArgs: [workoutExerciseId],
+    orderBy: 'set_number ASC',
+  );
+  
+  return result.map((map) => WorkoutSet.fromMap(map)).toList();
+}
+
+// Update a workout set
+Future<void> updateWorkoutSet(WorkoutSet workoutSet) async {
+  final db = await database;
+  await db.update(
+    'workout_set',
+    workoutSet.toMap(),
+    where: 'workout_set_id = ?',
+    whereArgs: [workoutSet.workoutSetId],
+  );
+}
+
+// Delete a workout set
+Future<void> deleteWorkoutSet(int workoutSetId) async {
+  final db = await database;
+  await db.delete(
+    'workout_set',
+    where: 'workout_set_id = ?',
+    whereArgs: [workoutSetId],
+  );
+}
+
+// ----- Utility Methods for Workout Logging -----
+
+// Save a complete workout with exercises and sets in a transaction
+Future<int> saveCompleteWorkout({
+  required String userId,
+  required DateTime date,
+  required int? duration,
+  required String? notes,
+  required List<Map<String, dynamic>> exercises,
+}) async {
+  final db = await database;
+  int workoutId = 0;
+  
+  await db.transaction((txn) async {
+    // 1. Insert the workout
+    workoutId = await txn.insert(
+      'workout',
+      {
+        'user_id': userId,
+        'date': date.toIso8601String(),
+        'duration': duration,
+        'notes': notes,
+      },
+    );
+    
+    // 2. Insert each exercise and its sets
+    for (var exercise in exercises) {
+      final workoutExerciseId = await txn.insert(
+        'workout_exercise',
+        {
+          'workout_id': workoutId,
+          'exercise_id': exercise['exercise_id'],
+        },
+      );
+      
+      // 3. Insert sets for this exercise
+      for (var set in exercise['sets']) {
+        await txn.insert(
+          'workout_set',
+          {
+            'workout_exercise_id': workoutExerciseId,
+            'set_number': set['set_number'],
+            'reps': set['reps'],
+            'weight': set['weight'],
+          },
+        );
+      }
+    }
+  });
+  
+  // Mark for sync
+  await markForSync('workout', workoutId.toString(), 'INSERT');
+  
+  return workoutId;
+}
+
+// Initialize database with predefined exercises
+Future<void> initializeExercisesIfNeeded() async {
+  final db = await database;
+  final exerciseCount = Sqflite.firstIntValue(
+    await db.rawQuery('SELECT COUNT(*) FROM exercise')
+  );
+  
+  if (exerciseCount == 0) {
+    // No exercises exist, populate with default exercises
+    await db.transaction((txn) async {
+      // Chest exercises
+      await txn.insert('exercise', {
+        'name': 'Bench Press',
+        'muscle_group': 'Chest',
+        'description': 'Lie on a flat bench and push a weighted barbell upward.'
+      });
+      await txn.insert('exercise', {
+        'name': 'Incline Dumbbell Press',
+        'muscle_group': 'Chest',
+        'description': 'Lie on an inclined bench and push dumbbells upward.'
+      });
+      await txn.insert('exercise', {
+        'name': 'Chest Fly',
+        'muscle_group': 'Chest',
+        'description': 'Lie on a bench and move weights in an arc motion.'
+      });
+      await txn.insert('exercise', {
+        'name': 'Push-Up',
+        'muscle_group': 'Chest',
+        'description': 'A bodyweight exercise where you push your body up from the ground.'
+      });
+      
+      // Back exercises
+      await txn.insert('exercise', {
+        'name': 'Deadlift',
+        'muscle_group': 'Back',
+        'description': 'Lift a weighted barbell off the ground to hip level.'
+      });
+      await txn.insert('exercise', {
+        'name': 'Pull-Up',
+        'muscle_group': 'Back',
+        'description': 'Pull your body upward while hanging from a bar.'
+      });
+      await txn.insert('exercise', {
+        'name': 'Bent Over Row',
+        'muscle_group': 'Back',
+        'description': 'Bend at the waist and pull weights up toward your torso.'
+      });
+      await txn.insert('exercise', {
+        'name': 'Lat Pulldown',
+        'muscle_group': 'Back',
+        'description': 'Pull a weighted bar down while seated.'
+      });
+      
+      // Leg exercises
+      await txn.insert('exercise', {
+        'name': 'Squat',
+        'muscle_group': 'Legs',
+        'description': 'Bend your knees and lower your body while keeping your back straight.'
+      });
+      await txn.insert('exercise', {
+        'name': 'Leg Press',
+        'muscle_group': 'Legs',
+        'description': 'Push a weighted platform away from you with your legs.'
+      });
+      await txn.insert('exercise', {
+        'name': 'Leg Extension',
+        'muscle_group': 'Legs',
+        'description': 'Extend your legs against resistance while seated.'
+      });
+      await txn.insert('exercise', {
+        'name': 'Leg Curl',
+        'muscle_group': 'Legs',
+        'description': 'Curl your legs toward your backside against resistance.'
+      });
+      
+      // Shoulder exercises
+      await txn.insert('exercise', {
+        'name': 'Shoulder Press',
+        'muscle_group': 'Shoulders',
+        'description': 'Push weights overhead from shoulder height.'
+      });
+      await txn.insert('exercise', {
+        'name': 'Lateral Raise',
+        'muscle_group': 'Shoulders',
+        'description': 'Raise weights out to the sides until arms are parallel to the floor.'
+      });
+      await txn.insert('exercise', {
+        'name': 'Front Raise',
+        'muscle_group': 'Shoulders',
+        'description': 'Raise weights in front of you until arms are parallel to the floor.'
+      });
+      
+      // Biceps exercises
+      await txn.insert('exercise', {
+        'name': 'Bicep Curl',
+        'muscle_group': 'Biceps',
+        'description': 'Curl weights up toward your shoulders.'
+      });
+      await txn.insert('exercise', {
+        'name': 'Hammer Curl',
+        'muscle_group': 'Biceps',
+        'description': 'Curl weights with palms facing inward.'
+      });
+      
+      // Triceps exercises
+      await txn.insert('exercise', {
+        'name': 'Tricep Extension',
+        'muscle_group': 'Triceps',
+        'description': 'Extend your arms against resistance.'
+      });
+      await txn.insert('exercise', {
+        'name': 'Tricep Dip',
+        'muscle_group': 'Triceps',
+        'description': 'Lower and raise your body using your arms while supported.'
+      });
+      
+      // Abs exercises
+      await txn.insert('exercise', {
+        'name': 'Crunch',
+        'muscle_group': 'Abs',
+        'description': 'Raise your torso toward your knees while lying down.'
+      });
+      await txn.insert('exercise', {
+        'name': 'Plank',
+        'muscle_group': 'Abs',
+        'description': 'Hold a position similar to a push-up, supporting your weight on forearms and toes.'
+      });
+      await txn.insert('exercise', {
+        'name': 'Leg Raise',
+        'muscle_group': 'Abs',
+        'description': 'Raise your legs while lying on your back.'
+      });
+    });
+  }
+}
 
   // Additional CRUD methods for other tables as needed.
 }

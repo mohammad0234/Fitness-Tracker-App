@@ -2,8 +2,8 @@ class Workout {
   final int? workoutId;
   final String userId;
   final DateTime date;
-  final int? duration;
-  final String? notes;
+  late final int? duration;
+  late final String? notes;
 
   Workout({
     this.workoutId,
