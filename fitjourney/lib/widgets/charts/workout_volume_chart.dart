@@ -27,16 +27,40 @@ class WorkoutVolumeChart extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Improved title with information icon
+        // Replace the title row with this more flexible layout
         Padding(
-          padding: const EdgeInsets.only(left: 16.0, top: 8.0, bottom: 8.0),
-          child: Text(
-            'Workout Volume ($timeRange)',
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
+          padding: const EdgeInsets.only(left: 16.0, top: 8.0, bottom: 8.0, right: 16.0),
+          child: Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            children: [
+              Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: Text(
+              'Workout Volume (Weight × Reps) - $timeRange',
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-        ),
+          const SizedBox(width: 4),
+          Tooltip(
+            message: 'Volume is calculated by multiplying weight by reps for each set, then adding all sets together. Higher volume indicates more work performed.',
+            child: const Icon(
+              Icons.info_outline,
+              size: 16,
+              color: Colors.grey,
+            ),
+          ),
+        ],
+      ),
+    ],
+  ),
+),
         SizedBox(
           height: 220,
           child: Padding(
@@ -80,7 +104,7 @@ class WorkoutVolumeChart extends StatelessWidget {
                     sideTitles: SideTitles(
                       showTitles: true,
                       interval: _calculateInterval(),
-                      reservedSize: 42,
+                      reservedSize: 50, // Increased for larger labels
                       getTitlesWidget: _leftTitleWidgets,
                     ),
                   ),
@@ -131,7 +155,7 @@ class WorkoutVolumeChart extends StatelessWidget {
                 ],
                 lineTouchData: LineTouchData(
                   touchTooltipData: LineTouchTooltipData(
-                    getTooltipColor: (LineBarSpot spot) => Colors.blue.shade700,
+                    getTooltipColor: (spot) => Colors.blue.shade700,
                     getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
                       return touchedBarSpots.map((barSpot) {
                         final index = barSpot.x.toInt();
@@ -158,6 +182,19 @@ class WorkoutVolumeChart extends StatelessWidget {
                   ),
                 ),
               ),
+            ),
+          ),
+        ),
+        
+        // Added explanation text for better user understanding
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          child: Text(
+            'Volume represents total work performed in your workouts. Higher numbers indicate more intense training sessions.',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey.shade600,
+              fontStyle: FontStyle.italic,
             ),
           ),
         ),
@@ -191,14 +228,26 @@ class WorkoutVolumeChart extends StatelessWidget {
   }
 
   Widget _leftTitleWidgets(double value, TitleMeta meta) {
-    return Text(
-      value.toInt().toString(),
-      style: const TextStyle(
-        color: Colors.black54,
-        fontSize: 10,
-        fontWeight: FontWeight.bold,
+    // Format numbers with units (kg)
+    String formatted = '';
+    if (value >= 1000) {
+      formatted = '${(value / 1000).toStringAsFixed(1)}k kg';
+    } else {
+      formatted = '${value.toInt()} kg';
+    }
+    
+    return SideTitleWidget(
+      axisSide: meta.axisSide,
+      space: 8,
+      child: Text(
+        formatted,
+        style: const TextStyle(
+          color: Colors.black54,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
+        textAlign: TextAlign.left,
       ),
-      textAlign: TextAlign.left,
     );
   }
 
