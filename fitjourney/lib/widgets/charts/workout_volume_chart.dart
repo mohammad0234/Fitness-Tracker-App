@@ -31,36 +31,15 @@ class WorkoutVolumeChart extends StatelessWidget {
         // Replace the title row with this more flexible layout
         Padding(
           padding: const EdgeInsets.only(left: 16.0, top: 8.0, bottom: 8.0, right: 16.0),
-          child: Wrap(
-            alignment: WrapAlignment.spaceBetween,
-            children: [
-              Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Flexible(
-            child: Text(
-              'Workout Volume (Weight × Reps) - $timeRange',
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
+          child: Text(
+            'Workout Volume (Weight × Reps) - $timeRange',
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
               ),
               overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          const SizedBox(width: 4),
-          Tooltip(
-            message: 'Volume is calculated by multiplying weight by reps for each set, then adding all sets together. Higher volume indicates more work performed.',
-            child: const Icon(
-              Icons.info_outline,
-              size: 16,
-              color: Colors.grey,
-            ),
-          ),
-        ],
-      ),
-    ],
-  ),
-),
+              ),
+              ),
         SizedBox(
           height: 220,
           child: Padding(
