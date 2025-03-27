@@ -1113,7 +1113,9 @@ class _GoalReviewScreenState extends State<GoalReviewScreen> {
 
       // Navigate back to goals page
       if (!mounted) return;
-      Navigator.of(context).popUntil((route) => route.isFirst);
+      Navigator.of(context).pop(); // Pop back to the exercise/frequency selection
+      Navigator.of(context).pop(); // Pop back to the goal type selection
+      Navigator.of(context).pop(); // Pop back to the Goals page
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

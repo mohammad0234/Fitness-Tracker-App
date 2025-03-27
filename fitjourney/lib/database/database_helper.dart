@@ -11,7 +11,7 @@ import 'package:fitjourney/database_models/workout_set.dart';
 import 'package:fitjourney/database_models/workout_exercise.dart';
 import 'package:fitjourney/database_models/goal.dart';
 import 'package:fitjourney/services/goal_tracking_service.dart';
-
+import 'package:fitjourney/services/workout_service.dart';
 class DatabaseHelper {
   // Singleton instance
   static final DatabaseHelper instance = DatabaseHelper._internal();
@@ -595,7 +595,7 @@ Future<int> saveCompleteWorkout({
   for (var exerciseId in exercisesToCheckForPB) {
     final maxWeight = exerciseMaxWeights[exerciseId];
     if (maxWeight != null) {
-      await checkAndUpdatePersonalBest(exerciseId, maxWeight);
+      await WorkoutService.instance.checkAndUpdatePersonalBest(exerciseId, maxWeight);
     }
   }
 

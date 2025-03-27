@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fitjourney/services/workout_service.dart'; 
+import 'package:fitjourney/services/goal_tracking_service.dart'; 
 import 'firebase_options.dart';
 
 import 'screens/onboarding_screen.dart';
@@ -23,6 +24,7 @@ Future<void> main() async {
       
    // Initialize exercise database
   await WorkoutService.instance.initializeExercises();
+  await GoalTrackingService.instance.performDailyGoalUpdate();
 
   // Check if onboarding has been seen
   final prefs = await SharedPreferences.getInstance();
