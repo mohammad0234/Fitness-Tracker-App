@@ -4,6 +4,8 @@ import 'package:fitjourney/database_models/workout.dart';
 import 'package:fitjourney/database_models/workout_exercise.dart';
 import 'package:fitjourney/database_models/workout_set.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:fitjourney/services/goal_tracking_service.dart';
+import 'package:fitjourney/services/goal_service.dart';
 
 class WorkoutService {
   // Singleton instance
@@ -49,6 +51,10 @@ class WorkoutService {
     return await _dbHelper.getAllExercises();
   }
   
+  // Get an exercise by ID
+Future<Exercise?> getExerciseById(int exerciseId) async {
+  return await _dbHelper.getExerciseById(exerciseId);
+}
   // Create a new workout
   Future<int> createWorkout({
     required DateTime date,
@@ -205,4 +211,70 @@ class WorkoutService {
   Future<void> deleteWorkout(int workoutId) async {
     await _dbHelper.deleteWorkout(workoutId);
   }
+
+// Check and update personal best for an exercise
+Future<bool> checkAndUpdatePersonalBest(int exerciseId, double weight) async {
+  final userId = _getCurrentUserId();
+  
+  // Get current personal best
+  final personalBest = await _dbHelper.getPersonalBestForExercise(userId, exerciseId);
+  
+  // Check if this is a new personal best
+  bool isNewPersonalBest = false;
+  
+  if (personalBest == null || personalBest['max_weight'] == null || 
+      weight > (personalBest['max_weight'] as double)) {
+    isNewPersonalBest = true;
+    
+    // Create or update personal best record
+    await _dbHelper.database.then((db) async {
+      // Start a transaction
+      await db.transaction((txn) async {
+        // Check if a record exists
+        if (personalBest != null) {
+          // Update existing record
+          await txn.update(
+            'personal_best',
+            {
+              'max_weight': weight,
+              'date': DateTime.now().toIso8601String(),
+            },
+            where: 'user_id = ? AND exercise_id = ?',
+            whereArgs: [userId, exerciseId],
+          );
+        } else {
+          // Insert new record
+          await txn.insert(
+            'personal_best',
+            {
+              'user_id': userId,
+              'exercise_id': exerciseId,
+              'max_weight': weight,
+              'date': DateTime.now().toIso8601String(),
+            },
+          );
+        }
+        
+        // Create milestone
+        await txn.insert(
+          'milestone',
+          {
+            'user_id': userId,
+            'type': 'PersonalBest',
+            'exercise_id': exerciseId,
+            'value': weight,
+            'date': DateTime.now().toIso8601String(),
+          },
+        );
+      });
+    });
+    
+    // Update any related goals
+    await GoalTrackingService.instance.updateGoalsAfterPersonalBest(exerciseId, weight);
+  }
+  
+  return isNewPersonalBest;
+}
+
+
 }

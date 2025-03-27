@@ -9,6 +9,8 @@ import 'package:fitjourney/database_models/workout.dart';
 import 'package:fitjourney/database_models/exercise.dart';
 import 'package:fitjourney/database_models/workout_set.dart';
 import 'package:fitjourney/database_models/workout_exercise.dart';
+import 'package:fitjourney/database_models/goal.dart';
+import 'package:fitjourney/services/goal_tracking_service.dart';
 
 class DatabaseHelper {
   // Singleton instance
@@ -534,7 +536,10 @@ Future<int> saveCompleteWorkout({
 }) async {
   final db = await database;
   int workoutId = 0;
-  
+
+  final exercisesToCheckForPB = <int>{};
+  final exerciseMaxWeights = <int, double>{};
+
   await db.transaction((txn) async {
     // 1. Insert the workout
     workoutId = await txn.insert(
@@ -546,7 +551,7 @@ Future<int> saveCompleteWorkout({
         'notes': notes,
       },
     );
-    
+
     // 2. Insert each exercise and its sets
     for (var exercise in exercises) {
       final workoutExerciseId = await txn.insert(
@@ -556,7 +561,7 @@ Future<int> saveCompleteWorkout({
           'exercise_id': exercise['exercise_id'],
         },
       );
-      
+
       // 3. Insert sets for this exercise
       for (var set in exercise['sets']) {
         await txn.insert(
@@ -568,13 +573,47 @@ Future<int> saveCompleteWorkout({
             'weight': set['weight'],
           },
         );
+
+        // Check for personal best
+        if (set['weight'] != null && set['weight'] > 0) {
+          final int exerciseId = exercise['exercise_id'];
+          final double weight = set['weight'];
+
+          if (!exercisesToCheckForPB.contains(exerciseId)) {
+            exercisesToCheckForPB.add(exerciseId);
+            exerciseMaxWeights[exerciseId] = weight;
+          } else if (weight > (exerciseMaxWeights[exerciseId] ?? 0)) {
+            exerciseMaxWeights[exerciseId] = weight;
+          }
+        }
       }
     }
   });
-  
+
+  // After the transaction in saveCompleteWorkout method
+  // Check personal bests outside the transaction
+  for (var exerciseId in exercisesToCheckForPB) {
+    final maxWeight = exerciseMaxWeights[exerciseId];
+    if (maxWeight != null) {
+      await checkAndUpdatePersonalBest(exerciseId, maxWeight);
+    }
+  }
+
   // Mark for sync
   await markForSync('workout', workoutId.toString(), 'INSERT');
-  
+
+  // After saving workout, update goals
+  final workout = Workout(
+    workoutId: workoutId,
+    userId: userId,
+    date: date,
+    duration: duration,
+    notes: notes,
+  );
+
+  // Update goals based on this new workout
+  await GoalTrackingService.instance.updateGoalsAfterWorkout(workout);
+
   return workoutId;
 }
 
@@ -712,6 +751,244 @@ Future<void> initializeExercisesIfNeeded() async {
         'description': 'Raise your legs while lying on your back.'
       });
     });
+  }
+}
+
+Future<int> insertGoal(Goal goal) async {
+  final db = await database;
+  final goalId = await db.insert(
+    'goal',
+    goal.toMap(),
+    conflictAlgorithm: ConflictAlgorithm.replace,
+  );
+  
+  await markForSync('goal', goalId.toString(), 'INSERT');
+  return goalId;
+}
+
+// Get a goal by ID
+Future<Goal?> getGoalById(int goalId) async {
+  final db = await database;
+  final result = await db.query(
+    'goal',
+    where: 'goal_id = ?',
+    whereArgs: [goalId],
+  );
+  
+  if (result.isNotEmpty) {
+    return Goal.fromMap(result.first);
+  }
+  return null;
+}
+
+// Get all goals for a user
+Future<List<Goal>> getGoalsForUser(String userId) async {
+  final db = await database;
+  final result = await db.query(
+    'goal',
+    where: 'user_id = ?',
+    whereArgs: [userId],
+    orderBy: 'end_date ASC',
+  );
+  
+  return result.map((map) => Goal.fromMap(map)).toList();
+}
+
+// Get only active (not achieved) goals for a user
+Future<List<Goal>> getActiveGoals(String userId) async {
+  final db = await database;
+  final result = await db.query(
+    'goal',
+    where: 'user_id = ? AND achieved = 0',
+    whereArgs: [userId],
+    orderBy: 'end_date ASC',
+  );
+  
+  return result.map((map) => Goal.fromMap(map)).toList();
+}
+
+// Get completed (achieved) goals for a user
+Future<List<Goal>> getCompletedGoals(String userId) async {
+  final db = await database;
+  final result = await db.query(
+    'goal',
+    where: 'user_id = ? AND achieved = 1',
+    whereArgs: [userId],
+    orderBy: 'end_date DESC',
+  );
+  
+  return result.map((map) => Goal.fromMap(map)).toList();
+}
+
+// Update goal progress
+Future<void> updateGoalProgress(int goalId, double progress) async {
+  final db = await database;
+  await db.update(
+    'goal',
+    {'current_progress': progress},
+    where: 'goal_id = ?',
+    whereArgs: [goalId],
+  );
+  
+  await markForSync('goal', goalId.toString(), 'UPDATE');
+}
+
+// Mark a goal as achieved
+Future<void> markGoalAchieved(int goalId) async {
+  final db = await database;
+  
+  // Start a transaction to update the goal and create milestone
+  await db.transaction((txn) async {
+    // Update goal
+    await txn.update(
+      'goal',
+      {'achieved': 1},
+      where: 'goal_id = ?',
+      whereArgs: [goalId],
+    );
+    
+    // Get goal details for milestone creation
+    final goalResult = await txn.query(
+      'goal',
+      where: 'goal_id = ?',
+      whereArgs: [goalId],
+    );
+    
+    if (goalResult.isNotEmpty) {
+      final goal = Goal.fromMap(goalResult.first);
+      
+      // Create milestone for achievement
+      await txn.insert(
+        'milestone',
+        {
+          'user_id': goal.userId,
+          'type': 'GoalAchieved',
+          'exercise_id': goal.exerciseId,
+          'value': goal.targetValue,
+          'date': DateTime.now().toIso8601String(),
+        },
+      );
+      
+      // Create notification
+      await txn.insert(
+        'notification',
+        {
+          'user_id': goal.userId,
+          'type': 'GoalProgress',
+          'message': 'Congratulations! You\'ve achieved your goal.',
+          'timestamp': DateTime.now().toIso8601String(),
+          'is_read': 0,
+        },
+      );
+    }
+  });
+  
+  await markForSync('goal', goalId.toString(), 'UPDATE');
+}
+
+// Delete a goal
+Future<void> deleteGoal(int goalId) async {
+  final db = await database;
+  await db.delete(
+    'goal',
+    where: 'goal_id = ?',
+    whereArgs: [goalId],
+  );
+  
+  await markForSync('goal', goalId.toString(), 'DELETE');
+}
+
+// Count workouts in a date range (for frequency goals)
+Future<int> countWorkoutsInDateRange(
+  String userId, 
+  DateTime startDate, 
+  DateTime endDate
+) async {
+  final db = await database;
+  final result = await db.rawQuery('''
+    SELECT COUNT(*) as count FROM workout
+    WHERE user_id = ? AND date BETWEEN ? AND ?
+  ''', [userId, startDate.toIso8601String(), endDate.toIso8601String()]);
+  
+  return Sqflite.firstIntValue(result) ?? 0;
+}
+
+// Get goals that are near completion (90% or more)
+Future<List<Goal>> getNearCompletionGoals(String userId) async {
+  final db = await database;
+  final result = await db.rawQuery('''
+    SELECT * FROM goal
+    WHERE user_id = ? AND achieved = 0 
+    AND (current_progress / target_value) >= 0.9
+    ORDER BY end_date ASC
+  ''', [userId]);
+  
+  return result.map((map) => Goal.fromMap(map)).toList();
+}
+
+// Get goals that are about to expire (within 3 days)
+Future<List<Goal>> getExpiringGoals(String userId) async {
+  final now = DateTime.now();
+  final threeDaysLater = now.add(const Duration(days: 3));
+  
+  final db = await database;
+  final result = await db.query(
+    'goal',
+    where: 'user_id = ? AND achieved = 0 AND end_date BETWEEN ? AND ?',
+    whereArgs: [userId, now.toIso8601String(), threeDaysLater.toIso8601String()],
+    orderBy: 'end_date ASC',
+  );
+  
+  return result.map((map) => Goal.fromMap(map)).toList();
+}
+
+// Get the most recent personal best for an exercise
+Future<Map<String, dynamic>?> getPersonalBestForExercise(
+  String userId, 
+  int exerciseId
+) async {
+  final db = await database;
+  final result = await db.rawQuery('''
+    SELECT pb.*, e.name as exercise_name
+    FROM personal_best pb
+    JOIN exercise e ON pb.exercise_id = e.exercise_id
+    WHERE pb.user_id = ? AND pb.exercise_id = ?
+    ORDER BY pb.max_weight DESC
+    LIMIT 1
+  ''', [userId, exerciseId]);
+  
+  if (result.isNotEmpty) {
+    return result.first;
+  }
+  return null;
+}
+
+// Update all goal statuses (to be called regularly)
+Future<void> updateAllGoalStatuses(String userId) async {
+  final db = await database;
+  
+  // Get all active goals
+  final goals = await getActiveGoals(userId);
+  
+  // Check each goal for completion
+  for (final goal in goals) {
+    if (goal.currentProgress >= (goal.targetValue ?? 0) && !goal.achieved) {
+      await markGoalAchieved(goal.goalId!);
+    }
+    
+    // Check for expired goals
+    if (DateTime.now().isAfter(goal.endDate) && !goal.achieved) {
+      // Goal has expired without being achieved
+      // You might want to handle this differently than achieved goals
+      await db.update(
+        'goal',
+        {'achieved': 2},  // Using 2 to indicate expired
+        where: 'goal_id = ?',
+        whereArgs: [goal.goalId],
+      );
+      
+      await markForSync('goal', goal.goalId.toString(), 'UPDATE');
+    }
   }
 }
 

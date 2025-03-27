@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:fitjourney/services/goal_service.dart';
+import 'package:fitjourney/services/workout_service.dart';
+import 'package:fitjourney/database_models/exercise.dart';
 
 class LogGoalFlow extends StatefulWidget {
   const LogGoalFlow({super.key});
@@ -420,27 +423,109 @@ class StrengthGoalDetailsScreen extends StatefulWidget {
 }
 
 class _StrengthGoalDetailsScreenState extends State<StrengthGoalDetailsScreen> {
-  String _selectedExercise = 'Bench Press';
+  String? _selectedExerciseId;
+  String _selectedExerciseName = 'Select an exercise';
   final TextEditingController _currentWeightController = TextEditingController();
   final TextEditingController _targetWeightController = TextEditingController();
   DateTime _targetDate = DateTime.now().add(const Duration(days: 30));
   bool _isMetric = true; // kg vs lbs
+  bool _isLoading = false;
+  List<Exercise> _exercises = [];
   
-  // Placeholder exercises
-  final List<String> _exercises = [
-    'Bench Press',
-    'Squat',
-    'Deadlift',
-    'Shoulder Press',
-    'Pull-up',
-    'Bent Over Row',
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadExercises();
+  }
+  
+  Future<void> _loadExercises() async {
+    setState(() {
+      _isLoading = true;
+    });
+    
+    try {
+      final exercises = await WorkoutService.instance.getAllExercises();
+      setState(() {
+        _exercises = exercises;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error loading exercises: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   void dispose() {
     _currentWeightController.dispose();
     _targetWeightController.dispose();
     super.dispose();
+  }
+
+  void _selectExercise() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.7,
+          minChildSize: 0.5,
+          maxChildSize: 0.9,
+          expand: false,
+          builder: (context, scrollController) {
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Select Exercise',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : ListView.builder(
+                        controller: scrollController,
+                        itemCount: _exercises.length,
+                        itemBuilder: (context, index) {
+                          final exercise = _exercises[index];
+                          return ListTile(
+                            title: Text(exercise.name),
+                            subtitle: Text(exercise.muscleGroup ?? ''),
+                            onTap: () {
+                              setState(() {
+                                _selectedExerciseId = exercise.exerciseId.toString();
+                                _selectedExerciseName = exercise.name;
+                              });
+                              Navigator.pop(context);
+                            },
+                          );
+                        },
+                      ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -504,29 +589,29 @@ class _StrengthGoalDetailsScreenState extends State<StrengthGoalDetailsScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade400),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: _selectedExercise,
-                  isExpanded: true,
-                  items: _exercises.map((String exercise) {
-                    return DropdownMenuItem<String>(
-                      value: exercise,
-                      child: Text(exercise),
-                    );
-                  }).toList(),
-                  onChanged: (String? newValue) {
-                    if (newValue != null) {
-                      setState(() {
-                        _selectedExercise = newValue;
-                      });
-                    }
-                  },
+            GestureDetector(
+              onTap: _selectExercise,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade400),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      _selectedExerciseName,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                    Icon(
+                      Icons.arrow_drop_down,
+                      color: Colors.grey.shade600,
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -663,32 +748,35 @@ class _StrengthGoalDetailsScreenState extends State<StrengthGoalDetailsScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  // Validate inputs
-                  if (_currentWeightController.text.isEmpty || _targetWeightController.text.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Please enter both current and target weights')),
-                    );
-                    return;
-                  }
-                  
-                  // Navigate to review screen
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => GoalReviewScreen(
-                        goalType: 'Strength Goal',
-                        details: {
-                          'exercise': _selectedExercise,
-                          'currentWeight': _currentWeightController.text,
-                          'targetWeight': _targetWeightController.text,
-                          'targetDate': _targetDate,
-                          'unit': _isMetric ? 'kg' : 'lbs',
-                        },
-                      ),
-                    ),
-                  );
-                },
+                onPressed: _selectedExerciseId == null 
+                  ? null 
+                  : () {
+                      // Validate inputs
+                      if (_currentWeightController.text.isEmpty || _targetWeightController.text.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Please enter both current and target weights')),
+                        );
+                        return;
+                      }
+                      
+                      // Navigate to review screen
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => GoalReviewScreen(
+                            goalType: 'Strength Goal',
+                            details: {
+                              'exerciseId': _selectedExerciseId,
+                              'exerciseName': _selectedExerciseName,
+                              'currentWeight': _currentWeightController.text,
+                              'targetWeight': _targetWeightController.text,
+                              'targetDate': _targetDate,
+                              'unit': _isMetric ? 'kg' : 'lbs',
+                            },
+                          ),
+                        ),
+                      );
+                    },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,
                   foregroundColor: Colors.white,
@@ -928,6 +1016,7 @@ class _FrequencyGoalDetailsScreenState extends State<FrequencyGoalDetailsScreen>
                           'workoutsPerWeek': _workoutsPerWeek,
                           'duration': _goalDuration,
                           'endDate': endDate,
+                          'totalWorkouts': _workoutsPerWeek * _goalDuration,
                         },
                       ),
                     ),
@@ -958,7 +1047,7 @@ class _FrequencyGoalDetailsScreenState extends State<FrequencyGoalDetailsScreen>
 }
 
 // Goal Review Screen
-class GoalReviewScreen extends StatelessWidget {
+class GoalReviewScreen extends StatefulWidget {
   final String goalType;
   final Map<String, dynamic> details;
   
@@ -967,6 +1056,77 @@ class GoalReviewScreen extends StatelessWidget {
     required this.goalType,
     required this.details,
   });
+
+  @override
+  State<GoalReviewScreen> createState() => _GoalReviewScreenState();
+}
+
+class _GoalReviewScreenState extends State<GoalReviewScreen> {
+  bool _isSaving = false;
+
+  Future<void> _saveGoal() async {
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      if (widget.goalType == 'Weight Goal') {
+        // Weight goals not implemented yet
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Weight tracking not implemented yet')),
+        );
+      } 
+      else if (widget.goalType == 'Strength Goal') {
+        final exerciseId = int.parse(widget.details['exerciseId'] as String);
+        final currentWeight = double.parse(widget.details['currentWeight']);
+        final targetWeight = double.parse(widget.details['targetWeight']);
+        final targetDate = widget.details['targetDate'] as DateTime;
+
+        // Create the strength goal
+        await GoalService.instance.createStrengthGoal(
+          exerciseId: exerciseId,
+          currentWeight: currentWeight,
+          targetWeight: targetWeight,
+          targetDate: targetDate,
+        );
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Strength goal created successfully!')),
+        );
+      } 
+      else if (widget.goalType == 'Frequency Goal') {
+        final totalWorkouts = widget.details['totalWorkouts'] as int;
+        final endDate = widget.details['endDate'] as DateTime;
+
+        // Create the frequency goal
+        await GoalService.instance.createFrequencyGoal(
+          targetWorkouts: totalWorkouts,
+          endDate: endDate,
+        );
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Frequency goal created successfully!')),
+        );
+      }
+
+      // Navigate back to goals page
+      if (!mounted) return;
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error creating goal: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1016,16 +1176,16 @@ class GoalReviewScreen extends StatelessWidget {
                       children: [
                         CircleAvatar(
                           radius: 20,
-                          backgroundColor: _getGoalColor(goalType).withOpacity(0.1),
+                          backgroundColor: _getGoalColor(widget.goalType).withOpacity(0.1),
                           child: Icon(
-                            _getGoalIcon(goalType),
-                            color: _getGoalColor(goalType),
+                            _getGoalIcon(widget.goalType),
+                            color: _getGoalColor(widget.goalType),
                             size: 24,
                           ),
                         ),
                         const SizedBox(width: 12),
                         Text(
-                          goalType,
+                          widget.goalType,
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -1036,34 +1196,34 @@ class GoalReviewScreen extends StatelessWidget {
                     const Divider(height: 32, thickness: 1),
                     
                     // Display different details based on goal type
-                    if (goalType == 'Weight Goal') ...[
-                      _buildDetailRow('Current Weight', '${details['currentWeight']} ${details['unit']}'),
+                    if (widget.goalType == 'Weight Goal') ...[
+                      _buildDetailRow('Current Weight', '${widget.details['currentWeight']} ${widget.details['unit']}'),
                       const SizedBox(height: 12),
-                      _buildDetailRow('Target Weight', '${details['targetWeight']} ${details['unit']}'),
+                      _buildDetailRow('Target Weight', '${widget.details['targetWeight']} ${widget.details['unit']}'),
                       const SizedBox(height: 12),
-                      _buildDetailRow('Target Date', DateFormat('MMMM d, yyyy').format(details['targetDate'])),
+                      _buildDetailRow('Target Date', DateFormat('MMMM d, yyyy').format(widget.details['targetDate'])),
                       const SizedBox(height: 12),
-                      _buildDetailRow('Duration', '${_calculateDays(details['targetDate'])} days'),
+                      _buildDetailRow('Duration', '${_calculateDays(widget.details['targetDate'])} days'),
                     ] 
-                    else if (goalType == 'Strength Goal') ...[
-                      _buildDetailRow('Exercise', details['exercise']),
+                    else if (widget.goalType == 'Strength Goal') ...[
+                      _buildDetailRow('Exercise', widget.details['exerciseName']),
                       const SizedBox(height: 12),
-                      _buildDetailRow('Current Weight', '${details['currentWeight']} ${details['unit']}'),
+                      _buildDetailRow('Current Weight', '${widget.details['currentWeight']} ${widget.details['unit']}'),
                       const SizedBox(height: 12),
-                      _buildDetailRow('Target Weight', '${details['targetWeight']} ${details['unit']}'),
+                      _buildDetailRow('Target Weight', '${widget.details['targetWeight']} ${widget.details['unit']}'),
                       const SizedBox(height: 12),
-                      _buildDetailRow('Target Date', DateFormat('MMMM d, yyyy').format(details['targetDate'])),
+                      _buildDetailRow('Target Date', DateFormat('MMMM d, yyyy').format(widget.details['targetDate'])),
                       const SizedBox(height: 12),
-                      _buildDetailRow('Duration', '${_calculateDays(details['targetDate'])} days'),
+                      _buildDetailRow('Duration', '${_calculateDays(widget.details['targetDate'])} days'),
                     ]
-                    else if (goalType == 'Frequency Goal') ...[
-                      _buildDetailRow('Workouts Per Week', '${details['workoutsPerWeek']} workouts'),
+                    else if (widget.goalType == 'Frequency Goal') ...[
+                      _buildDetailRow('Workouts Per Week', '${widget.details['workoutsPerWeek']} workouts'),
                       const SizedBox(height: 12),
-                      _buildDetailRow('Duration', '${details['duration']} weeks'),
+                      _buildDetailRow('Duration', '${widget.details['duration']} weeks'),
                       const SizedBox(height: 12),
-                      _buildDetailRow('End Date', DateFormat('MMMM d, yyyy').format(details['endDate'])),
+                      _buildDetailRow('End Date', DateFormat('MMMM d, yyyy').format(widget.details['endDate'])),
                       const SizedBox(height: 12),
-                      _buildDetailRow('Total Workouts', '${details['workoutsPerWeek'] * details['duration']} workouts'),
+                      _buildDetailRow('Total Workouts', '${widget.details['totalWorkouts']} workouts'),
                     ],
                   ],
                 ),
@@ -1076,22 +1236,7 @@ class GoalReviewScreen extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  // TODO: Save goal to database
-                  
-                  // Show success message
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Goal created successfully!'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                  
-                  // Navigate back to goals screen
-                  Navigator.of(context).pop();
-                  Navigator.of(context).pop();
-                  Navigator.of(context).pop();
-                },
+                onPressed: _isSaving ? null : _saveGoal,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,
                   foregroundColor: Colors.white,
@@ -1100,13 +1245,22 @@ class GoalReviewScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: const Text(
-                  'Save Goal',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                child: _isSaving
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text(
+                        'Save Goal',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
               ),
             ),
             const SizedBox(height: 16),
@@ -1115,10 +1269,7 @@ class GoalReviewScreen extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: OutlinedButton(
-                onPressed: () {
-                  // Go back to edit
-                  Navigator.pop(context);
-                },
+                onPressed: _isSaving ? null : () => Navigator.pop(context),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   side: const BorderSide(color: Colors.blue),
