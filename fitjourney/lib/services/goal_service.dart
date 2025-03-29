@@ -104,32 +104,40 @@ class GoalService {
   
   // Calculate current progress for strength goal
   Future<double> calculateStrengthGoalProgress(int goalId) async {
-    final goal = await _dbHelper.getGoalById(goalId);
-    if (goal == null || goal.exerciseId == null || goal.targetValue == null) {
-      return 0.0;
-    }
-    
-    // Get personal best for this exercise
-    final personalBest = await _dbHelper.getPersonalBestForExercise(
-      goal.userId, 
-      goal.exerciseId!
-    );
-    
-    if (personalBest == null || personalBest['max_weight'] == null) {
-      return goal.currentProgress;
-    }
-    
-    final maxWeight = personalBest['max_weight'] as double;
-    
-    // Calculate progress percentage (capped at 100%)
-    double progressPercent = (maxWeight / goal.targetValue!) * 100;
-    if (progressPercent > 100) progressPercent = 100;
-    
-    // Update goal's progress
-    await updateGoalProgress(goalId, maxWeight);
-    
-    return maxWeight;
+  final goal = await _dbHelper.getGoalById(goalId);
+  if (goal == null || goal.exerciseId == null || goal.targetValue == null) {
+    print("Goal not found or missing exercise/target: $goalId");
+    return 0.0;
   }
+  
+  print("Calculating progress for goal $goalId, exercise ${goal.exerciseId}");
+  
+  // Get max weight directly from workout sets (same approach as ProgressService)
+  final db = await _dbHelper.database;
+  final maxWeightResult = await db.rawQuery('''
+    SELECT MAX(ws.weight) as max_weight
+    FROM workout_set ws
+    JOIN workout_exercise we ON ws.workout_exercise_id = we.workout_exercise_id
+    JOIN workout w ON we.workout_id = w.workout_id
+    WHERE we.exercise_id = ? AND w.user_id = ? AND ws.weight IS NOT NULL
+    ORDER BY ws.weight DESC
+    LIMIT 1
+  ''', [goal.exerciseId, goal.userId]);
+  
+  if (maxWeightResult.isEmpty || maxWeightResult.first['max_weight'] == null) {
+    print("No personal best found for exercise ${goal.exerciseId}");
+    return goal.currentProgress;
+  }
+  
+  final maxWeight = (maxWeightResult.first['max_weight'] as num).toDouble();
+  print("Max weight for exercise ${goal.exerciseId}: $maxWeight");
+  
+  // Update goal's progress
+  await _dbHelper.updateGoalProgress(goalId, maxWeight);
+  print("Updated goal $goalId progress to $maxWeight");
+  
+  return maxWeight;
+}
   
   // Calculate current progress for frequency goal
   Future<double> calculateFrequencyGoalProgress(int goalId) async {

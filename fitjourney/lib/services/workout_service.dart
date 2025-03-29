@@ -276,5 +276,4 @@ Future<bool> checkAndUpdatePersonalBest(int exerciseId, double weight) async {
   return isNewPersonalBest;
 }
 
-
 }
