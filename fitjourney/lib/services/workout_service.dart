@@ -213,61 +213,39 @@ Future<Exercise?> getExerciseById(int exerciseId) async {
   }
 
 // Check and update personal best for an exercise
+// Modified version that doesn't use personal_best table
 Future<bool> checkAndUpdatePersonalBest(int exerciseId, double weight) async {
   final userId = _getCurrentUserId();
   
-  // Get current personal best
-  final personalBest = await _dbHelper.getPersonalBestForExercise(userId, exerciseId);
+  // Get current max weight from workout data
+  final db = await _dbHelper.database;
+  final maxWeightResult = await db.rawQuery('''
+    SELECT MAX(ws.weight) as max_weight
+    FROM workout_set ws
+    JOIN workout_exercise we ON ws.workout_exercise_id = we.workout_exercise_id
+    JOIN workout w ON we.workout_id = w.workout_id
+    WHERE we.exercise_id = ? AND w.user_id = ? AND ws.weight IS NOT NULL
+  ''', [exerciseId, userId]);
+  
+  final double? currentMax = maxWeightResult.isNotEmpty && maxWeightResult.first['max_weight'] != null
+      ? (maxWeightResult.first['max_weight'] as num).toDouble()
+      : null;
   
   // Check if this is a new personal best
-  bool isNewPersonalBest = false;
+  bool isNewPersonalBest = currentMax == null || weight > currentMax;
   
-  if (personalBest == null || personalBest['max_weight'] == null || 
-      weight > (personalBest['max_weight'] as double)) {
-    isNewPersonalBest = true;
-    
-    // Create or update personal best record
-    await _dbHelper.database.then((db) async {
-      // Start a transaction
-      await db.transaction((txn) async {
-        // Check if a record exists
-        if (personalBest != null) {
-          // Update existing record
-          await txn.update(
-            'personal_best',
-            {
-              'max_weight': weight,
-              'date': DateTime.now().toIso8601String(),
-            },
-            where: 'user_id = ? AND exercise_id = ?',
-            whereArgs: [userId, exerciseId],
-          );
-        } else {
-          // Insert new record
-          await txn.insert(
-            'personal_best',
-            {
-              'user_id': userId,
-              'exercise_id': exerciseId,
-              'max_weight': weight,
-              'date': DateTime.now().toIso8601String(),
-            },
-          );
-        }
-        
-        // Create milestone
-        await txn.insert(
-          'milestone',
-          {
-            'user_id': userId,
-            'type': 'PersonalBest',
-            'exercise_id': exerciseId,
-            'value': weight,
-            'date': DateTime.now().toIso8601String(),
-          },
-        );
-      });
-    });
+  if (isNewPersonalBest) {
+    // Create milestone for the new personal best
+    await db.insert(
+      'milestone',
+      {
+        'user_id': userId,
+        'type': 'PersonalBest',
+        'exercise_id': exerciseId,
+        'value': weight,
+        'date': DateTime.now().toIso8601String(),
+      },
+    );
     
     // Update any related goals
     await GoalTrackingService.instance.updateGoalsAfterPersonalBest(exerciseId, weight);
