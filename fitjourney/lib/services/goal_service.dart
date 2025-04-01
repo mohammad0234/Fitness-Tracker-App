@@ -221,4 +221,39 @@ class GoalService {
     final userId = _getCurrentUserId();
     return await _dbHelper.getExpiringGoals(userId);
   }
+
+// Update an existing goal
+Future<void> updateGoal(Goal goal) async {
+  if (goal.goalId == null) {
+    throw Exception('Cannot update a goal without an ID');
+  }
+  
+  // Get the original goal to compare and handle progress changes
+  final originalGoal = await getGoalById(goal.goalId!);
+  if (originalGoal == null) {
+    throw Exception('Goal not found');
+  }
+  
+  // Update the goal in the database through DatabaseHelper
+  await _dbHelper.updateGoal(goal);
+  
+  // If target value changed, recalculate progress percentage
+  if (originalGoal.targetValue != goal.targetValue) {
+    if (goal.type == 'ExerciseTarget') {
+      await calculateStrengthGoalProgress(goal.goalId!);
+    } else if (goal.type == 'WorkoutFrequency') {
+      await calculateFrequencyGoalProgress(goal.goalId!);
+    }
+  }
+  
+  // Check if the goal is now achieved based on new target
+  if (goal.currentProgress >= (goal.targetValue ?? 0) && !goal.achieved) {
+    await _dbHelper.markGoalAchieved(goal.goalId!);
+  }
+}
+
+Future<Goal?> getGoalById(int goalId) async {
+  return await _dbHelper.getGoalById(goalId);
+}
+
 }

@@ -3,6 +3,8 @@ import 'package:fitjourney/services/goal_service.dart';
 import 'package:fitjourney/database_models/goal.dart';
 import 'package:intl/intl.dart';
 import 'log_goal_flow.dart';
+import 'package:fitjourney/screens/goal_detail_screen.dart';
+
 
 class GoalsPage extends StatefulWidget {
   const GoalsPage({super.key});
@@ -462,13 +464,28 @@ class _GoalsPageState extends State<GoalsPage> {
   }
   
   Widget _buildGoalCard(Map<String, dynamic> goal) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
+  return Card(
+    margin: const EdgeInsets.only(bottom: 16),
+    elevation: 0,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12),
+      side: BorderSide(color: Colors.grey.shade200),
+    ),
+    child: InkWell(  // Add InkWell for tap detection
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => GoalDetailScreen(goalId: goal['goalId']),
+          ),
+        ).then((result) {
+          // Refresh the goals list if a goal was deleted or updated
+          if (result == true) {
+            _loadGoalData();
+          }
+        });
+      },
+      borderRadius: BorderRadius.circular(12),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -574,8 +591,9 @@ class _GoalsPageState extends State<GoalsPage> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
   
   Widget _buildCompletedGoalItem(Map<String, dynamic> goal) {
     return Padding(

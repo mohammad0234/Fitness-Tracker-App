@@ -956,6 +956,22 @@ class DatabaseHelper {
     return result.map((map) => Goal.fromMap(map)).toList();
   }
 
+  // Add this method to your DatabaseHelper class if it doesn't exist
+
+// Update a goal
+Future<void> updateGoal(Goal goal) async {
+  final db = await database;
+  
+  await db.update(
+    'goal',
+    goal.toMap(),
+    where: 'goal_id = ?',
+    whereArgs: [goal.goalId],
+  );
+  
+  await markForSync('goal', goal.goalId.toString(), 'UPDATE');
+}
+
   // Update all goal statuses (to be called regularly)
   Future<void> updateAllGoalStatuses(String userId) async {
     final db = await database;
