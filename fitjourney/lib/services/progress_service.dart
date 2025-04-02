@@ -247,196 +247,206 @@ class ProgressService {
   // 4. WORKOUT FREQUENCY PROCESSING (continued)
 
   /// Get workout frequency data for consistency tracking
-  Future<Map<String, dynamic>> getWorkoutFrequencyData({
-    required DateTime startDate,
-    required DateTime endDate,
-  }) async {
-    final String userId = _getCurrentUserId();
-    final db = await _dbHelper.database;
+Future<Map<String, dynamic>> getWorkoutFrequencyData({
+  required DateTime startDate,
+  required DateTime endDate,
+}) async {
+  final String userId = _getCurrentUserId();
+  final db = await _dbHelper.database;
+  
+  // Format date for SQLite query
+  final String formattedStartDate = startDate.toIso8601String();
+  final String formattedEndDate = endDate.toIso8601String();
+  
+  // Get all workout dates in the range
+  final List<Map<String, dynamic>> workoutDates = await db.rawQuery('''
+    SELECT date FROM workout 
+    WHERE user_id = ? AND date BETWEEN ? AND ?
+    ORDER BY date ASC
+  ''', [userId, formattedStartDate, formattedEndDate]);
+  
+  // Get all rest days in the range
+  final List<Map<String, dynamic>> restDayResults = await db.rawQuery('''
+    SELECT date FROM daily_log 
+    WHERE user_id = ? AND date BETWEEN ? AND ? AND activity_type = 'rest'
+    ORDER BY date ASC
+  ''', [userId, formattedStartDate, formattedEndDate]);
+  
+  // Convert to DateTime objects
+  List<DateTime> workoutDaysList = workoutDates
+      .map((row) => DateTime.parse(row['date'] as String))
+      .toList();
+  
+  List<DateTime> restDaysList = restDayResults
+      .map((row) => DateTime.parse(row['date'] as String))
+      .toList();
+  
+  // Create sets of activity days (using date only, no time)
+  Set<String> workoutDays = workoutDaysList
+      .map((date) => DateFormat('yyyy-MM-dd').format(date))
+      .toSet();
+  
+  Set<String> restDays = restDaysList
+      .map((date) => DateFormat('yyyy-MM-dd').format(date))
+      .toSet();
+  
+  // Create a map of all days in the range with activity status
+  List<Map<String, dynamic>> calendarData = [];
+  Map<String, int> workoutsByWeekday = {
+    'Monday': 0,
+    'Tuesday': 0,
+    'Wednesday': 0,
+    'Thursday': 0,
+    'Friday': 0,
+    'Saturday': 0,
+    'Sunday': 0,
+  };
+  
+  // Fill in all dates in the range
+  for (DateTime date = startDate;
+       date.isBefore(endDate) || date.isAtSameMomentAs(endDate);
+       date = date.add(const Duration(days: 1))) {
     
-    // Format date for SQLite query
-    final String formattedStartDate = startDate.toIso8601String();
-    final String formattedEndDate = endDate.toIso8601String();
+    final String dateStr = DateFormat('yyyy-MM-dd').format(date);
+    final bool hasWorkout = workoutDays.contains(dateStr);
+    final bool hasRestDay = restDays.contains(dateStr);
     
-    // Get all workout dates in the range
-    final List<Map<String, dynamic>> workoutDates = await db.rawQuery('''
-      SELECT date FROM workout 
-      WHERE user_id = ? AND date BETWEEN ? AND ?
-      ORDER BY date ASC
-    ''', [userId, formattedStartDate, formattedEndDate]);
+    calendarData.add({
+      'date': date,
+      'hasWorkout': hasWorkout,
+      'hasRestDay': hasRestDay,
+      'hasActivity': hasWorkout || hasRestDay,
+      'formattedDate': DateFormat('MMM d').format(date),
+    });
     
-    // Convert to DateTime objects
-    List<DateTime> workoutDaysList = workoutDates
-        .map((row) => DateTime.parse(row['date'] as String))
-        .toList();
-    
-    // Create a set of workout days (using date only, no time)
-    Set<String> workoutDays = workoutDaysList
-        .map((date) => DateFormat('yyyy-MM-dd').format(date))
-        .toSet();
-    
-    // Create a map of all days in the range with workout status
-    List<Map<String, dynamic>> calendarData = [];
-    Map<String, int> workoutsByWeekday = {
-      'Monday': 0,
-      'Tuesday': 0,
-      'Wednesday': 0,
-      'Thursday': 0,
-      'Friday': 0,
-      'Saturday': 0,
-      'Sunday': 0,
-    };
-    
-    // Fill in all dates in the range
-    for (DateTime date = startDate;
-         date.isBefore(endDate) || date.isAtSameMomentAs(endDate);
-         date = date.add(const Duration(days: 1))) {
-      
-      final String dateStr = DateFormat('yyyy-MM-dd').format(date);
-      final bool hasWorkout = workoutDays.contains(dateStr);
-      
-      calendarData.add({
-        'date': date,
-        'hasWorkout': hasWorkout,
-        'formattedDate': DateFormat('MMM d').format(date),
-      });
-      
-      // Count workouts by weekday
-      if (hasWorkout) {
-        final String weekday = DateFormat('EEEE').format(date);
-        workoutsByWeekday[weekday] = (workoutsByWeekday[weekday] ?? 0) + 1;
-      }
+    // Count workouts by weekday
+    if (hasWorkout) {
+      final String weekday = DateFormat('EEEE').format(date);
+      workoutsByWeekday[weekday] = (workoutsByWeekday[weekday] ?? 0) + 1;
     }
-    
-    // Calculate overall stats
-    int totalWorkouts = workoutDays.length;
-    int totalDays = calendarData.length;
-    double workoutFrequency = totalDays > 0 ? totalWorkouts / totalDays * 100 : 0;
-    
-    // Calculate longest streak
-    int longestStreak = 0;
-    int currentStreak = 0;
-    
-    for (var dayData in calendarData) {
-      if (dayData['hasWorkout']) {
-        currentStreak++;
-        if (currentStreak > longestStreak) {
-          longestStreak = currentStreak;
-        }
-      } else {
-        currentStreak = 0;
-      }
-    }
-    
-    // Reset for calculating current streak (counting backward from today)
-    currentStreak = 0;
-    for (int i = calendarData.length - 1; i >= 0; i--) {
-      if (calendarData[i]['hasWorkout']) {
-        currentStreak++;
-      } else {
-        break; // Break on first non-workout day
-      }
-    }
-    
-    return {
-      'calendarData': calendarData,
-      'workoutsByWeekday': workoutsByWeekday,
-      'totalWorkouts': totalWorkouts,
-      'workoutFrequency': workoutFrequency,
-      'formattedFrequency': '${workoutFrequency.toStringAsFixed(1)}%',
-      'longestStreak': longestStreak,
-      'currentStreak': currentStreak,
-    };
   }
+  
+  // Calculate overall stats
+  int totalWorkouts = workoutDays.length;
+  int totalDays = calendarData.length;
+  double workoutFrequency = totalDays > 0 ? totalWorkouts / totalDays * 100 : 0;
+  
+  // Get streak information directly from streak table instead of calculating
+  int currentStreak = 0;
+  int longestStreak = 0;
+  final streakQuery = await db.query(
+    'streak',
+    where: 'user_id = ?',
+    whereArgs: [userId],
+  );
+  
+  if (streakQuery.isNotEmpty) {
+    currentStreak = streakQuery.first['current_streak'] as int;
+    longestStreak = streakQuery.first['longest_streak'] as int;
+  }
+  
+  return {
+    'calendarData': calendarData,
+    'workoutsByWeekday': workoutsByWeekday,
+    'totalWorkouts': totalWorkouts,
+    'workoutFrequency': workoutFrequency,
+    'formattedFrequency': '${workoutFrequency.toStringAsFixed(1)}%',
+    'longestStreak': longestStreak,
+    'currentStreak': currentStreak,
+  };
+}
 
   // 5. COMBINED PROGRESS SUMMARY
 
-  /// Get a summary of all key progress metrics
-  Future<Map<String, dynamic>> getProgressSummary() async {
-    final String userId = _getCurrentUserId();
-    final db = await _dbHelper.database;
-    
-    // Get date ranges
-    final DateTime now = DateTime.now();
-    final DateTime weekStart = now.subtract(Duration(days: now.weekday - 1));
-    final DateTime monthStart = DateTime(now.year, now.month, 1);
-    
-    // 1. Total workout count
-    final totalWorkoutCount = Sqflite.firstIntValue(await db.rawQuery(
-      'SELECT COUNT(*) FROM workout WHERE user_id = ?',
-      [userId]
-    )) ?? 0;
-    
-    // 2. This week's workout count
-    final weeklyWorkoutCount = Sqflite.firstIntValue(await db.rawQuery(
-      'SELECT COUNT(*) FROM workout WHERE user_id = ? AND date >= ?',
-      [userId, weekStart.toIso8601String()]
-    )) ?? 0;
-    
-    // 3. This month's workout count
-    final monthlyWorkoutCount = Sqflite.firstIntValue(await db.rawQuery(
-      'SELECT COUNT(*) FROM workout WHERE user_id = ? AND date >= ?',
-      [userId, monthStart.toIso8601String()]
-    )) ?? 0;
-    
-    // 4. Most recent workout date
-    final recentWorkoutResult = await db.rawQuery(
-      'SELECT date FROM workout WHERE user_id = ? ORDER BY date DESC LIMIT 1',
-      [userId]
-    );
-    
-    DateTime? mostRecentWorkout;
-    if (recentWorkoutResult.isNotEmpty) {
-      mostRecentWorkout = DateTime.parse(recentWorkoutResult.first['date'] as String);
-    }
-    
-    // 5. Current streak
-    int currentStreak = 0;
-    final streakQuery = await db.query(
-      'streak',
-      where: 'user_id = ?',
-      whereArgs: [userId],
-    );
-    
-    if (streakQuery.isNotEmpty) {
-      currentStreak = streakQuery.first['current_streak'] as int;
-    }
-    
-    // 6. Most trained muscle group
-    final muscleGroupResult = await db.rawQuery('''
-      SELECT e.muscle_group, COUNT(*) as count
-      FROM exercise e
-      JOIN workout_exercise we ON e.exercise_id = we.exercise_id
-      JOIN workout w ON we.workout_id = w.workout_id
-      WHERE w.user_id = ?
-      GROUP BY e.muscle_group
-      ORDER BY count DESC
-      LIMIT 1
-    ''', [userId]);
-    
-    String? mostTrainedMuscleGroup;
-    int? muscleGroupCount;
-    
-    if (muscleGroupResult.isNotEmpty) {
-      mostTrainedMuscleGroup = muscleGroupResult.first['muscle_group'] as String;
-      muscleGroupCount = muscleGroupResult.first['count'] as int;
-    }
-    
-    return {
-      'totalWorkouts': totalWorkoutCount,
-      'weeklyWorkouts': weeklyWorkoutCount,
-      'monthlyWorkouts': monthlyWorkoutCount,
-      'weeklyTarget': 5, // This could be customizable by the user
-      'weeklyProgress': weeklyWorkoutCount / 5, // As a fraction of target
-      'mostRecentWorkout': mostRecentWorkout,
-      'daysSinceLastWorkout': mostRecentWorkout != null 
-          ? now.difference(mostRecentWorkout).inDays 
-          : null,
-      'currentStreak': currentStreak,
-      'mostTrainedMuscleGroup': mostTrainedMuscleGroup,
-      'muscleGroupCount': muscleGroupCount,
-    };
+ /// Get a summary of all key progress metrics
+Future<Map<String, dynamic>> getProgressSummary() async {
+  final String userId = _getCurrentUserId();
+  final db = await _dbHelper.database;
+  
+  // Get date ranges
+  final DateTime now = DateTime.now();
+  final DateTime weekStart = now.subtract(Duration(days: now.weekday - 1));
+  final DateTime monthStart = DateTime(now.year, now.month, 1);
+  
+  // 1. Total workout count
+  final totalWorkoutCount = Sqflite.firstIntValue(await db.rawQuery(
+    'SELECT COUNT(*) FROM workout WHERE user_id = ?',
+    [userId]
+  )) ?? 0;
+  
+  // 2. This week's workout count
+  final weeklyWorkoutCount = Sqflite.firstIntValue(await db.rawQuery(
+    'SELECT COUNT(*) FROM workout WHERE user_id = ? AND date >= ?',
+    [userId, weekStart.toIso8601String()]
+  )) ?? 0;
+  
+  // 3. This month's workout count
+  final monthlyWorkoutCount = Sqflite.firstIntValue(await db.rawQuery(
+    'SELECT COUNT(*) FROM workout WHERE user_id = ? AND date >= ?',
+    [userId, monthStart.toIso8601String()]
+  )) ?? 0;
+  
+  // 4. Most recent workout date
+  final recentWorkoutResult = await db.rawQuery(
+    'SELECT date FROM workout WHERE user_id = ? ORDER BY date DESC LIMIT 1',
+    [userId]
+  );
+  
+  DateTime? mostRecentWorkout;
+  if (recentWorkoutResult.isNotEmpty) {
+    mostRecentWorkout = DateTime.parse(recentWorkoutResult.first['date'] as String);
   }
+  
+  // 5. Current streak - use streak table directly 
+  int currentStreak = 0;
+  int longestStreak = 0;
+  final streakQuery = await db.query(
+    'streak',
+    where: 'user_id = ?',
+    whereArgs: [userId],
+  );
+  
+  if (streakQuery.isNotEmpty) {
+    currentStreak = streakQuery.first['current_streak'] as int;
+    longestStreak = streakQuery.first['longest_streak'] as int;
+  }
+  
+  // 6. Most trained muscle group
+  final muscleGroupResult = await db.rawQuery('''
+    SELECT e.muscle_group, COUNT(*) as count
+    FROM exercise e
+    JOIN workout_exercise we ON e.exercise_id = we.exercise_id
+    JOIN workout w ON we.workout_id = w.workout_id
+    WHERE w.user_id = ?
+    GROUP BY e.muscle_group
+    ORDER BY count DESC
+    LIMIT 1
+  ''', [userId]);
+  
+  String? mostTrainedMuscleGroup;
+  int? muscleGroupCount;
+  
+  if (muscleGroupResult.isNotEmpty) {
+    mostTrainedMuscleGroup = muscleGroupResult.first['muscle_group'] as String;
+    muscleGroupCount = muscleGroupResult.first['count'] as int;
+  }
+  
+  return {
+    'totalWorkouts': totalWorkoutCount,
+    'weeklyWorkouts': weeklyWorkoutCount,
+    'monthlyWorkouts': monthlyWorkoutCount,
+    'weeklyTarget': 5, 
+    'weeklyProgress': weeklyWorkoutCount / 5, // As a fraction of target
+    'mostRecentWorkout': mostRecentWorkout,
+    'daysSinceLastWorkout': mostRecentWorkout != null 
+        ? now.difference(mostRecentWorkout).inDays 
+        : null,
+    'currentStreak': currentStreak,
+    'longestStreak': longestStreak, // Added this field
+    'mostTrainedMuscleGroup': mostTrainedMuscleGroup,
+    'muscleGroupCount': muscleGroupCount,
+  };
+}
 
   // 6. PERSONAL BESTS COLLECTION
 

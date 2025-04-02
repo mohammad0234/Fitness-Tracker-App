@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fitjourney/services/workout_service.dart'; 
 import 'package:fitjourney/services/goal_tracking_service.dart'; 
 import 'firebase_options.dart';
+import 'package:fitjourney/services/streak_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import 'screens/onboarding_screen.dart';
 import 'screens/signup_page.dart';
@@ -29,6 +31,16 @@ Future<void> main() async {
   // Check if onboarding has been seen
   final prefs = await SharedPreferences.getInstance();
   final seenOnboarding = prefs.getBool('seenOnboarding') ?? false;
+
+  try {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user != null) {
+    await StreakService.instance.performDailyStreakCheck();
+  }
+} catch (e) {
+  print('Error performing streak check: $e');
+  // Continue with app startup even if this fails
+}
   
   runApp(MyApp(seenOnboarding: seenOnboarding));
 }

@@ -3,6 +3,7 @@ import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
+
 // Import local database models
 import 'package:fitjourney/database_models/user.dart';
 import 'package:fitjourney/database_models/workout.dart';
@@ -10,8 +11,12 @@ import 'package:fitjourney/database_models/exercise.dart';
 import 'package:fitjourney/database_models/workout_set.dart';
 import 'package:fitjourney/database_models/workout_exercise.dart';
 import 'package:fitjourney/database_models/goal.dart';
+import 'package:fitjourney/database_models/daily_log.dart';
+import 'package:fitjourney/database_models/streak.dart';
 import 'package:fitjourney/services/goal_tracking_service.dart';
 import 'package:fitjourney/services/workout_service.dart';
+import 'package:fitjourney/services/streak_service.dart';
+
 class DatabaseHelper {
   // Singleton instance
   static final DatabaseHelper instance = DatabaseHelper._internal();
@@ -163,27 +168,28 @@ class DatabaseHelper {
     ''');
 
     // DAILY_LOG table
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS daily_log (
-        daily_log_id  INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id       TEXT NOT NULL,
-        date          DATE NOT NULL,
-        activity_type TEXT NOT NULL CHECK (activity_type IN ('workout','rest')),
-        FOREIGN KEY (user_id) REFERENCES users(user_id),
-        UNIQUE (user_id, date)
-      );
-    ''');
+await db.execute('''
+  CREATE TABLE IF NOT EXISTS daily_log (
+    daily_log_id  INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id       TEXT NOT NULL,
+    date          DATE NOT NULL,
+    activity_type TEXT NOT NULL CHECK (activity_type IN ('workout','rest')),
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+    UNIQUE (user_id, date)
+  );
+''');
 
-    // STREAK table
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS streak (
-        user_id            TEXT PRIMARY KEY,
-        current_streak     INT DEFAULT 0,
-        longest_streak     INT DEFAULT 0,
-        last_activity_date DATE,
-        FOREIGN KEY (user_id) REFERENCES users(user_id)
-      );
-    ''');
+    // STREAK table - updated version
+await db.execute('''
+  CREATE TABLE IF NOT EXISTS streak (
+    user_id            TEXT PRIMARY KEY,
+    current_streak     INT DEFAULT 0,
+    longest_streak     INT DEFAULT 0,
+    last_activity_date DATE,
+    last_workout_date  DATE,
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+  );
+''');
 
     // NOTIFICATION table
     await db.execute('''
@@ -513,123 +519,131 @@ class DatabaseHelper {
 
   // ----- Utility Methods for Workout Logging -----
 
-  // Save a complete workout with exercises and sets in a transaction
-  Future<int> saveCompleteWorkout({
-    required String userId,
-    required DateTime date,
-    required int? duration,
-    required String? notes,
-    required List<Map<String, dynamic>> exercises,
-  }) async {
-    final db = await database;
-    int workoutId = 0;
+ // Save a complete workout with exercises and sets in a transaction
+Future<int> saveCompleteWorkout({
+  required String userId,
+  required DateTime date,
+  required int? duration,
+  required String? notes,
+  required List<Map<String, dynamic>> exercises,
+}) async {
+  final db = await database;
+  int workoutId = 0;
 
-    final exercisesToCheckForPB = <int>{};
-    final exerciseMaxWeights = <int, double>{};
+  final exercisesToCheckForPB = <int>{};
+  final exerciseMaxWeights = <int, double>{};
 
-    await db.transaction((txn) async {
-      // 1. Insert the workout
-      workoutId = await txn.insert(
-        'workout',
+  await db.transaction((txn) async {
+    // 1. Insert the workout
+    workoutId = await txn.insert(
+      'workout',
+      {
+        'user_id': userId,
+        'date': date.toIso8601String(),
+        'duration': duration,
+        'notes': notes,
+      },
+    );
+
+    // 2. Insert each exercise and its sets
+    for (var exercise in exercises) {
+      final workoutExerciseId = await txn.insert(
+        'workout_exercise',
         {
-          'user_id': userId,
-          'date': date.toIso8601String(),
-          'duration': duration,
-          'notes': notes,
+          'workout_id': workoutId,
+          'exercise_id': exercise['exercise_id'],
         },
       );
 
-      // 2. Insert each exercise and its sets
-      for (var exercise in exercises) {
-        final workoutExerciseId = await txn.insert(
-          'workout_exercise',
+      // 3. Insert sets for this exercise
+      for (var set in exercise['sets']) {
+        await txn.insert(
+          'workout_set',
           {
-            'workout_id': workoutId,
-            'exercise_id': exercise['exercise_id'],
+            'workout_exercise_id': workoutExerciseId,
+            'set_number': set['set_number'],
+            'reps': set['reps'],
+            'weight': set['weight'],
           },
         );
 
-        // 3. Insert sets for this exercise
-        for (var set in exercise['sets']) {
-          await txn.insert(
-            'workout_set',
-            {
-              'workout_exercise_id': workoutExerciseId,
-              'set_number': set['set_number'],
-              'reps': set['reps'],
-              'weight': set['weight'],
-            },
-          );
+        // Check for personal best
+        if (set['weight'] != null && set['weight'] > 0) {
+          final int exerciseId = exercise['exercise_id'];
+          final double weight = set['weight'];
 
-          // Check for personal best
-          if (set['weight'] != null && set['weight'] > 0) {
-            final int exerciseId = exercise['exercise_id'];
-            final double weight = set['weight'];
-
-            if (!exercisesToCheckForPB.contains(exerciseId)) {
-              exercisesToCheckForPB.add(exerciseId);
-              exerciseMaxWeights[exerciseId] = weight;
-            } else if (weight > (exerciseMaxWeights[exerciseId] ?? 0)) {
-              exerciseMaxWeights[exerciseId] = weight;
-            }
+          if (!exercisesToCheckForPB.contains(exerciseId)) {
+            exercisesToCheckForPB.add(exerciseId);
+            exerciseMaxWeights[exerciseId] = weight;
+          } else if (weight > (exerciseMaxWeights[exerciseId] ?? 0)) {
+            exerciseMaxWeights[exerciseId] = weight;
           }
         }
       }
-    });
+    }
+  });
 
-    // After the transaction, check for personal bests and create milestones
-    for (var exerciseId in exercisesToCheckForPB) {
-      final maxWeight = exerciseMaxWeights[exerciseId];
-      if (maxWeight != null) {
-        // Get current max weight to see if this is a new personal best
-        final prevMaxResult = await db.rawQuery('''
-          SELECT MAX(ws.weight) as max_weight
-          FROM workout_set ws
-          JOIN workout_exercise we ON ws.workout_exercise_id = we.workout_exercise_id
-          JOIN workout w ON we.workout_id = w.workout_id
-          WHERE we.exercise_id = ? AND w.user_id = ? AND w.workout_id != ? AND ws.weight IS NOT NULL
-        ''', [exerciseId, userId, workoutId]);
+  // After the transaction, check for personal bests and create milestones
+  for (var exerciseId in exercisesToCheckForPB) {
+    final maxWeight = exerciseMaxWeights[exerciseId];
+    if (maxWeight != null) {
+      // Get current max weight to see if this is a new personal best
+      final prevMaxResult = await db.rawQuery('''
+        SELECT MAX(ws.weight) as max_weight
+        FROM workout_set ws
+        JOIN workout_exercise we ON ws.workout_exercise_id = we.workout_exercise_id
+        JOIN workout w ON we.workout_id = w.workout_id
+        WHERE we.exercise_id = ? AND w.user_id = ? AND w.workout_id != ? AND ws.weight IS NOT NULL
+      ''', [exerciseId, userId, workoutId]);
+      
+      final double? prevMax = prevMaxResult.isNotEmpty && prevMaxResult.first['max_weight'] != null
+          ? (prevMaxResult.first['max_weight'] as num).toDouble()
+          : null;
+      
+      // If this is a new personal best, create a milestone
+      if (prevMax == null || maxWeight > prevMax) {
+        await db.insert(
+          'milestone',
+          {
+            'user_id': userId,
+            'type': 'PersonalBest',
+            'exercise_id': exerciseId,
+            'value': maxWeight,
+            'date': DateTime.now().toIso8601String(),
+          },
+        );
         
-        final double? prevMax = prevMaxResult.isNotEmpty && prevMaxResult.first['max_weight'] != null
-            ? (prevMaxResult.first['max_weight'] as num).toDouble()
-            : null;
-        
-        // If this is a new personal best, create a milestone
-        if (prevMax == null || maxWeight > prevMax) {
-          await db.insert(
-            'milestone',
-            {
-              'user_id': userId,
-              'type': 'PersonalBest',
-              'exercise_id': exerciseId,
-              'value': maxWeight,
-              'date': DateTime.now().toIso8601String(),
-            },
-          );
-          
-          // Update any related goals directly
-          await GoalTrackingService.instance.updateGoalsAfterPersonalBest(exerciseId, maxWeight);
-        }
+        // Update any related goals directly
+        await GoalTrackingService.instance.updateGoalsAfterPersonalBest(exerciseId, maxWeight);
       }
     }
-
-    // Mark for sync
-    await markForSync('workout', workoutId.toString(), 'INSERT');
-
-    // After saving workout, update goals
-    final workout = Workout(
-      workoutId: workoutId,
-      userId: userId,
-      date: date,
-      duration: duration,
-      notes: notes,
-    );
-
-    // Update goals based on this new workout
-    await GoalTrackingService.instance.updateGoalsAfterWorkout(workout);
-
-    return workoutId;
   }
+
+  // Mark for sync
+  await markForSync('workout', workoutId.toString(), 'INSERT');
+
+  // After saving workout, update goals
+  final workout = Workout(
+    workoutId: workoutId,
+    userId: userId,
+    date: date,
+    duration: duration,
+    notes: notes,
+  );
+
+  // Update goals based on this new workout
+  await GoalTrackingService.instance.updateGoalsAfterWorkout(workout);
+
+  // Update streak when workout is logged
+  try {
+    await StreakService.instance.logWorkout(date);
+  } catch (e) {
+    print('Error updating streak: $e');
+    // Don't throw - we want to keep the workout even if streak update fails
+  }
+
+  return workoutId;
+}
 
   // Initialize database with predefined exercises
   Future<void> initializeExercisesIfNeeded() async {
@@ -956,7 +970,6 @@ class DatabaseHelper {
     return result.map((map) => Goal.fromMap(map)).toList();
   }
 
-  // Add this method to your DatabaseHelper class if it doesn't exist
 
 // Update a goal
 Future<void> updateGoal(Goal goal) async {
@@ -1000,6 +1013,84 @@ Future<void> updateGoal(Goal goal) async {
       }
     }
   }
+
+
+  // Get streak for a user
+Future<Streak?> getStreakForUser(String userId) async {
+  final db = await database;
+  final result = await db.query(
+    'streak',
+    where: 'user_id = ?',
+    whereArgs: [userId],
+  );
+  
+  if (result.isNotEmpty) {
+    return Streak.fromMap(result.first);
+  }
+  return null;
+}
+
+// Update a user's streak
+Future<void> updateUserStreak(Streak streak) async {
+  final db = await database;
+  await db.update(
+    'streak',
+    streak.toMap(),
+    where: 'user_id = ?',
+    whereArgs: [streak.userId],
+    conflictAlgorithm: ConflictAlgorithm.replace,
+  );
+}
+
+// Log a daily activity
+Future<int> logDailyActivity(DailyLog log) async {
+  final db = await database;
+  
+  // Check for existing log on the same date
+  final existingLogs = await db.query(
+    'daily_log',
+    where: 'user_id = ? AND date = ?',
+    whereArgs: [log.userId, log.date.toIso8601String().split('T')[0]],
+  );
+  
+  if (existingLogs.isEmpty) {
+    // Insert new log
+    return await db.insert('daily_log', log.toMap());
+  } else {
+    // Update existing log if not downgrading from workout to rest
+    if (!(existingLogs.first['activity_type'] == 'workout' && log.activityType == 'rest')) {
+      await db.update(
+        'daily_log',
+        {'activity_type': log.activityType},
+        where: 'daily_log_id = ?',
+        whereArgs: [existingLogs.first['daily_log_id']],
+      );
+    }
+    return existingLogs.first['daily_log_id'] as int;
+  }
+}
+
+// Get daily logs for a date range
+Future<List<DailyLog>> getDailyLogsForDateRange(
+  String userId, 
+  DateTime startDate, 
+  DateTime endDate
+) async {
+  final db = await database;
+  
+  final result = await db.query(
+    'daily_log',
+    where: 'user_id = ? AND date BETWEEN ? AND ?',
+    whereArgs: [
+      userId, 
+      startDate.toIso8601String().split('T')[0],
+      endDate.toIso8601String().split('T')[0],
+    ],
+    orderBy: 'date ASC',
+  );
+  
+  return result.map((log) => DailyLog.fromMap(log)).toList();
+}
 
   // Additional CRUD methods for other tables as needed.
 }

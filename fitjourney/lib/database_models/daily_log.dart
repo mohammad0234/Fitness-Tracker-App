@@ -1,3 +1,5 @@
+// lib/database_models/daily_log.dart
+
 class DailyLog {
   final int? dailyLogId;
   final String userId;
