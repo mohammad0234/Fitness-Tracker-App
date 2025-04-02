@@ -6,6 +6,7 @@ import 'package:fitjourney/database_models/workout_set.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:fitjourney/services/goal_tracking_service.dart';
 import 'package:fitjourney/services/goal_service.dart';
+import 'package:fitjourney/services/streak_service.dart';
 
 class WorkoutService {
   // Singleton instance
@@ -55,23 +56,35 @@ class WorkoutService {
 Future<Exercise?> getExerciseById(int exerciseId) async {
   return await _dbHelper.getExerciseById(exerciseId);
 }
-  // Create a new workout
-  Future<int> createWorkout({
-    required DateTime date,
-    int? duration,
-    String? notes,
-  }) async {
-    final userId = _getCurrentUserId();
-    
-    final workout = Workout(
-      userId: userId,
-      date: date,
-      duration: duration,
-      notes: notes,
-    );
-    
-    return await _dbHelper.insertWorkout(workout);
+  
+Future<int> createWorkout({
+  required DateTime date,
+  int? duration,
+  String? notes,
+}) async {
+  final userId = _getCurrentUserId();
+  
+  final workout = Workout(
+    userId: userId,
+    date: date,
+    duration: duration,
+    notes: notes,
+  );
+  
+  final workoutId = await _dbHelper.insertWorkout(workout);
+  
+  // Add this code to update the streak
+  try {
+    // Import the StreakService at the top of the file
+    await StreakService.instance.logWorkout(date);
+    print('Streak updated after workout creation');
+  } catch (e) {
+    print('Error updating streak: $e');
+    // Don't throw - we want the workout to be saved even if streak update fails
   }
+  
+  return workoutId;
+}
 
   // Get a workout by ID
   Future<Workout?> getWorkoutById(int workoutId) async {

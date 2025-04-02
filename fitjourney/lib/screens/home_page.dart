@@ -414,6 +414,7 @@ class _HomePageState extends State<HomePage> {
                         MaterialPageRoute(builder: (context) => const LogWorkoutFlow()),
                       ).then((_) {
                         // Refresh streak data when returning from workout logging
+                        _fetchUserData();
                         _fetchStreakData();
                       });
                     },
