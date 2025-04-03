@@ -76,6 +76,7 @@ Future<void> logWorkout(DateTime date) async {
           date: dateKey,
           activityType: 'workout',
         ).toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace,
       );
     } else {
       await txn.update(
