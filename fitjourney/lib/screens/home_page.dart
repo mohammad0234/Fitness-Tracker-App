@@ -1,8 +1,10 @@
+// lib/screens/home_page.dart
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:fitjourney/database/database_helper.dart';
 import 'package:fitjourney/database_models/user.dart';
 import 'package:fitjourney/services/streak_service.dart';
+import 'package:fitjourney/screens/calendar_streak_screen.dart'; // Add this import
 import 'log_workout_flow.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -27,8 +29,9 @@ class _HomePageState extends State<HomePage> {
     _fetchStreakData();
   }
 
-  /// Fetches the current user's data from SQLite first, then tries Firestore if needed
+  // Existing methods remain unchanged
   Future<void> _fetchUserData() async {
+    // Keep existing implementation
     setState(() {
       _isLoading = true;
     });
@@ -100,7 +103,6 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  /// Fetches the user's current streak
   Future<void> _fetchStreakData() async {
     setState(() {
       _isLoadingStreak = true;
@@ -121,8 +123,8 @@ class _HomePageState extends State<HomePage> {
     }
   }
   
-  /// Log a rest day for the current user
   Future<void> _logRestDay() async {
+    // Keep existing implementation
     try {
       // Show a confirmation dialog
       final confirm = await showDialog<bool>(
@@ -215,7 +217,7 @@ class _HomePageState extends State<HomePage> {
                 ),
                 const SizedBox(height: 20),
                 
-                // Current Streak Card
+                // Current Streak Card - Updated with calendar button
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -231,51 +233,77 @@ class _HomePageState extends State<HomePage> {
                     ],
                   ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Current Streak',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey.shade600,
-                            ),
-                          ),
-                          if (_isLoadingStreak)
-                            const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          else
-                            Text(
-                              '$_currentStreak Days',
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
+                      // Streak information
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.green.shade100,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.local_fire_department,
+                                color: Colors.green.shade700,
+                                size: 24,
                               ),
                             ),
-                        ],
+                            const SizedBox(width: 12),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Current Streak',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                                if (_isLoadingStreak)
+                                  const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                else
+                                  Text(
+                                    '$_currentStreak Days',
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.green.shade100,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.local_fire_department,
-                          color: Colors.green.shade700,
-                          size: 24,
-                        ),
+                      
+                      // Calendar button
+                      IconButton(
+                        icon: const Icon(Icons.calendar_month),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const CalendarStreakScreen(),
+                            ),
+                          ).then((_) {
+                            // Refresh streak data when returning from calendar
+                            _fetchStreakData();
+                          });
+                        },
+                        tooltip: 'View Calendar',
+                        color: Colors.blue,
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 24),
                 
+                // Rest of the home page content remains unchanged
                 // Recent Workout Section
                 const Text(
                   'Recent Workout',
@@ -414,7 +442,6 @@ class _HomePageState extends State<HomePage> {
                         MaterialPageRoute(builder: (context) => const LogWorkoutFlow()),
                       ).then((_) {
                         // Refresh streak data when returning from workout logging
-                        _fetchUserData();
                         _fetchStreakData();
                       });
                     },
