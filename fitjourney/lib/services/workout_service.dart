@@ -5,7 +5,7 @@ import 'package:fitjourney/database_models/workout_exercise.dart';
 import 'package:fitjourney/database_models/workout_set.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:fitjourney/services/goal_tracking_service.dart';
-import 'package:fitjourney/services/goal_service.dart';
+//import 'package:fitjourney/services/goal_service.dart';
 import 'package:fitjourney/services/streak_service.dart';
 
 class WorkoutService {
