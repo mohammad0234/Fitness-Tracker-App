@@ -6,6 +6,7 @@ import 'package:fitjourney/database_models/workout.dart';
 import 'package:fitjourney/database_models/workout_set.dart';
 import 'package:intl/intl.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:fitjourney/utils/date_utils.dart';
 
 class ProgressService {
   // Singleton instance
@@ -253,24 +254,20 @@ Future<Map<String, dynamic>> getWorkoutFrequencyData({
 }) async {
   final String userId = _getCurrentUserId();
   final db = await _dbHelper.database;
-  
-  // Format date for SQLite query
-  final String formattedStartDate = startDate.toIso8601String();
-  final String formattedEndDate = endDate.toIso8601String();
-  
+
   // Get all workout dates in the range
   final List<Map<String, dynamic>> workoutDates = await db.rawQuery('''
     SELECT date FROM workout 
     WHERE user_id = ? AND date BETWEEN ? AND ?
     ORDER BY date ASC
-  ''', [userId, formattedStartDate, formattedEndDate]);
+  ''', [userId, normaliseDate(startDate), normaliseDate(endDate)]);
   
   // Get all rest days in the range
   final List<Map<String, dynamic>> restDayResults = await db.rawQuery('''
     SELECT date FROM daily_log 
     WHERE user_id = ? AND date BETWEEN ? AND ? AND activity_type = 'rest'
     ORDER BY date ASC
-  ''', [userId, formattedStartDate, formattedEndDate]);
+  ''', [userId, normaliseDate(startDate), normaliseDate(endDate)]);
   
   // Convert to DateTime objects
   List<DateTime> workoutDaysList = workoutDates
@@ -283,11 +280,11 @@ Future<Map<String, dynamic>> getWorkoutFrequencyData({
   
   // Create sets of activity days (using date only, no time)
   Set<String> workoutDays = workoutDaysList
-      .map((date) => DateFormat('yyyy-MM-dd').format(date))
+      .map((date) => normaliseDate(date))
       .toSet();
   
   Set<String> restDays = restDaysList
-      .map((date) => DateFormat('yyyy-MM-dd').format(date))
+      .map((date) => normaliseDate(date))
       .toSet();
   
   // Create a map of all days in the range with activity status

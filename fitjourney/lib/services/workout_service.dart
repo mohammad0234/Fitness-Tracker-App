@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:fitjourney/services/goal_tracking_service.dart';
 import 'package:fitjourney/services/goal_service.dart';
 import 'package:fitjourney/services/streak_service.dart';
+import 'package:fitjourney/utils/date_utils.dart';
 
 class WorkoutService {
   // Singleton instance

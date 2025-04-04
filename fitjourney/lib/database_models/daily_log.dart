@@ -1,5 +1,7 @@
 // lib/database_models/daily_log.dart
 
+import 'package:fitjourney/utils/date_utils.dart';
+
 class DailyLog {
   final int? dailyLogId;
   final String userId;
@@ -26,7 +28,7 @@ class DailyLog {
     return {
       'daily_log_id': dailyLogId,
       'user_id': userId,
-      'date': date.toIso8601String(),
+      'date': normaliseDate(date),
       'activity_type': activityType,
     };
   }

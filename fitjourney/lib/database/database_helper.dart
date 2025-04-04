@@ -16,6 +16,7 @@ import 'package:fitjourney/database_models/streak.dart';
 import 'package:fitjourney/services/goal_tracking_service.dart';
 import 'package:fitjourney/services/workout_service.dart';
 import 'package:fitjourney/services/streak_service.dart';
+import 'package:fitjourney/utils/date_utils.dart';
 
 class DatabaseHelper {
   // Singleton instance
@@ -539,7 +540,7 @@ Future<int> saveCompleteWorkout({
       'workout',
       {
         'user_id': userId,
-        'date': date.toIso8601String(),
+        'date': normaliseDate(date),
         'duration': duration,
         'notes': notes,
       },
@@ -936,7 +937,7 @@ Future<int> saveCompleteWorkout({
     final result = await db.rawQuery('''
       SELECT COUNT(*) as count FROM workout
       WHERE user_id = ? AND date BETWEEN ? AND ?
-    ''', [userId, startDate.toIso8601String(), endDate.toIso8601String()]);
+    ''', [userId, normaliseDate(startDate), normaliseDate(endDate)]);
     
     return Sqflite.firstIntValue(result) ?? 0;
   }
@@ -999,7 +1000,7 @@ Future<void> updateGoal(Goal goal) async {
       }
       
       // Check for expired goals
-      if (DateTime.now().isAfter(goal.endDate) && !goal.achieved) {
+      if (normaliseDate(DateTime.now()).compareTo(normaliseDate(goal.endDate)) > 0 && !goal.achieved) {
         // Goal has expired without being achieved
         // You might want to handle this differently than achieved goals
         await db.update(
@@ -1082,9 +1083,9 @@ Future<List<DailyLog>> getDailyLogsForDateRange(
     'daily_log',
     where: 'user_id = ? AND date BETWEEN ? AND ?',
     whereArgs: [
-      userId, 
-      startDate.toIso8601String().split('T')[0],
-      endDate.toIso8601String().split('T')[0],
+      userId,
+      normaliseDate(startDate),
+      normaliseDate(endDate),
     ],
     orderBy: 'date ASC',
   );

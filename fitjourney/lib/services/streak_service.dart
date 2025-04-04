@@ -5,6 +5,7 @@ import 'package:fitjourney/database/database_helper.dart';
 import 'package:fitjourney/database_models/streak.dart';
 import 'package:fitjourney/database_models/daily_log.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:fitjourney/utils/date_utils.dart';
 
 class StreakService {
   // Singleton instance
@@ -65,7 +66,7 @@ Future<void> logWorkout(DateTime date) async {
     final existingLogs = await txn.query(
       'daily_log',
       where: 'user_id = ? AND date = ?',
-      whereArgs: [userId, dateKey.toIso8601String().split('T')[0]],
+      whereArgs: [userId, normaliseDate(date)],
     );
     
     if (existingLogs.isEmpty) {
@@ -73,7 +74,7 @@ Future<void> logWorkout(DateTime date) async {
         'daily_log',
         DailyLog(
           userId: userId,
-          date: dateKey,
+          date: date,
           activityType: 'workout',
         ).toMap(),
         conflictAlgorithm: ConflictAlgorithm.replace,
@@ -186,7 +187,7 @@ Future<void> logWorkout(DateTime date) async {
     final existingLogs = await db.query(
       'daily_log',
       where: 'user_id = ? AND date = ?',
-      whereArgs: [userId, date.toIso8601String().split('T')[0]],
+      whereArgs: [userId, normaliseDate(date)],
     );
     
     // Use a transaction for the database operations
@@ -356,8 +357,8 @@ Future<void> logWorkout(DateTime date) async {
       where: 'user_id = ? AND date BETWEEN ? AND ?',
       whereArgs: [
         userId, 
-        startDate.toIso8601String().split('T')[0],
-        endDate.toIso8601String().split('T')[0],
+        normaliseDate(startDate),
+        normaliseDate(endDate),
       ],
       orderBy: 'date ASC',
     );
