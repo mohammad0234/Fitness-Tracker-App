@@ -3,9 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import 'package:fitjourney/services/streak_service.dart';
+import 'package:fitjourney/services/workout_service.dart';
 import 'package:fitjourney/database_models/daily_log.dart';
 import 'package:fitjourney/database_models/streak.dart';
-//import 'package:fitjourney/services/workout_service.dart';
+import 'package:fitjourney/database_models/workout.dart';
+import 'package:fitjourney/screens/workout_detail_screen.dart';
+//import 'package:fitjourney/utils/date_utils.dart';
+
 
 class CalendarStreakScreen extends StatefulWidget {
   const CalendarStreakScreen({Key? key}) : super(key: key);
@@ -16,6 +20,7 @@ class CalendarStreakScreen extends StatefulWidget {
 
 class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
   final StreakService _streakService = StreakService.instance;
+  final WorkoutService _workoutService = WorkoutService.instance;
   
   CalendarFormat _calendarFormat = CalendarFormat.month;
   DateTime _focusedDay = DateTime.now();
@@ -24,6 +29,10 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
   List<DailyLog> _dailyLogs = [];
   Streak? _streak;
   bool _isLoading = true;
+  
+  // For selected day workouts
+  List<Workout> _selectedDayWorkouts = [];
+  bool _isLoadingWorkouts = false;
   
   @override
   void initState() {
@@ -66,6 +75,9 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
           _isLoading = false;
           _selectedDay = today; // Default select today
         });
+        
+        // Load workouts for today initially
+        _loadWorkoutsForSelectedDay(today);
       }
     } catch (e) {
       print('Error loading calendar data: $e');
@@ -75,6 +87,48 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
         });
       }
     }
+  }
+  
+  // Load workouts for a selected day
+  Future<void> _loadWorkoutsForSelectedDay(DateTime date) async {
+    if (date == null) return;
+    
+    setState(() {
+      _isLoadingWorkouts = true;
+    });
+    
+    try {
+      // Get workouts for this specific date
+      final workouts = await _getWorkoutsForDate(date);
+      
+      setState(() {
+        _selectedDayWorkouts = workouts;
+        _isLoadingWorkouts = false;
+      });
+    } catch (e) {
+      print('Error loading workouts for date: $e');
+      setState(() {
+        _selectedDayWorkouts = [];
+        _isLoadingWorkouts = false;
+      });
+    }
+  }
+  
+  // Helper method to get workouts for a specific date
+  Future<List<Workout>> _getWorkoutsForDate(DateTime date) async {
+    // When you need the DateTime object
+    final normalizedDate = DateTime(date.year, date.month, date.day);
+    
+    // Check if the selected day has a workout activity
+    final activities = _events[normalizedDate] ?? [];
+    bool hasWorkout = activities.any((activity) => activity.activityType == 'workout');
+    
+    if (!hasWorkout) {
+      return []; // No workouts on this day
+    }
+    
+    // Use WorkoutService to get workouts for this date
+    return await _workoutService.getWorkoutsForDate(date);
   }
   
   // Determine the event color based on activity type
@@ -246,8 +300,10 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
                           setState(() {
                             _selectedDay = selectedDay;
                             _focusedDay = focusedDay;
-                        
                           });
+                          
+                          // Load workouts for the selected day
+                          _loadWorkoutsForSelectedDay(selectedDay);
                         },
                         onPageChanged: (focusedDay) {
                           setState(() {
@@ -370,12 +426,150 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
                           ),
                           child: _buildSelectedDayInfo(),
                         ),
+                      
+                      // Workout list for selected day (NEW)
+                      if (_selectedDayWorkouts.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16.0,
+                            vertical: 8.0
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Workouts on ${DateFormat('MMM d').format(_selectedDay!)}',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              ..._buildWorkoutsList(),
+                            ],
+                          ),
+                        ),
+                      
+                      // Loading indicator for workouts
+                      if (_isLoadingWorkouts)
+                        const Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: Center(child: CircularProgressIndicator()),
+                        ),
                     ],
                   ),
                 ),
               ),
             ),
     );
+  }
+  
+  // NEW: Build workout cards
+  List<Widget> _buildWorkoutsList() {
+    if (_selectedDayWorkouts.isEmpty) {
+      return [
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Center(
+            child: Text('No workouts found on this day'),
+          ),
+        )
+      ];
+    }
+    
+    return _selectedDayWorkouts.map((workout) {
+      return Card(
+        margin: const EdgeInsets.only(bottom: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: Colors.grey.shade200),
+        ),
+        child: InkWell(
+          onTap: () {
+            // Navigate to workout details
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => WorkoutDetailScreen(workoutId: workout.workoutId!),
+              ),
+            );
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        workout.notes ?? 'Workout ${DateFormat('h:mm a').format(workout.date)}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Text(
+                      DateFormat('h:mm a').format(workout.date),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.timer_outlined, size: 16, color: Colors.grey),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${workout.duration ?? 0} minutes',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton.icon(
+                      icon: const Icon(Icons.visibility, size: 16),
+                      label: const Text('View Details'),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => WorkoutDetailScreen(workoutId: workout.workoutId!),
+                          ),
+                        );
+                      },
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                        minimumSize: const Size(0, 0),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }).toList();
   }
   
   Widget _buildStreakHeader() {
@@ -574,10 +768,6 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
     
     return '$activeCount/$elapsedDays';
   }
-
-  
-
-  
 }
 
 // Helper function to get minimum of two integers

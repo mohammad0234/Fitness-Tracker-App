@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:fitjourney/services/goal_tracking_service.dart';
 //import 'package:fitjourney/services/goal_service.dart';
 import 'package:fitjourney/services/streak_service.dart';
+import 'package:fitjourney/utils/date_utils.dart';
 
 class WorkoutService {
   // Singleton instance
@@ -265,6 +266,21 @@ Future<bool> checkAndUpdatePersonalBest(int exerciseId, double weight) async {
   }
   
   return isNewPersonalBest;
+}
+
+Future<List<Workout>> getWorkoutsForDate(DateTime date) async {
+  final userId = _getCurrentUserId();
+  final db = await _dbHelper.database;
+  
+  // Use normalizeDate to ensure consistent date formats
+  final normalizedDate = normaliseDate(date);
+  
+  final result = await db.rawQuery(
+    "SELECT * FROM workout WHERE user_id = ? AND date LIKE ?", 
+    [userId, "$normalizedDate%"]
+  );
+  
+  return result.map((map) => Workout.fromMap(map)).toList();
 }
 
 }
