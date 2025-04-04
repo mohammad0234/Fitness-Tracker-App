@@ -197,7 +197,7 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
   Widget _buildExerciseCard(Map<String, dynamic> exercise) {
     final exerciseName = exercise['name'] as String;
     final muscleGroup = exercise['muscle_group'] as String;
-    final workoutExerciseId = exercise['workout_exercise_id'] as int;
+    //final workoutExerciseId = exercise['workout_exercise_id'] as int;
     final sets = exercise['sets'] as List<dynamic>? ?? [];
     
     return Card(

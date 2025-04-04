@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:fitjourney/services/streak_service.dart';
 import 'package:fitjourney/database_models/daily_log.dart';
 import 'package:fitjourney/database_models/streak.dart';
+import 'package:fitjourney/services/workout_service.dart';
 
 class CalendarStreakScreen extends StatefulWidget {
   const CalendarStreakScreen({Key? key}) : super(key: key);
@@ -245,6 +246,7 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
                           setState(() {
                             _selectedDay = selectedDay;
                             _focusedDay = focusedDay;
+                        
                           });
                         },
                         onPageChanged: (focusedDay) {
@@ -572,6 +574,10 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
     
     return '$activeCount/$elapsedDays';
   }
+
+  
+
+  
 }
 
 // Helper function to get minimum of two integers

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fitjourney/services/goal_service.dart';
-import 'package:fitjourney/database_models/goal.dart';
+//import 'package:fitjourney/database_models/goal.dart';
 import 'package:intl/intl.dart';
 import 'log_goal_flow.dart';
 import 'package:fitjourney/screens/goal_detail_screen.dart';

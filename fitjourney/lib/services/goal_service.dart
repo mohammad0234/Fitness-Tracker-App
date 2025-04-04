@@ -3,7 +3,7 @@
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:fitjourney/database/database_helper.dart';
 import 'package:fitjourney/database_models/goal.dart';
-import 'package:fitjourney/database_models/exercise.dart';
+//import 'package:fitjourney/database_models/exercise.dart';
 import 'package:fitjourney/services/workout_service.dart';
 
 class GoalService {

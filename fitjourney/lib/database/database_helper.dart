@@ -14,7 +14,7 @@ import 'package:fitjourney/database_models/goal.dart';
 import 'package:fitjourney/database_models/daily_log.dart';
 import 'package:fitjourney/database_models/streak.dart';
 import 'package:fitjourney/services/goal_tracking_service.dart';
-import 'package:fitjourney/services/workout_service.dart';
+//import 'package:fitjourney/services/workout_service.dart';
 import 'package:fitjourney/services/streak_service.dart';
 import 'package:fitjourney/utils/date_utils.dart';
 
