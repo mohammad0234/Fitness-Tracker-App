@@ -15,6 +15,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
+        coreLibraryDesugaringEnabled true 
     }
 
     kotlinOptions {
@@ -49,4 +50,6 @@ dependencies {
     // implementation "com.google.firebase:firebase-auth"
 
     // Add more Firebase libraries as needed, e.g. Firestore, Crashlytics, etc.
+
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.3'
 }

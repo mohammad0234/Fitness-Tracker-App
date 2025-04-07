@@ -235,12 +235,6 @@ class _GoalsPageState extends State<GoalsPage> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.notifications_outlined),
-                    onPressed: () {
-                      // TODO: Show notifications
-                    },
-                  ),
                 ],
               ),
               

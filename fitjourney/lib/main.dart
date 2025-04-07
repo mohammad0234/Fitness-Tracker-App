@@ -16,6 +16,7 @@ import 'screens/main_scaffold.dart';
 import 'screens/verification_page.dart';
 import 'package:fitjourney/services/notification_trigger_service.dart';
 import 'package:fitjourney/services/progress_service.dart';
+import 'package:fitjourney/screens/notification_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -84,6 +85,7 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const LoginPage(),
         '/home': (context) => const MainScaffold(), // Changed from HomePage to MainScaffold
         '/verification-pending': (context) => const VerificationPendingPage(),
+        '/notifications': (context) => const NotificationScreen(),
       },
     );
   }

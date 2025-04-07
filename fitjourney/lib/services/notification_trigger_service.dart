@@ -4,6 +4,7 @@ import 'package:fitjourney/services/notification_service.dart';
 import 'package:fitjourney/database_models/goal.dart';
 import 'package:fitjourney/utils/notification_helper.dart';
 import 'package:fitjourney/database/database_helper.dart';
+import 'package:fitjourney/services/in_app_notification_service.dart';
 
 /// Service to handle scheduling notifications based on app events
 class NotificationTriggerService {
@@ -16,6 +17,7 @@ class NotificationTriggerService {
   // Services
   final NotificationService _notificationService = NotificationService.instance;
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
+  final InAppNotificationService _inAppNotificationService = InAppNotificationService.instance;
   
   // Goal-related notification triggers
   
@@ -27,7 +29,7 @@ class NotificationTriggerService {
     final title = 'Goal Achieved!';
     final body = NotificationMessages.goalAchieved(goalName);
     
-    // Schedule for immediate delivery
+    // Schedule for immediate delivery (system notification)
     await _notificationService.scheduleNotification(
       id: _notificationService.generateUniqueId(),
       title: title,
@@ -35,6 +37,12 @@ class NotificationTriggerService {
       scheduledDate: DateTime.now().add(const Duration(seconds: 5)),
       category: NotificationService.goalCategory,
       payload: 'goal_${goal.goalId}',
+    );
+    
+    // Create in-app notification
+    await _inAppNotificationService.createNotification(
+      type: 'GoalProgress',
+      message: body,
     );
     
     debugPrint('Scheduled goal achievement notification for ${goal.goalId}');
@@ -71,7 +79,7 @@ class NotificationTriggerService {
       body = NotificationMessages.goalProgress(goalName, 0.5);
     }
     
-    // Schedule for immediate delivery
+    // Schedule for immediate delivery (system notification)
     await _notificationService.scheduleNotification(
       id: _notificationService.generateUniqueId(),
       title: title,
@@ -79,6 +87,12 @@ class NotificationTriggerService {
       scheduledDate: DateTime.now().add(const Duration(seconds: 5)),
       category: NotificationService.goalCategory,
       payload: 'goal_${goal.goalId}',
+    );
+    
+    // Create in-app notification
+    await _inAppNotificationService.createNotification(
+      type: 'GoalProgress',
+      message: body,
     );
     
     debugPrint('Scheduled goal progress notification for ${goal.goalId}');
@@ -105,6 +119,7 @@ class NotificationTriggerService {
       9, 0, 0,
     );
     
+    // System notification
     await _notificationService.scheduleNotification(
       id: _notificationService.generateUniqueId(),
       title: title,
@@ -112,6 +127,12 @@ class NotificationTriggerService {
       scheduledDate: scheduledDate,
       category: NotificationService.goalCategory,
       payload: 'goal_${goal.goalId}',
+    );
+    
+    // Create in-app notification
+    await _inAppNotificationService.createNotification(
+      type: 'GoalProgress',
+      message: body,
     );
     
     debugPrint('Scheduled goal expiration notification for ${goal.goalId}');
@@ -124,7 +145,7 @@ class NotificationTriggerService {
     final title = 'New Streak Milestone!';
     final body = NotificationMessages.streakMilestone(streakDays);
     
-    // Schedule for immediate delivery
+    // Schedule for immediate delivery (system notification)
     await _notificationService.scheduleNotification(
       id: _notificationService.generateUniqueId(),
       title: title,
@@ -132,6 +153,12 @@ class NotificationTriggerService {
       scheduledDate: DateTime.now().add(const Duration(seconds: 5)),
       category: NotificationService.streakCategory,
       payload: 'streak_milestone_$streakDays',
+    );
+    
+    // Create in-app notification
+    await _inAppNotificationService.createNotification(
+      type: 'NewStreak',
+      message: body,
     );
     
     debugPrint('Scheduled streak milestone notification for $streakDays days');
@@ -148,6 +175,7 @@ class NotificationTriggerService {
     
     // Only schedule if future time
     if (scheduledDate.isAfter(now)) {
+      // System notification
       await _notificationService.scheduleNotification(
         id: _notificationService.generateUniqueId(),
         title: title,
@@ -155,6 +183,12 @@ class NotificationTriggerService {
         scheduledDate: scheduledDate,
         category: NotificationService.streakCategory,
         payload: 'streak_maintenance',
+      );
+      
+      // Create in-app notification
+      await _inAppNotificationService.createNotification(
+        type: 'NewStreak',
+        message: body,
       );
       
       debugPrint('Scheduled streak maintenance notification for $currentStreak streak');
@@ -172,6 +206,7 @@ class NotificationTriggerService {
     
     // Only schedule if future time
     if (scheduledDate.isAfter(now)) {
+      // System notification
       await _notificationService.scheduleNotification(
         id: _notificationService.generateUniqueId(),
         title: title,
@@ -179,6 +214,12 @@ class NotificationTriggerService {
         scheduledDate: scheduledDate,
         category: NotificationService.streakCategory,
         payload: 'streak_at_risk',
+      );
+      
+      // Create in-app notification
+      await _inAppNotificationService.createNotification(
+        type: 'NewStreak',
+        message: body,
       );
       
       debugPrint('Scheduled streak at risk notification for $currentStreak streak');
@@ -196,7 +237,7 @@ class NotificationTriggerService {
     final title = 'New Personal Best!';
     final body = NotificationMessages.personalBest(exercise.name, weight);
     
-    // Schedule for immediate delivery
+    // Schedule for immediate delivery (system notification)
     await _notificationService.scheduleNotification(
       id: _notificationService.generateUniqueId(),
       title: title,
@@ -204,6 +245,12 @@ class NotificationTriggerService {
       scheduledDate: DateTime.now().add(const Duration(seconds: 5)),
       category: NotificationService.performanceCategory,
       payload: 'personal_best_${exercise.exerciseId}',
+    );
+    
+    // Create in-app notification
+    await _inAppNotificationService.createNotification(
+      type: 'Milestone',
+      message: body,
     );
     
     debugPrint('Scheduled personal best notification for ${exercise.name}');
@@ -221,6 +268,7 @@ class NotificationTriggerService {
     final tomorrow = now.add(const Duration(days: 1));
     final scheduledDate = DateTime(tomorrow.year, tomorrow.month, tomorrow.day, 9, 0, 0);
     
+    // System notification
     await _notificationService.scheduleNotification(
       id: _notificationService.generateUniqueId(),
       title: title,
@@ -228,6 +276,12 @@ class NotificationTriggerService {
       scheduledDate: scheduledDate,
       category: NotificationService.performanceCategory,
       payload: 'volume_improvement_$muscleGroup',
+    );
+    
+    // Create in-app notification
+    await _inAppNotificationService.createNotification(
+      type: 'Milestone',
+      message: body,
     );
     
     debugPrint('Scheduled volume improvement notification for $muscleGroup');
@@ -246,6 +300,7 @@ class NotificationTriggerService {
     final now = DateTime.now();
     final scheduledDate = DateTime(now.year, now.month, now.day, 10, 0, 0);
     
+    // System notification
     await _notificationService.scheduleNotification(
       id: _notificationService.generateUniqueId(),
       title: title,
@@ -253,6 +308,12 @@ class NotificationTriggerService {
       scheduledDate: scheduledDate,
       category: NotificationService.engagementCategory,
       payload: 'inactivity_reminder',
+    );
+    
+    // Create in-app notification
+    await _inAppNotificationService.createNotification(
+      type: 'NewStreak', // Using NewStreak type for consistency
+      message: body,
     );
     
     debugPrint('Scheduled inactivity reminder notification after $daysWithoutWorkout days');
@@ -268,6 +329,7 @@ class NotificationTriggerService {
     final tomorrow = now.add(const Duration(days: 1));
     final scheduledDate = DateTime(tomorrow.year, tomorrow.month, tomorrow.day, 8, 0, 0);
     
+    // System notification
     await _notificationService.scheduleNotification(
       id: _notificationService.generateUniqueId(),
       title: title,
@@ -275,6 +337,12 @@ class NotificationTriggerService {
       scheduledDate: scheduledDate,
       category: NotificationService.engagementCategory,
       payload: 'workout_suggestion_$muscleGroup',
+    );
+    
+    // Create in-app notification
+    await _inAppNotificationService.createNotification(
+      type: 'Milestone', // Using Milestone type for consistency
+      message: body,
     );
     
     debugPrint('Scheduled workout suggestion notification for $muscleGroup');

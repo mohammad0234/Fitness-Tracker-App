@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'home_page.dart';
 import 'workouts_page.dart';
 import 'progress_page.dart';
 import 'goals_page.dart';
 import 'profile_page.dart';
+import 'package:fitjourney/widgets/notification_badge.dart';
+import 'package:fitjourney/screens/notification_screen.dart';
 
 class MainScaffold extends StatefulWidget {
   const MainScaffold({super.key});
@@ -14,6 +17,7 @@ class MainScaffold extends StatefulWidget {
 
 class _MainScaffoldState extends State<MainScaffold> {
   int _selectedIndex = 0;
+  Timer? _notificationTimer;
   
   // List of screens to navigate between
   final List<Widget> _screens = [
@@ -53,6 +57,23 @@ class _MainScaffoldState extends State<MainScaffold> {
     ),
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    // Check for new notifications every minute
+    _notificationTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      setState(() {
+        // This will trigger a rebuild of any NotificationBadge widgets
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _notificationTimer?.cancel();
+    super.dispose();
+  }
+
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -61,7 +82,31 @@ class _MainScaffoldState extends State<MainScaffold> {
 
   @override
   Widget build(BuildContext context) {
+    // Get appBar title based on selected index
+    final String appBarTitle = [
+      'Home',
+      'Workouts',
+      'Progress',
+      'Goals',
+      'Profile'
+    ][_selectedIndex];
+
     return Scaffold(
+      appBar: AppBar(
+        title: Text(appBarTitle),
+        actions: [
+          NotificationBadge(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const NotificationScreen()),
+              );
+            },
+          ),
+          // Add a little spacing
+          const SizedBox(width: 8),
+        ],
+      ),
       body: _screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
