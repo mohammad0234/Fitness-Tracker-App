@@ -14,6 +14,8 @@ import 'screens/signup_page.dart';
 import 'screens/login_page.dart';
 import 'screens/main_scaffold.dart';
 import 'screens/verification_page.dart';
+import 'package:fitjourney/services/notification_trigger_service.dart';
+import 'package:fitjourney/services/progress_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,13 +38,24 @@ Future<void> main() async {
   final prefs = await SharedPreferences.getInstance();
   final seenOnboarding = prefs.getBool('seenOnboarding') ?? false;
 
-  try {
+   try {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       await StreakService.instance.performDailyStreakCheck();
+      
+      // Schedule daily streak maintenance notifications
+      await NotificationTriggerService.instance.scheduleDailyStreakCheck();
+      
+      // Check for inactivity
+      final progressSummary = await ProgressService.instance.getProgressSummary();
+      final daysSinceLastWorkout = progressSummary['daysSinceLastWorkout'] as int?;
+      
+      if (daysSinceLastWorkout != null && daysSinceLastWorkout >= 3) {
+        await NotificationTriggerService.instance.scheduleInactivityReminder(daysSinceLastWorkout);
+      }
     }
   } catch (e) {
-    print('Error performing streak check: $e');
+    print('Error performing notification checks: $e');
     // Continue with app startup even if this fails
   }
   

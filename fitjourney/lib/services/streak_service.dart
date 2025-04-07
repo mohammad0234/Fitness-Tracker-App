@@ -6,6 +6,8 @@ import 'package:fitjourney/database_models/streak.dart';
 import 'package:fitjourney/database_models/daily_log.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:fitjourney/utils/date_utils.dart';
+import 'package:fitjourney/services/notification_trigger_service.dart';
+import 'package:flutter/material.dart';
 
 class StreakService {
   // Singleton instance
@@ -13,6 +15,9 @@ class StreakService {
   
   // Database helper instance
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
+  
+  // Notification trigger service
+  final NotificationTriggerService _notificationTriggerService = NotificationTriggerService.instance;
   
   // Private constructor
   StreakService._internal();
@@ -54,129 +59,148 @@ class StreakService {
   }
   
   // Record a workout day
-Future<void> logWorkout(DateTime date) async {
-  final userId = _getCurrentUserId();
-  final db = await _dbHelper.database;
-  
-  // Ensure the date is truncated to just the date part
-  final dateKey = DateTime(date.year, date.month, date.day);
-  
-  await db.transaction((txn) async {
-    // Insert or update daily log
-    final existingLogs = await txn.query(
-      'daily_log',
-      where: 'user_id = ? AND date = ?',
-      whereArgs: [userId, normaliseDate(date)],
-    );
+  Future<void> logWorkout(DateTime date) async {
+    final userId = _getCurrentUserId();
+    final db = await _dbHelper.database;
     
-    if (existingLogs.isEmpty) {
-      await txn.insert(
+    // Ensure the date is truncated to just the date part
+    final dateKey = DateTime(date.year, date.month, date.day);
+    
+    await db.transaction((txn) async {
+      // Insert or update daily log
+      final existingLogs = await txn.query(
         'daily_log',
-        DailyLog(
-          userId: userId,
-          date: date,
-          activityType: 'workout',
-        ).toMap(),
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
-    } else {
-      await txn.update(
-        'daily_log',
-        {'activity_type': 'workout'},
-        where: 'daily_log_id = ?',
-        whereArgs: [existingLogs.first['daily_log_id']],
-      );
-    }
-    
-    // Get current streak information
-    final streakRecords = await txn.query(
-      'streak',
-      where: 'user_id = ?',
-      whereArgs: [userId],
-    );
-    
-    print('Existing streak records: ${streakRecords.length}'); // Debug print
-    
-    // Initialize streak variables
-    int currentStreak = 0; // Changed from 1 to 0 to match database state
-    int longestStreak = 0;
-    DateTime? lastActivityDate;
-    
-    if (streakRecords.isNotEmpty) {
-      final streak = Streak.fromMap(streakRecords.first);
-      currentStreak = streak.currentStreak;
-      longestStreak = streak.longestStreak;
-      lastActivityDate = streak.lastActivityDate;
-      
-      print('Existing streak: $currentStreak'); // Debug print
-      print('Last activity date: $lastActivityDate'); // Debug print
-    }
-    
-    // Check for consecutive day
-    if (lastActivityDate != null) {
-      final lastActivityDateKey = DateTime(
-        lastActivityDate.year, 
-        lastActivityDate.month, 
-        lastActivityDate.day
+        where: 'user_id = ? AND date = ?',
+        whereArgs: [userId, normaliseDate(date)],
       );
       
-      final daysDifference = dateKey.difference(lastActivityDateKey).inDays;
-      
-      print('Days difference: $daysDifference'); // Debug print
-      
-      if (daysDifference == 1) {
-        // Consecutive day - increment streak
-        currentStreak += 1;
-      } else if (daysDifference > 1) {
-        // Not consecutive - reset streak
-        currentStreak = 1;
-      } else if (daysDifference == 0 && currentStreak == 0) {
-        // Same day, but streak is 0 - set to 1
-        currentStreak = 1;
+      if (existingLogs.isEmpty) {
+        await txn.insert(
+          'daily_log',
+          DailyLog(
+            userId: userId,
+            date: date,
+            activityType: 'workout',
+          ).toMap(),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      } else {
+        await txn.update(
+          'daily_log',
+          {'activity_type': 'workout'},
+          where: 'daily_log_id = ?',
+          whereArgs: [existingLogs.first['daily_log_id']],
+        );
       }
-    } else {
-      // First activity ever - start streak at 1
-      currentStreak = 1;
-    }
-    
-    // Update longest streak
-    if (currentStreak > longestStreak) {
-      longestStreak = currentStreak;
-    }
-    
-    print('New streak: $currentStreak'); // Debug print
-    print('Longest streak: $longestStreak'); // Debug print
-    
-    // Update or insert streak record
-    if (streakRecords.isEmpty) {
-      await txn.insert(
+      
+      // Get current streak information
+      final streakRecords = await txn.query(
         'streak',
-        {
-          'user_id': userId,
-          'current_streak': currentStreak,
-          'longest_streak': longestStreak,
-          'last_activity_date': dateKey.toIso8601String(),
-          'last_workout_date': dateKey.toIso8601String(),
-        },
-      );
-    } else {
-      await txn.update(
-        'streak',
-        {
-          'current_streak': currentStreak,
-          'longest_streak': longestStreak,
-          'last_activity_date': dateKey.toIso8601String(),
-          'last_workout_date': dateKey.toIso8601String(),
-        },
         where: 'user_id = ?',
         whereArgs: [userId],
       );
-    }
-    
-    // Check for milestone achievements
-    await _checkStreakMilestones(txn, userId, currentStreak);
-  });
-}
+      
+      debugPrint('Existing streak records: ${streakRecords.length}');
+      
+      // Initialize streak variables
+      int currentStreak = 0;
+      int longestStreak = 0;
+      DateTime? lastActivityDate;
+      
+      if (streakRecords.isNotEmpty) {
+        final streak = Streak.fromMap(streakRecords.first);
+        currentStreak = streak.currentStreak;
+        longestStreak = streak.longestStreak;
+        lastActivityDate = streak.lastActivityDate;
+        
+        debugPrint('Existing streak: $currentStreak');
+        debugPrint('Last activity date: $lastActivityDate');
+      }
+      
+      // Check for consecutive day
+      if (lastActivityDate != null) {
+        final lastActivityDateKey = DateTime(
+          lastActivityDate.year, 
+          lastActivityDate.month, 
+          lastActivityDate.day
+        );
+        
+        final daysDifference = dateKey.difference(lastActivityDateKey).inDays;
+        
+        debugPrint('Days difference: $daysDifference');
+        
+        if (daysDifference == 1) {
+          // Consecutive day - increment streak
+          currentStreak += 1;
+        } else if (daysDifference > 1) {
+          // Not consecutive - reset streak
+          currentStreak = 1;
+        } else if (daysDifference == 0 && currentStreak == 0) {
+          // Same day, but streak is 0 - set to 1
+          currentStreak = 1;
+        }
+      } else {
+        // First activity ever - start streak at 1
+        currentStreak = 1;
+      }
+      
+      // Update longest streak
+      bool isLongestStreak = false;
+      if (currentStreak > longestStreak) {
+        longestStreak = currentStreak;
+        isLongestStreak = true;
+      }
+      
+      debugPrint('New streak: $currentStreak');
+      debugPrint('Longest streak: $longestStreak');
+      
+      // Update or insert streak record
+      if (streakRecords.isEmpty) {
+        await txn.insert(
+          'streak',
+          {
+            'user_id': userId,
+            'current_streak': currentStreak,
+            'longest_streak': longestStreak,
+            'last_activity_date': dateKey.toIso8601String(),
+            'last_workout_date': dateKey.toIso8601String(),
+          },
+        );
+      } else {
+        await txn.update(
+          'streak',
+          {
+            'current_streak': currentStreak,
+            'longest_streak': longestStreak,
+            'last_activity_date': dateKey.toIso8601String(),
+            'last_workout_date': dateKey.toIso8601String(),
+          },
+          where: 'user_id = ?',
+          whereArgs: [userId],
+        );
+      }
+      
+      // Check for milestone achievements
+      await _checkStreakMilestones(txn, userId, currentStreak);
+      
+      // Store values for notifications after transaction completes
+      return {
+        'currentStreak': currentStreak,
+        'isLongestStreak': isLongestStreak,
+      };
+    }).then((result) async {
+      // Handle post-transaction notifications
+      final currentStreak = result['currentStreak'] as int;
+      final isLongestStreak = result['isLongestStreak'] as bool;
+      //final longestStreak = result['longestStreak'] as int; 
+
+      // If it's a new longest streak, we might want to notify this too
+      if (isLongestStreak && currentStreak > 7) {
+        // Send a special notification for breaking your own record
+        // This would be a custom implementation
+      }
+        });
+  }
   
   // Record a rest day
   Future<void> logRestDay(DateTime date) async {
@@ -289,6 +313,10 @@ Future<void> logWorkout(DateTime date) async {
           'date': DateTime.now().toIso8601String(),
         },
       );
+      
+      // Schedule notification for 7-day streak milestone
+      // Note: Can't use await in transaction, so we don't await this call
+      _notificationTriggerService.onStreakMilestone(7);
     }
     
     // Check for 30-day streak
@@ -302,6 +330,9 @@ Future<void> logWorkout(DateTime date) async {
           'date': DateTime.now().toIso8601String(),
         },
       );
+      
+      // Schedule notification for 30-day streak milestone
+      _notificationTriggerService.onStreakMilestone(30);
     }
   }
   
@@ -335,8 +366,15 @@ Future<void> logWorkout(DateTime date) async {
       
       final difference = today.difference(lastActivity).inDays;
       
-      // If more than 1 day has passed since last activity, reset streak
-      if (difference > 1) {
+      // If activity is not logged today, schedule streak maintenance notification
+      if (difference == 0 && streak.currentStreak > 0) {
+        // Activity already logged today
+        // Do nothing
+      } else if (difference == 1) {
+        // Last activity was yesterday, schedule reminder
+        await _notificationTriggerService.onStreakMaintenanceRequired(streak.currentStreak);
+      } else if (difference > 1) {
+        // If more than 1 day has passed since last activity, reset streak
         await db.update(
           'streak',
           {'current_streak': 0},
@@ -365,5 +403,4 @@ Future<void> logWorkout(DateTime date) async {
     
     return logs.map((log) => DailyLog.fromMap(log)).toList();
   }
-
 }

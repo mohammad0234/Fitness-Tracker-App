@@ -8,6 +8,7 @@ import 'package:fitjourney/services/goal_tracking_service.dart';
 //import 'package:fitjourney/services/goal_service.dart';
 import 'package:fitjourney/services/streak_service.dart';
 import 'package:fitjourney/utils/date_utils.dart';
+import 'package:fitjourney/services/notification_trigger_service.dart';
 
 class WorkoutService {
   // Singleton instance
@@ -16,6 +17,8 @@ class WorkoutService {
   // Database helper instance
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
   
+  final NotificationTriggerService _notificationTriggerService = NotificationTriggerService.instance;
+
   // Private constructor
   WorkoutService._internal();
   
@@ -263,6 +266,10 @@ Future<bool> checkAndUpdatePersonalBest(int exerciseId, double weight) async {
     
     // Update any related goals
     await GoalTrackingService.instance.updateGoalsAfterPersonalBest(exerciseId, weight);
+    
+    // Schedule notification for personal best
+    await _notificationTriggerService.onPersonalBest(exerciseId, weight);
+
   }
   
   return isNewPersonalBest;
