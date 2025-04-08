@@ -4,6 +4,9 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:rxdart/rxdart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:android_intent_plus/android_intent.dart';
+import 'package:android_intent_plus/flag.dart';
+import 'dart:io' show Platform;
 
 class NotificationService {
   // Singleton instance
@@ -30,16 +33,13 @@ class NotificationService {
   Future<void> init() async {
     tz.initializeTimeZones();
 
-    // Define initialization settings for Android
     final AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    // Define initialization settings
     final InitializationSettings initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid,
     );
 
-    // Initialize the plugin with the new callback approach
     await flutterLocalNotificationsPlugin.initialize(
       initializationSettings,
       onDidReceiveNotificationResponse: (NotificationResponse response) {
@@ -50,13 +50,11 @@ class NotificationService {
       },
     );
 
-    // Create notification channels for Android
     await _createNotificationChannels();
   }
 
   // Create notification channels for Android
   Future<void> _createNotificationChannels() async {
-    // Goal notification channel
     AndroidNotificationChannel goalChannel = const AndroidNotificationChannel(
       goalCategory,
       'Goal Notifications',
@@ -64,7 +62,6 @@ class NotificationService {
       importance: Importance.high,
     );
 
-    // Streak notification channel
     AndroidNotificationChannel streakChannel = const AndroidNotificationChannel(
       streakCategory,
       'Streak Notifications',
@@ -72,7 +69,6 @@ class NotificationService {
       importance: Importance.high,
     );
 
-    // Performance notification channel
     AndroidNotificationChannel performanceChannel = const AndroidNotificationChannel(
       performanceCategory,
       'Performance Notifications',
@@ -80,7 +76,6 @@ class NotificationService {
       importance: Importance.defaultImportance,
     );
 
-    // Engagement notification channel
     AndroidNotificationChannel engagementChannel = const AndroidNotificationChannel(
       engagementCategory,
       'Engagement Notifications',
@@ -88,22 +83,13 @@ class NotificationService {
       importance: Importance.defaultImportance,
     );
 
-    // Create the channels
-    await flutterLocalNotificationsPlugin
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(goalChannel);
+    final androidPlatform = flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
 
-    await flutterLocalNotificationsPlugin
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(streakChannel);
-
-    await flutterLocalNotificationsPlugin
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(performanceChannel);
-
-    await flutterLocalNotificationsPlugin
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(engagementChannel);
+    await androidPlatform?.createNotificationChannel(goalChannel);
+    await androidPlatform?.createNotificationChannel(streakChannel);
+    await androidPlatform?.createNotificationChannel(performanceChannel);
+    await androidPlatform?.createNotificationChannel(engagementChannel);
   }
 
   // Schedule a notification
@@ -115,22 +101,19 @@ class NotificationService {
     String? payload,
     required String category,
   }) async {
-    // Check if notifications are enabled for this category
     final prefs = await SharedPreferences.getInstance();
     final categoryEnabled = prefs.getBool('${category}_enabled') ?? true;
-    
+
     if (!categoryEnabled) {
       debugPrint('Notifications disabled for category: $category');
       return;
     }
 
-    // Check if within quiet hours
     if (await _isInQuietHours(scheduledDate)) {
       debugPrint('Notification scheduled during quiet hours, skipping');
       return;
     }
 
-    // Android-specific notification details
     AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
       category,
       getCategoryName(category),
@@ -140,11 +123,9 @@ class NotificationService {
       showWhen: true,
     );
 
-    // Platform-specific notification details
     NotificationDetails platformDetails =
         NotificationDetails(android: androidDetails);
 
-    // Schedule the notification with the new required parameter
     await flutterLocalNotificationsPlugin.zonedSchedule(
       id,
       title,
@@ -162,21 +143,16 @@ class NotificationService {
   Future<bool> _isInQuietHours(DateTime time) async {
     final prefs = await SharedPreferences.getInstance();
     final quietHoursEnabled = prefs.getBool('quiet_hours_enabled') ?? false;
-    
-    if (!quietHoursEnabled) {
-      return false;
-    }
-    
+
+    if (!quietHoursEnabled) return false;
+
     final quietHoursStart = prefs.getInt('quiet_hours_start') ?? 22; // 10 PM
     final quietHoursEnd = prefs.getInt('quiet_hours_end') ?? 8; // 8 AM
-    
     final hour = time.hour;
-    
+
     if (quietHoursStart <= quietHoursEnd) {
-      // Simple case: e.g., 22:00 to 08:00
       return hour >= quietHoursStart || hour < quietHoursEnd;
     } else {
-      // Wrap around case: e.g., 22:00 to 08:00
       return hour >= quietHoursStart || hour < quietHoursEnd;
     }
   }
@@ -210,6 +186,17 @@ class NotificationService {
   // Generate a unique notification ID
   int generateUniqueId() {
     return DateTime.now().millisecondsSinceEpoch.remainder(100000);
+  }
+
+  // Open exact alarm permission settings (new method)
+  Future<void> openExactAlarmSettings() async {
+    if (Platform.isAndroid) {
+      final intent = AndroidIntent(
+        action: 'android.settings.REQUEST_SCHEDULE_EXACT_ALARM',
+        flags: <int>[Flag.FLAG_ACTIVITY_NEW_TASK],
+      );
+      await intent.launch();
+    }
   }
 
   // Dispose resources

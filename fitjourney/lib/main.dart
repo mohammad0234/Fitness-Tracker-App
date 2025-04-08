@@ -8,6 +8,9 @@ import 'package:fitjourney/services/notification_service.dart';
 import 'firebase_options.dart';
 import 'package:fitjourney/services/streak_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
+import 'dart:io'; // Add this for Platform checks
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import 'screens/onboarding_screen.dart';
 import 'screens/signup_page.dart';
@@ -30,6 +33,9 @@ Future<void> main() async {
       
   // Initialize notification service
   await NotificationService.instance.init();
+  
+  // Request notification permissions
+  await requestNotificationPermissions();
       
   // Initialize exercise database
   await WorkoutService.instance.initializeExercises();
@@ -39,7 +45,7 @@ Future<void> main() async {
   final prefs = await SharedPreferences.getInstance();
   final seenOnboarding = prefs.getBool('seenOnboarding') ?? false;
 
-   try {
+  try {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       await StreakService.instance.performDailyStreakCheck();
@@ -63,6 +69,25 @@ Future<void> main() async {
   runApp(MyApp(seenOnboarding: seenOnboarding));
 }
 
+// Add this function to request notification permissions
+Future<void> requestNotificationPermissions() async {
+  // Only needed for Android 13+ (SDK 33+)
+  if (Platform.isAndroid) {
+    try {
+      final androidImplementation = 
+          NotificationService.instance.flutterLocalNotificationsPlugin
+              .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+              
+      if (androidImplementation != null) {
+        final bool? granted = await androidImplementation.requestNotificationsPermission();
+        debugPrint('Notification permission granted: $granted');
+      }
+    } catch (e) {
+      debugPrint('Error requesting notification permissions: $e');
+    }
+  }
+}
+
 class MyApp extends StatelessWidget {
   final bool seenOnboarding;
   
@@ -83,7 +108,7 @@ class MyApp extends StatelessWidget {
         '/': (context) => const OnboardingScreen(),
         '/signup': (context) => const SignUpPage(),
         '/login': (context) => const LoginPage(),
-        '/home': (context) => const MainScaffold(), // Changed from HomePage to MainScaffold
+        '/home': (context) => const MainScaffold(),
         '/verification-pending': (context) => const VerificationPendingPage(),
         '/notifications': (context) => const NotificationScreen(),
       },
