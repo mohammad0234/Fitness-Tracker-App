@@ -1093,12 +1093,10 @@ Future<List<DailyLog>> getDailyLogsForDateRange(
   return result.map((log) => DailyLog.fromMap(log)).toList();
 }
 
-
-Future<void> insertNotification(Map<String, dynamic> data) async {
-  final db = await database;
-  await db.insert('notification', data);
-}
-
+// Future<void> insertNotification(Map<String, dynamic> data) async {
+//   final db = await database;
+//   await db.insert('notification', data);
+// }
 
   // Additional CRUD methods for other tables as needed.
 }

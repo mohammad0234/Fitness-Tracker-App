@@ -118,63 +118,6 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<void> _testNotification() async {
-  try {
-    final id = DateTime.now().millisecondsSinceEpoch.remainder(100000);
-
-    await NotificationService.instance.scheduleNotification(
-      id: id,
-      title: 'Test Notification',
-      body: 'This is a test notification from FitJourney app',
-      scheduledDate: DateTime.now().add(const Duration(seconds: 5)),
-      category: NotificationService.streakCategory,
-      payload: 'test_notification',
-    );
-
-    // ✅ Save to in-app notification table
-    final userId = firebase_auth.FirebaseAuth.instance.currentUser?.uid;
-    if (userId != null) {
-      await DatabaseHelper.instance.insertNotification({
-        'user_id': userId,
-        'type': 'NewStreak', // Choose an appropriate type
-        'message': 'This is a test notification from FitJourney app',
-        'timestamp': DateTime.now().toIso8601String(),
-        'is_read': 0,
-      });
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Test notification scheduled! Check your notification area in 5 seconds.'),
-        duration: Duration(seconds: 3),
-      ),
-    );
-
-    print('Test notification scheduled with ID: $id');
-  } catch (e) {
-    print('Error scheduling test notification: $e');
-
-    if (e.toString().contains('exact_alarms_not_permitted')) {
-      await NotificationService.instance.openExactAlarmSettings();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please allow "Schedule exact alarms" in settings.'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error scheduling notification: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-}
-
-
-
   Future<void> _logRestDay() async {
     try {
       final confirm = await showDialog<bool>(
@@ -318,42 +261,6 @@ class _HomePageState extends State<HomePage> {
                         },
                         tooltip: 'View Calendar',
                         color: Colors.blue,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.yellow.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.yellow.shade200),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Debug Tools',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Use this button to test if notifications are working properly',
-                        style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
-                      ),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: _testNotification,
-                          icon: const Icon(Icons.notifications_active),
-                          label: const Text('Test Notification'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.yellow.shade700,
-                            foregroundColor: Colors.white,
-                          ),
-                        ),
                       ),
                     ],
                   ),
