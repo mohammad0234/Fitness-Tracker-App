@@ -1,11 +1,12 @@
 // lib/screens/progress_page.dart
+import 'package:fitjourney/screens/exercise_progress_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:fitjourney/services/progress_service.dart';
 import 'package:fitjourney/database_models/progress_data.dart';
 import 'package:fitjourney/widgets/charts/workout_volume_chart.dart';
 import 'package:fitjourney/widgets/charts/muscle_group_pie_chart.dart';
 import 'package:fitjourney/widgets/charts/workout_frequency_chart.dart';
-//import 'package:fitjourney/widgets/charts/exercise_progress_chart.dart';
+import 'package:fitjourney/screens/exercise_selection_screen.dart';
 
 class ProgressPage extends StatefulWidget {
   const ProgressPage({super.key});
@@ -256,6 +257,90 @@ class _ProgressPageState extends State<ProgressPage> {
                                 if (data.personalBests.isNotEmpty)
                                   _buildPersonalBestsSection(data.personalBests),
                                 
+                                const SizedBox(height: 24),
+                                
+                                // Track Exercise Progress section
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Padding(
+                                      padding: EdgeInsets.symmetric(horizontal: 16.0),
+                                      child: Text(
+                                        'Track Exercise Progress',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                                      child: Card(
+                                        elevation: 1,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(16.0),
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons.timeline,
+                                                    color: Colors.blue.shade700,
+                                                    size: 24,
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  const Expanded(
+                                                    child: Text(
+                                                      'View detailed progress for specific exercises',
+                                                      style: TextStyle(
+                                                        fontSize: 16,
+                                                        fontWeight: FontWeight.w500,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 12),
+                                              const Text(
+                                                'Track your strength progression over time for individual exercises. See personal bests, improvement trends, and historical performance.',
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  color: Colors.black87,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 16),
+                                              SizedBox(
+                                                width: double.infinity,
+                                                child: ElevatedButton(
+                                                  onPressed: () {
+                                                    Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (context) => const ExerciseSelectionScreen(),
+                                                      ),
+                                                    );
+                                                  },
+                                                  style: ElevatedButton.styleFrom(
+                                                    backgroundColor: Colors.blue,
+                                                    foregroundColor: Colors.white,
+                                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                                  ),
+                                                  child: const Text('Select Exercise to Track'),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
                                 const SizedBox(height: 24), // Bottom padding
                               ],
                             ),
@@ -405,63 +490,75 @@ class _ProgressPageState extends State<ProgressPage> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Container(
-        width: 160,
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              personalBest['exerciseName'],
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+      child: InkWell(
+        onTap: () {
+          // Navigate to exercise progress screen when tapping on a personal best
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ExerciseProgressScreen(exerciseId: personalBest['exerciseId']),
             ),
-            Text(
-              personalBest['muscleGroup'],
-              style: TextStyle(
-                color: Colors.grey.shade600,
-                fontSize: 12,
-              ),
-            ),
-            const Spacer(),
-            Row(
-              children: [
-                Icon(
-                  Icons.emoji_events,
-                  color: Colors.amber.shade700,
-                  size: 20,
+          );
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          width: 160,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                personalBest['exerciseName'],
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
                 ),
-                const SizedBox(width: 4),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              Text(
+                personalBest['muscleGroup'],
+                style: TextStyle(
+                  color: Colors.grey.shade600,
+                  fontSize: 12,
+                ),
+              ),
+              const Spacer(),
+              Row(
+                children: [
+                  Icon(
+                    Icons.emoji_events,
+                    color: Colors.amber.shade700,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${personalBest['maxWeight']} kg',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              if (personalBest['reps'] != null)
                 Text(
-                  '${personalBest['maxWeight']} kg',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                  '${personalBest['reps']} reps',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade700,
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            if (personalBest['reps'] != null)
               Text(
-                '${personalBest['reps']} reps',
+                personalBest['formattedDate'],
                 style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade700,
+                  fontSize: 12,
+                  color: Colors.grey.shade500,
                 ),
               ),
-            Text(
-              personalBest['formattedDate'],
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade500,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
