@@ -5,7 +5,6 @@ import 'package:fitjourney/database/database_helper.dart';
 import 'package:fitjourney/database_models/user.dart';
 import 'package:fitjourney/services/streak_service.dart';
 import 'package:fitjourney/screens/calendar_streak_screen.dart';
-import 'package:fitjourney/services/notification_service.dart'; // ✅ Added
 import 'log_workout_flow.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 

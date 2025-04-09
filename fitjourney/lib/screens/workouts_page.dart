@@ -1,3 +1,4 @@
+import 'package:fitjourney/screens/workout_comparison_selection_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:fitjourney/services/workout_service.dart';
 import 'package:fitjourney/database_models/workout.dart';
@@ -213,6 +214,24 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
                   ),
                   Row(
                     children: [
+                      OutlinedButton.icon(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const WorkoutComparisonSelectionScreen(),
+              ),
+            );
+          },
+          icon: const Icon(Icons.compare_arrows, size: 18),
+          label: const Text('Compare'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: Colors.blue,
+            side: BorderSide(color: Colors.blue),
+            visualDensity: VisualDensity.compact,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+          ),
+        ),
                       // Filter button
                       IconButton(
                         icon: const Icon(Icons.filter_list),

@@ -329,17 +329,15 @@ class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
     sideTitles: SideTitles(showTitles: false),
   ),
   bottomTitles: AxisTitles(
-    axisNameWidget: const Padding(
-      padding: EdgeInsets.only(top: 8.0),
-      child: Text(
-        'Date',
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
-        ),
+    axisNameWidget: const Text(
+      'Date',
+      style: TextStyle(
+        color: Colors.black87,
+        fontSize: 12,
+        fontWeight: FontWeight.bold,
       ),
     ),
-    axisNameSize: 24,
+    axisNameSize: 25,
     sideTitles: SideTitles(
       showTitles: true,
       reservedSize: 30,
@@ -363,17 +361,15 @@ class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
     ),
   ),
   leftTitles: AxisTitles(
-    axisNameWidget: const RotatedBox(
-      quarterTurns: -1,
-      child: Text(
-        'Weight',
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
-        ),
+    axisNameWidget: const Text(
+      'Weight (kg)',
+      style: TextStyle(
+        color: Colors.black87,
+        fontSize: 12,
+        fontWeight: FontWeight.bold,
       ),
     ),
-    axisNameSize: 28,
+    axisNameSize: 25,
     sideTitles: SideTitles(
       showTitles: true,
       interval: _calculateInterval(),
