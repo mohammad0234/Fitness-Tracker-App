@@ -527,201 +527,213 @@ class _WorkoutComparisonScreenState extends State<WorkoutComparisonScreen> {
   }
   
   Widget _buildExerciseComparisonCard(Map<String, dynamic> exercise) {
-    final name = exercise['name'] as String;
-    final muscleGroup = exercise['muscleGroup'] as String;
-    
-    final firstMaxWeight = exercise['firstMaxWeight'] as double;
-    final secondMaxWeight = exercise['secondMaxWeight'] as double;
-    final weightDifference = exercise['weightDifference'] as double;
-    final weightPercentChange = exercise['weightPercentChange'] as double;
-    
-    final firstTotalVolume = exercise['firstTotalVolume'] as double;
-    final secondTotalVolume = exercise['secondTotalVolume'] as double;
-    final volumePercentChange = exercise['volumePercentChange'] as double;
-    
-    final firstSets = exercise['firstSets'] as int;
-    final secondSets = exercise['secondSets'] as int;
-    
-    final isWeightImproved = weightDifference > 0;
-    final isVolumeImproved = volumePercentChange > 0;
-    
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.fitness_center,
-                  color: Colors.blue.shade700,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        name,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+  final name = exercise['name'] as String;
+  final muscleGroup = exercise['muscleGroup'] as String;
+  
+  final firstMaxWeight = exercise['firstMaxWeight'] as double;
+  final secondMaxWeight = exercise['secondMaxWeight'] as double;
+  final weightDifference = exercise['weightDifference'] as double;
+  final weightPercentChange = exercise['weightPercentChange'] as double;
+  
+  final firstTotalVolume = exercise['firstTotalVolume'] as double;
+  final secondTotalVolume = exercise['secondTotalVolume'] as double;
+  final volumePercentChange = exercise['volumePercentChange'] as double;
+  
+  final firstSets = exercise['firstSets'] as int;
+  final secondSets = exercise['secondSets'] as int;
+  
+  final isWeightImproved = weightDifference > 0;
+  final isVolumeImproved = volumePercentChange > 0;
+  
+  return Card(
+    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    elevation: 0,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12),
+      side: BorderSide(color: Colors.grey.shade200),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.fitness_center,
+                color: Colors.blue.shade700,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
                       ),
-                      Text(
-                        muscleGroup,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade600,
-                        ),
+                    ),
+                    Text(
+                      muscleGroup,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade600,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: isWeightImproved ? Colors.green.shade100 : Colors.red.shade100,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        isWeightImproved ? Icons.arrow_upward : Icons.arrow_downward,
-                        size: 16,
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isWeightImproved ? Colors.green.shade100 : Colors.red.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min, 
+                  children: [
+                    Icon(
+                      isWeightImproved ? Icons.arrow_upward : Icons.arrow_downward,
+                      size: 16,
+                      color: isWeightImproved ? Colors.green.shade700 : Colors.red.shade700,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${weightPercentChange.abs().toStringAsFixed(1)}%',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
                         color: isWeightImproved ? Colors.green.shade700 : Colors.red.shade700,
                       ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${weightPercentChange.abs().toStringAsFixed(1)}%',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: isWeightImproved ? Colors.green.shade700 : Colors.red.shade700,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Max Weight',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Flexible(
+                    flex: 1,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Max Weight',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      _buildComparisonRow(
-                        'First',
-                        '${firstMaxWeight.toStringAsFixed(1)} kg',
-                        null,
-                      ),
-                      const SizedBox(height: 4),
-                      _buildComparisonRow(
-                        'Second',
-                        '${secondMaxWeight.toStringAsFixed(1)} kg',
-                        isWeightImproved,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Total Volume',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
+                        const SizedBox(height: 8),
+                        _buildComparisonRow(
+                          'First',
+                          '${firstMaxWeight.toStringAsFixed(1)} kg',
+                          null,
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      _buildComparisonRow(
-                        'First',
-                        '${firstTotalVolume.toStringAsFixed(1)} kg',
-                        null,
-                      ),
-                      const SizedBox(height: 4),
-                      _buildComparisonRow(
-                        'Second',
-                        '${secondTotalVolume.toStringAsFixed(1)} kg',
-                        isVolumeImproved,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Number of sets: $firstSets → $secondSets',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
+                        const SizedBox(height: 4),
+                        _buildComparisonRow(
+                          'Second',
+                          '${secondMaxWeight.toStringAsFixed(1)} kg',
+                          isWeightImproved,
+                        ),
+                      ],
                     ),
                   ),
+                  const SizedBox(width: 8), 
+                  Flexible(
+                    flex: 1,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Total Volume',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        _buildComparisonRow(
+                          'First',
+                          '${firstTotalVolume.toStringAsFixed(1)} kg',
+                          null,
+                        ),
+                        const SizedBox(height: 4),
+                        _buildComparisonRow(
+                          'Second',
+                          '${secondTotalVolume.toStringAsFixed(1)} kg',
+                          isVolumeImproved,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            }
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Number of sets: $firstSets → $secondSets',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
+                  ),
                 ),
-              ],
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+        ],
       ),
-    );
-  }
-  
-  Widget _buildComparisonRow(String label, String value, bool? isImproved) {
-    return Row(
-      children: [
-        SizedBox(
-          width: 60,
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade600,
-            ),
+    ),
+  );
+}
+
+Widget _buildComparisonRow(String label, String value, bool? isImproved) {
+  return Row(
+    mainAxisSize: MainAxisSize.min, 
+    children: [
+      SizedBox(
+        width: 50,
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey.shade600,
           ),
         ),
-        Text(
+      ),
+      Flexible(
+        child: Text(
           value,
+          overflow: TextOverflow.ellipsis, 
           style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,
           ),
         ),
-        if (isImproved != null) ...[
-          const SizedBox(width: 8),
-          Icon(
-            isImproved ? Icons.arrow_upward : Icons.arrow_downward,
-            size: 16,
-            color: isImproved ? Colors.green : Colors.red,
-          ),
-        ],
+      ),
+      if (isImproved != null) ...[
+        const SizedBox(width: 4), 
+        Icon(
+          isImproved ? Icons.arrow_upward : Icons.arrow_downward,
+          size: 16,
+          color: isImproved ? Colors.green : Colors.red,
+        ),
       ],
-    );
-  }
+    ],
+  );
+}
   
   Widget _buildUniqueExercisesSection() {
     final uniqueToFirst = _comparisonData['uniqueToFirst'] as List;

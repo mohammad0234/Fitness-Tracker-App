@@ -91,107 +91,114 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
   }
 
   void _showFilterDialog() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Filter Workouts',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true, // Add this to allow scrolling
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setModalState) {
+          return SingleChildScrollView( // Wrap content in a ScrollView
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom + 20, // Add padding for keyboard
+              left: 20,
+              right: 20,
+              top: 20,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Filter Workouts',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                   ),
-                  const SizedBox(height: 20),
-                  
-                  // Date filter
-                  const Text(
-                    'Date Range',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
+                ),
+                const SizedBox(height: 20),
+                
+                // Date filter
+                const Text(
+                  'Date Range',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
                   ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    children: _dateFilterOptions.map((option) {
-                      return ChoiceChip(
-                        label: Text(option),
-                        selected: _dateFilter == option,
-                        onSelected: (selected) {
-                          setModalState(() {
-                            _dateFilter = option;
-                          });
-                          setState(() {
-                            _dateFilter = option;
-                          });
-                        },
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 20),
-                  
-                  // Muscle group filter
-                  const Text(
-                    'Workout Type',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    children: _filterOptions.map((option) {
-                      return ChoiceChip(
-                        label: Text(option),
-                        selected: _selectedFilter == option,
-                        onSelected: (selected) {
-                          setModalState(() {
-                            _selectedFilter = option;
-                          });
-                          setState(() {
-                            _selectedFilter = option;
-                          });
-                        },
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 20),
-                  
-                  // Apply button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
+                ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  children: _dateFilterOptions.map((option) {
+                    return ChoiceChip(
+                      label: Text(option),
+                      selected: _dateFilter == option,
+                      onSelected: (selected) {
+                        setModalState(() {
+                          _dateFilter = option;
+                        });
+                        setState(() {
+                          _dateFilter = option;
+                        });
                       },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      child: const Text('Apply Filters'),
-                    ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 20),
+                
+                // Muscle group filter
+                const Text(
+                  'Workout Type',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
                   ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
+                ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  children: _filterOptions.map((option) {
+                    return ChoiceChip(
+                      label: Text(option),
+                      selected: _selectedFilter == option,
+                      onSelected: (selected) {
+                        setModalState(() {
+                          _selectedFilter = option;
+                        });
+                        setState(() {
+                          _selectedFilter = option;
+                        });
+                      },
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 20),
+                
+                // Apply button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: const Text('Apply Filters'),
+                  ),
+                ),
+                // Add space at the bottom to prevent overflow
+                const SizedBox(height: 20),
+              ],
+            ),
+          );
+        },
+      );
+    },
+  );
+}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
