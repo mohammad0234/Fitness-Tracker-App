@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import 'log_goal_flow.dart';
 import 'package:fitjourney/screens/goal_detail_screen.dart';
 
-
 class GoalsPage extends StatefulWidget {
   const GoalsPage({super.key});
 
@@ -18,7 +17,7 @@ class _GoalsPageState extends State<GoalsPage> {
   List<Map<String, dynamic>> _activeGoals = [];
   List<Map<String, dynamic>> _achievements = [];
   List<Map<String, dynamic>> _completedGoals = [];
-  
+
   // UI states
   bool _showAllCompletedGoals = false;
   bool _isLoading = true;
@@ -30,30 +29,30 @@ class _GoalsPageState extends State<GoalsPage> {
     super.initState();
     _loadGoalData();
   }
-  
+
   Future<void> _loadGoalData() async {
     setState(() {
       _isLoading = true;
       _hasError = false;
     });
-    
+
     try {
       // Update all goal progress first
       await GoalService.instance.updateAllGoalsProgress();
-      
+
       // Get active goals and prepare them for display
       final activeGoals = await GoalService.instance.getActiveGoals();
       final List<Map<String, dynamic>> formattedActiveGoals = [];
-      
+
       for (final goal in activeGoals) {
         final goalInfo = await GoalService.instance.getGoalDisplayInfo(goal);
         formattedActiveGoals.add(goalInfo);
       }
-      
+
       // Get completed goals
       final completedGoals = await GoalService.instance.getCompletedGoals();
       final List<Map<String, dynamic>> formattedCompletedGoals = [];
-      
+
       for (final goal in completedGoals) {
         final goalInfo = await GoalService.instance.getGoalDisplayInfo(goal);
         formattedCompletedGoals.add({
@@ -61,10 +60,10 @@ class _GoalsPageState extends State<GoalsPage> {
           'completedOn': DateFormat('MMM d, yyyy').format(goal.endDate),
         });
       }
-      
+
       // Get achievements
       final achievements = await _loadAchievements();
-      
+
       // Update state with the loaded data
       setState(() {
         _activeGoals = formattedActiveGoals;
@@ -81,19 +80,19 @@ class _GoalsPageState extends State<GoalsPage> {
       print('Error loading goals: $e');
     }
   }
-  
+
   Future<List<Map<String, dynamic>>> _loadAchievements() async {
     try {
       // For now, we'll use milestone data to create achievement badges
       // This could be expanded in the future
-      
+
       final milestones = await _fetchRecentMilestones();
       final achievements = <Map<String, dynamic>>[];
-      
+
       // Convert milestones to achievement badge format
       for (final milestone in milestones) {
         final Map<String, dynamic> achievement = {};
-        
+
         switch (milestone['type']) {
           case 'PersonalBest':
             achievement['name'] = 'Strength Master';
@@ -111,12 +110,12 @@ class _GoalsPageState extends State<GoalsPage> {
             achievement['color'] = Colors.green;
             break;
         }
-        
+
         if (achievement.isNotEmpty) {
           achievements.add(achievement);
         }
       }
-      
+
       // If we have no achievements yet, add placeholder achievements
       // This ensures the UI doesn't look empty for new users
       if (achievements.isEmpty) {
@@ -128,7 +127,7 @@ class _GoalsPageState extends State<GoalsPage> {
           },
         ]);
       }
-      
+
       return achievements;
     } catch (e) {
       print('Error loading achievements: $e');
@@ -142,7 +141,7 @@ class _GoalsPageState extends State<GoalsPage> {
       ];
     }
   }
-  
+
   Future<List<Map<String, dynamic>>> _fetchRecentMilestones() async {
     // This would typically be fetched from the database
     // For now, we'll return a simple placeholder list
@@ -173,7 +172,7 @@ class _GoalsPageState extends State<GoalsPage> {
         ),
       );
     }
-    
+
     if (_hasError) {
       return Scaffold(
         body: SafeArea(
@@ -237,7 +236,7 @@ class _GoalsPageState extends State<GoalsPage> {
                   ),
                 ],
               ),
-              
+
               // Main content - scrollable
               Expanded(
                 child: RefreshIndicator(
@@ -248,7 +247,7 @@ class _GoalsPageState extends State<GoalsPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const SizedBox(height: 16),
-                        
+
                         // Active Goals Section
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -264,7 +263,9 @@ class _GoalsPageState extends State<GoalsPage> {
                               onPressed: () {
                                 Navigator.push(
                                   context,
-                                  MaterialPageRoute(builder: (context) => const LogGoalFlow()),
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          const LogGoalFlow()),
                                 ).then((_) => _loadGoalData());
                               },
                               icon: const Icon(Icons.add, size: 18),
@@ -272,22 +273,24 @@ class _GoalsPageState extends State<GoalsPage> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.blue,
                                 foregroundColor: Colors.white,
-                                textStyle: const TextStyle(fontWeight: FontWeight.bold),
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                textStyle: const TextStyle(
+                                    fontWeight: FontWeight.bold),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 8),
                               ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 16),
-                        
+
                         // Active goals list
                         if (_activeGoals.isEmpty)
                           _buildEmptyGoalsMessage()
                         else
                           ..._activeGoals.map((goal) => _buildGoalCard(goal)),
-                        
+
                         const SizedBox(height: 32),
-                        
+
                         // Achievements Section
                         const Text(
                           'Achievements',
@@ -297,7 +300,7 @@ class _GoalsPageState extends State<GoalsPage> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        
+
                         // Achievement badges
                         SizedBox(
                           height: 100,
@@ -314,7 +317,8 @@ class _GoalsPageState extends State<GoalsPage> {
                                       width: 60,
                                       height: 60,
                                       decoration: BoxDecoration(
-                                        color: achievement['color'].withOpacity(0.2),
+                                        color: achievement['color']
+                                            .withOpacity(0.2),
                                         shape: BoxShape.circle,
                                       ),
                                       child: Icon(
@@ -337,9 +341,9 @@ class _GoalsPageState extends State<GoalsPage> {
                             },
                           ),
                         ),
-                        
+
                         const SizedBox(height: 32),
-                        
+
                         // Completed Goals Section
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -355,23 +359,28 @@ class _GoalsPageState extends State<GoalsPage> {
                               TextButton(
                                 onPressed: () {
                                   setState(() {
-                                    _showAllCompletedGoals = !_showAllCompletedGoals;
+                                    _showAllCompletedGoals =
+                                        !_showAllCompletedGoals;
                                   });
                                 },
-                                child: Text(_showAllCompletedGoals ? 'Show Less' : 'See All'),
+                                child: Text(_showAllCompletedGoals
+                                    ? 'Show Less'
+                                    : 'See All'),
                               ),
                           ],
                         ),
                         const SizedBox(height: 16),
-                        
+
                         // Completed goals list
                         if (_completedGoals.isEmpty)
                           _buildEmptyCompletedGoalsMessage()
                         else
                           ..._completedGoals
-                              .take(_showAllCompletedGoals ? _completedGoals.length : 2)
+                              .take(_showAllCompletedGoals
+                                  ? _completedGoals.length
+                                  : 2)
                               .map((goal) => _buildCompletedGoalItem(goal)),
-                        
+
                         const SizedBox(height: 16),
                       ],
                     ),
@@ -384,7 +393,7 @@ class _GoalsPageState extends State<GoalsPage> {
       ),
     );
   }
-  
+
   Widget _buildEmptyGoalsMessage() {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -436,7 +445,7 @@ class _GoalsPageState extends State<GoalsPage> {
       ),
     );
   }
-  
+
   Widget _buildEmptyCompletedGoalsMessage() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -456,139 +465,173 @@ class _GoalsPageState extends State<GoalsPage> {
       ),
     );
   }
-  
+
   Widget _buildGoalCard(Map<String, dynamic> goal) {
-  return Card(
-    margin: const EdgeInsets.only(bottom: 16),
-    elevation: 0,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(12),
-      side: BorderSide(color: Colors.grey.shade200),
-    ),
-    child: InkWell(  // Add InkWell for tap detection
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => GoalDetailScreen(goalId: goal['goalId']),
-          ),
-        ).then((result) {
-          // Refresh the goals list if a goal was deleted or updated
-          if (result == true) {
-            _loadGoalData();
-          }
-        });
-      },
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  goal['title'] ?? 'Goal',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  goal['isExpired'] == true
-                    ? 'Expired'
-                    : '${goal['daysLeft']} days left',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: goal['isExpired'] == true
-                        ? Colors.red.shade700
-                        : Colors.blue.shade700,
-                  ),
-                ),
-              ],
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => GoalDetailScreen(goalId: goal['goalId']),
             ),
-            const SizedBox(height: 16),
-            
-            // Progress bar
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: goal['progress'] ?? 0.0,
-                backgroundColor: Colors.grey.shade200,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  goal['isExpired'] == true ? Colors.grey : Colors.blue,
-                ),
-                minHeight: 8,
-              ),
-            ),
-            
-            const SizedBox(height: 16),
-            
-            if (goal['type'] == 'ExerciseTarget') ...[
-              // Strength goal stats
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    goal['exerciseName'] ?? '',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade700,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Current: ${goal['current']?.toStringAsFixed(1) ?? 0}kg',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade700,
-                        ),
-                      ),
-                      Text(
-                        'Target: ${goal['target']?.toStringAsFixed(1) ?? 0}kg',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ] else if (goal['type'] == 'WorkoutFrequency') ...[
-              // Frequency goal stats
+          ).then((result) {
+            if (result == true) {
+              _loadGoalData();
+            }
+          });
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Workouts completed: ${goal['current']?.toInt() ?? 0}',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade700,
+                  Expanded(
+                    child: Text(
+                      goal['title'] ?? 'Goal',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  const SizedBox(width: 8),
                   Text(
-                    'Target: ${goal['target']?.toInt() ?? 0}',
+                    goal['isExpired'] == true
+                        ? 'Expired'
+                        : '${goal['daysLeft']} days left',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey.shade700,
+                      fontWeight: FontWeight.w500,
+                      color: goal['isExpired'] == true
+                          ? Colors.red.shade700
+                          : Colors.blue.shade700,
                     ),
                   ),
                 ],
               ),
+              const SizedBox(height: 16),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: goal['progress'] ?? 0.0,
+                  backgroundColor: Colors.grey.shade200,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    goal['isExpired'] == true ? Colors.grey : Colors.blue,
+                  ),
+                  minHeight: 8,
+                ),
+              ),
+              const SizedBox(height: 16),
+              if (goal['type'] == 'ExerciseTarget') ...[
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      goal['exerciseName'] ?? '',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade700,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Current: ${goal['current']?.toStringAsFixed(1) ?? 0}kg',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                        Text(
+                          'Target: ${goal['target']?.toStringAsFixed(1) ?? 0}kg',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (goal.containsKey('startingWeight') &&
+                        goal.containsKey('formattedImprovement')) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Starting: ${goal['startingWeight']?.toStringAsFixed(1) ?? 0}kg',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey.shade700,
+                            ),
+                          ),
+                          Text(
+                            goal['formattedImprovement'],
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.green.shade600,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ] else if (goal.containsKey('formattedImprovement')) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        goal['formattedImprovement'],
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.green.shade600,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ] else if (goal['type'] == 'WorkoutFrequency') ...[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Workouts completed: ${goal['current']?.toInt() ?? 0}',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                    Text(
+                      'Target: ${goal['target']?.toInt() ?? 0}',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
-    ),
-  );
-}
-  
+    );
+  }
+
   Widget _buildCompletedGoalItem(Map<String, dynamic> goal) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
@@ -634,7 +677,4 @@ class _GoalsPageState extends State<GoalsPage> {
       ),
     );
   }
-
-
-  
 }

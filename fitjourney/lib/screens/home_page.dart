@@ -659,6 +659,9 @@ class _HomePageState extends State<HomePage> {
     final current = _activeGoalData!['current'] as double?;
     final target = _activeGoalData!['target'] as double?;
     final exerciseName = _activeGoalData!['exerciseName'] as String?;
+    final formattedImprovement =
+        _activeGoalData!['formattedImprovement'] as String?;
+    final startingWeight = _activeGoalData!['startingWeight'] as double?;
 
     return GestureDetector(
       onTap: goalId != null
@@ -740,6 +743,39 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ],
               ),
+              if (startingWeight != null && formattedImprovement != null) ...[
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Starting: ${startingWeight.toStringAsFixed(1)}kg',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                    Text(
+                      formattedImprovement,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.green.shade600,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ] else if (formattedImprovement != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  formattedImprovement,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.green.shade600,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ],
           ],
         ),
