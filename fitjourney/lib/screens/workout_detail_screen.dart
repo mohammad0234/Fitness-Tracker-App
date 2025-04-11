@@ -154,12 +154,7 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
                                 ],
                               ),
                               const SizedBox(height: 8),
-                              Text(
-                                'Duration: ${_workout!.duration ?? 0} minutes',
-                                style: TextStyle(
-                                  color: Colors.grey.shade700,
-                                ),
-                              ),
+                              
                               if (_workout!.notes != null) ...[
                                 const SizedBox(height: 16),
                                 const Text(

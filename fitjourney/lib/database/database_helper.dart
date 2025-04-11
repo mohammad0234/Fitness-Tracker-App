@@ -541,7 +541,7 @@ Future<int> saveCompleteWorkout({
       {
         'user_id': userId,
         'date': normaliseDate(date),
-        'duration': duration,
+        'duration': duration == 0 ? null : duration,
         'notes': notes,
       },
     );

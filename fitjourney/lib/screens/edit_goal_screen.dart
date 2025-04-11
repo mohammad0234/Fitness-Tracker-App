@@ -8,7 +8,7 @@ import 'package:intl/intl.dart';
 
 class EditGoalScreen extends StatefulWidget {
   final int goalId;
-  
+
   const EditGoalScreen({
     super.key,
     required this.goalId,
@@ -21,10 +21,10 @@ class EditGoalScreen extends StatefulWidget {
 class _EditGoalScreenState extends State<EditGoalScreen> {
   final GoalService _goalService = GoalService.instance;
   final WorkoutService _workoutService = WorkoutService.instance;
-  
+
   // Controllers
   final TextEditingController _targetValueController = TextEditingController();
-  
+
   // State variables
   bool _isLoading = true;
   bool _isSaving = false;
@@ -33,19 +33,19 @@ class _EditGoalScreenState extends State<EditGoalScreen> {
   Map<String, dynamic>? _goalDetails;
   String? _exerciseName;
   DateTime _endDate = DateTime.now().add(const Duration(days: 30));
-  
+
   @override
   void initState() {
     super.initState();
     _loadGoalDetails();
   }
-  
+
   @override
   void dispose() {
     _targetValueController.dispose();
     super.dispose();
   }
-  
+
   Future<void> _loadGoalDetails() async {
     try {
       // Load the goal
@@ -56,20 +56,21 @@ class _EditGoalScreenState extends State<EditGoalScreen> {
         });
         return;
       }
-      
+
       // Get formatted display information
       final goalDetails = await _goalService.getGoalDisplayInfo(goal);
-      
+
       // Load exercise name for strength goals
       String? exerciseName;
       if (goal.type == 'ExerciseTarget' && goal.exerciseId != null) {
-        final exercise = await _workoutService.getExerciseById(goal.exerciseId!);
+        final exercise =
+            await _workoutService.getExerciseById(goal.exerciseId!);
         exerciseName = exercise?.name;
       }
-      
+
       // Initialize controllers
       _targetValueController.text = goal.targetValue?.toString() ?? '';
-      
+
       setState(() {
         _goal = goal;
         _goalDetails = goalDetails;
@@ -84,10 +85,10 @@ class _EditGoalScreenState extends State<EditGoalScreen> {
       });
     }
   }
-  
+
   Future<void> _saveGoal() async {
     if (_goal == null) return;
-    
+
     // Validate inputs
     if (_targetValueController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -95,7 +96,7 @@ class _EditGoalScreenState extends State<EditGoalScreen> {
       );
       return;
     }
-    
+
     double targetValue;
     try {
       targetValue = double.parse(_targetValueController.text);
@@ -108,18 +109,18 @@ class _EditGoalScreenState extends State<EditGoalScreen> {
       );
       return;
     }
-    
+
     if (_endDate.isBefore(DateTime.now())) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('End date must be in the future')),
       );
       return;
     }
-    
+
     setState(() {
       _isSaving = true;
     });
-    
+
     try {
       // Create updated goal
       final updatedGoal = Goal(
@@ -133,22 +134,22 @@ class _EditGoalScreenState extends State<EditGoalScreen> {
         achieved: _goal!.achieved,
         currentProgress: _goal!.currentProgress,
       );
-      
+
       // Save to database
       await _goalService.updateGoal(updatedGoal);
-      
+
       if (!mounted) return;
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Goal updated successfully')),
       );
-      
+
       // Return to previous screen
       Navigator.pop(context, true); // Return true to indicate update
     } catch (e) {
       print('Error updating goal: $e');
       if (!mounted) return;
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error updating goal: $e')),
       );
@@ -160,7 +161,7 @@ class _EditGoalScreenState extends State<EditGoalScreen> {
       }
     }
   }
-  
+
   Future<void> _selectEndDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -168,7 +169,7 @@ class _EditGoalScreenState extends State<EditGoalScreen> {
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
     );
-    
+
     if (picked != null && picked != _endDate) {
       setState(() {
         _endDate = picked;
@@ -176,18 +177,19 @@ class _EditGoalScreenState extends State<EditGoalScreen> {
       });
     }
   }
-  
+
   Future<bool> _onWillPop() async {
     if (!_hasChanges) {
       return true;
     }
-    
+
     // Show confirmation dialog
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Discard Changes?'),
-        content: const Text('You have unsaved changes. Are you sure you want to discard them?'),
+        content: const Text(
+            'You have unsaved changes. Are you sure you want to discard them?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -200,7 +202,7 @@ class _EditGoalScreenState extends State<EditGoalScreen> {
         ],
       ),
     );
-    
+
     return result ?? false;
   }
 
@@ -252,7 +254,8 @@ class _EditGoalScreenState extends State<EditGoalScreen> {
                           children: [
                             CircleAvatar(
                               radius: 24,
-                              backgroundColor: _getGoalColor(_goal!.type).withOpacity(0.1),
+                              backgroundColor:
+                                  _getGoalColor(_goal!.type).withOpacity(0.1),
                               child: Icon(
                                 _getGoalIcon(_goal!.type),
                                 color: _getGoalColor(_goal!.type),
@@ -272,8 +275,8 @@ class _EditGoalScreenState extends State<EditGoalScreen> {
                                     ),
                                   ),
                                   Text(
-                                    _goal!.type == 'ExerciseTarget' 
-                                        ? 'Strength Goal' 
+                                    _goal!.type == 'ExerciseTarget'
+                                        ? 'Strength Goal'
                                         : 'Workout Frequency Goal',
                                     style: TextStyle(
                                       fontSize: 14,
@@ -286,7 +289,7 @@ class _EditGoalScreenState extends State<EditGoalScreen> {
                           ],
                         ),
                         const SizedBox(height: 32),
-                        
+
                         // Goal details - different based on goal type
                         if (_goal!.type == 'ExerciseTarget') ...[
                           // Exercise information (non-editable)
@@ -315,7 +318,8 @@ class _EditGoalScreenState extends State<EditGoalScreen> {
                                 const SizedBox(width: 16),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         _exerciseName ?? 'Unknown Exercise',
@@ -339,7 +343,7 @@ class _EditGoalScreenState extends State<EditGoalScreen> {
                             ),
                           ),
                           const SizedBox(height: 24),
-                          
+
                           // Current progress (non-editable)
                           Text(
                             'Current Weight',
@@ -370,7 +374,6 @@ class _EditGoalScreenState extends State<EditGoalScreen> {
                               ],
                             ),
                           ),
-                          
                         ] else if (_goal!.type == 'WorkoutFrequency') ...[
                           // Frequency goal current progress
                           Text(
@@ -403,13 +406,13 @@ class _EditGoalScreenState extends State<EditGoalScreen> {
                             ),
                           ),
                         ],
-                        
+
                         const SizedBox(height: 24),
-                        
+
                         // Target value (editable)
                         Text(
-                          _goal!.type == 'ExerciseTarget' 
-                              ? 'Target Weight (kg)' 
+                          _goal!.type == 'ExerciseTarget'
+                              ? 'Target Weight (kg)'
                               : 'Target Workouts',
                           style: TextStyle(
                             fontSize: 16,
@@ -425,10 +428,11 @@ class _EditGoalScreenState extends State<EditGoalScreen> {
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            hintText: _goal!.type == 'ExerciseTarget' 
-                                ? 'Enter target weight in kg' 
+                            hintText: _goal!.type == 'ExerciseTarget'
+                                ? 'Enter target weight in kg'
                                 : 'Enter target number of workouts',
-                            suffixText: _goal!.type == 'ExerciseTarget' ? 'kg' : '',
+                            suffixText:
+                                _goal!.type == 'ExerciseTarget' ? 'kg' : '',
                           ),
                           onChanged: (value) {
                             setState(() {
@@ -437,7 +441,7 @@ class _EditGoalScreenState extends State<EditGoalScreen> {
                           },
                         ),
                         const SizedBox(height: 24),
-                        
+
                         // End date (editable)
                         Text(
                           'Goal End Date',
@@ -451,7 +455,8 @@ class _EditGoalScreenState extends State<EditGoalScreen> {
                         InkWell(
                           onTap: _selectEndDate,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 16),
                             decoration: BoxDecoration(
                               border: Border.all(color: Colors.grey.shade400),
                               borderRadius: BorderRadius.circular(8),
@@ -474,9 +479,9 @@ class _EditGoalScreenState extends State<EditGoalScreen> {
                             ),
                           ),
                         ),
-                        
+
                         const SizedBox(height: 32),
-                        
+
                         // Information card about editing
                         Container(
                           padding: const EdgeInsets.all(16),
@@ -523,7 +528,7 @@ class _EditGoalScreenState extends State<EditGoalScreen> {
       ),
     );
   }
-  
+
   // Helper methods
   Color _getGoalColor(String goalType) {
     switch (goalType) {
@@ -535,7 +540,7 @@ class _EditGoalScreenState extends State<EditGoalScreen> {
         return Colors.blue;
     }
   }
-  
+
   IconData _getGoalIcon(String goalType) {
     switch (goalType) {
       case 'ExerciseTarget':

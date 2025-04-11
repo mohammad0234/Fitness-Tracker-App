@@ -29,7 +29,7 @@ class _HomePageState extends State<HomePage> {
   bool _isLoadingStreak = true;
   int _currentStreak = 0;
   bool _isLoggingRestDay = false;
-  
+
   // Variables for the recent workout
   bool _isLoadingRecentWorkout = true;
   Map<String, dynamic>? _recentWorkoutData;
@@ -52,7 +52,8 @@ class _HomePageState extends State<HomePage> {
       _isLoading = true;
     });
 
-    final firebase_auth.User? user = firebase_auth.FirebaseAuth.instance.currentUser;
+    final firebase_auth.User? user =
+        firebase_auth.FirebaseAuth.instance.currentUser;
     if (user != null) {
       final uid = user.uid;
 
@@ -143,26 +144,27 @@ class _HomePageState extends State<HomePage> {
     try {
       // Get all workouts for the user
       final workouts = await WorkoutService.instance.getUserWorkouts();
-      
+
       if (workouts.isNotEmpty) {
         // The most recent workout will be first since they're ordered by date DESC
         final mostRecentWorkout = workouts.first;
-        
+
         // Get detailed information about this workout
-        final details = await WorkoutService.instance.getWorkoutDetails(mostRecentWorkout.workoutId!);
-        
+        final details = await WorkoutService.instance
+            .getWorkoutDetails(mostRecentWorkout.workoutId!);
+
         // Extract exercise count and muscle groups
         final exerciseCount = (details['exercises'] as List).length;
         final muscleGroups = (details['exercises'] as List)
             .map((e) => e['muscle_group'] as String)
             .toSet()
             .toList();
-        
+
         // Calculate how long ago this workout was
         final now = DateTime.now();
         final difference = now.difference(mostRecentWorkout.date);
         String timeAgo;
-        
+
         if (difference.inDays > 0) {
           timeAgo = '${difference.inDays}d ago';
         } else if (difference.inHours > 0) {
@@ -170,7 +172,7 @@ class _HomePageState extends State<HomePage> {
         } else {
           timeAgo = '${difference.inMinutes}m ago';
         }
-        
+
         // Create a formatted object with the workout data
         setState(() {
           _recentWorkoutData = {
@@ -207,17 +209,17 @@ class _HomePageState extends State<HomePage> {
     try {
       // Get active goals
       final activeGoals = await GoalService.instance.getActiveGoals();
-      
+
       if (activeGoals.isNotEmpty) {
         // Sort goals by closest deadline
         activeGoals.sort((a, b) => a.endDate.compareTo(b.endDate));
-        
+
         // Get the most important goal (closest to deadline)
         final goal = activeGoals.first;
-        
+
         // Get formatted goal info for display
         final goalInfo = await GoalService.instance.getGoalDisplayInfo(goal);
-        
+
         setState(() {
           _activeGoalData = goalInfo;
           _isLoadingGoal = false;
@@ -240,24 +242,24 @@ class _HomePageState extends State<HomePage> {
   Future<void> _logRestDay() async {
     try {
       final confirm = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Log Rest Day'),
-          content: const Text(
-            'Logging a rest day will maintain your current streak. Are you sure you want to log today as a rest day?'
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('CANCEL'),
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Log Rest Day'),
+              content: const Text(
+                  'Logging a rest day will maintain your current streak. Are you sure you want to log today as a rest day?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('CANCEL'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('LOG REST DAY'),
+                ),
+              ],
             ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('LOG REST DAY'),
-            ),
-          ],
-        ),
-      ) ?? false;
+          ) ??
+          false;
 
       if (!confirm) return;
 
@@ -312,7 +314,8 @@ class _HomePageState extends State<HomePage> {
                 ),
                 Text(
                   '${_currentUser!.firstName} ${_currentUser!.lastName}',
-                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                      fontSize: 24, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 20),
                 Container(
@@ -352,18 +355,23 @@ class _HomePageState extends State<HomePage> {
                               children: [
                                 Text(
                                   'Current Streak',
-                                  style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                                  style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey.shade600),
                                 ),
                                 if (_isLoadingStreak)
                                   const SizedBox(
                                     height: 20,
                                     width: 20,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2),
                                   )
                                 else
                                   Text(
                                     '$_currentStreak Days',
-                                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                    style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold),
                                   ),
                               ],
                             ),
@@ -375,7 +383,9 @@ class _HomePageState extends State<HomePage> {
                         onPressed: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => const CalendarStreakScreen()),
+                            MaterialPageRoute(
+                                builder: (context) =>
+                                    const CalendarStreakScreen()),
                           ).then((_) => _fetchStreakData());
                         },
                         tooltip: 'View Calendar',
@@ -391,15 +401,15 @@ class _HomePageState extends State<HomePage> {
                 ),
                 const SizedBox(height: 8),
                 _isLoadingRecentWorkout
-                  ? const Center(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(vertical: 24.0),
-                        child: CircularProgressIndicator(),
-                      ),
-                    )
-                  : _recentWorkoutData == null
-                    ? _buildNoWorkoutsCard()
-                    : _buildRecentWorkoutCard(),
+                    ? const Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 24.0),
+                          child: CircularProgressIndicator(),
+                        ),
+                      )
+                    : _recentWorkoutData == null
+                        ? _buildNoWorkoutsCard()
+                        : _buildRecentWorkoutCard(),
                 const SizedBox(height: 24),
                 // Active Goal section
                 const Text(
@@ -408,15 +418,15 @@ class _HomePageState extends State<HomePage> {
                 ),
                 const SizedBox(height: 8),
                 _isLoadingGoal
-                  ? const Center(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(vertical: 24.0),
-                        child: CircularProgressIndicator(),
-                      ),
-                    )
-                  : _activeGoalData == null
-                    ? _buildNoGoalsCard()
-                    : _buildActiveGoalCard(),
+                    ? const Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 24.0),
+                          child: CircularProgressIndicator(),
+                        ),
+                      )
+                    : _activeGoalData == null
+                        ? _buildNoGoalsCard()
+                        : _buildActiveGoalCard(),
                 const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
@@ -424,7 +434,8 @@ class _HomePageState extends State<HomePage> {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const LogWorkoutFlow()),
+                        MaterialPageRoute(
+                            builder: (context) => const LogWorkoutFlow()),
                       ).then((_) {
                         _fetchStreakData();
                         _fetchRecentWorkout();
@@ -510,9 +521,16 @@ class _HomePageState extends State<HomePage> {
     String primaryType = 'Workout';
     if (muscleGroups.isNotEmpty) {
       // Check for common groupings
-      if (muscleGroups.any((group) => ['Chest', 'Back', 'Shoulders', 'Biceps', 'Triceps'].contains(group))) {
+      if (muscleGroups.any((group) => [
+            'Chest',
+            'Back',
+            'Shoulders',
+            'Biceps',
+            'Triceps'
+          ].contains(group))) {
         primaryType = 'Upper Body';
-      } else if (muscleGroups.any((group) => ['Legs', 'Calves', 'Glutes'].contains(group))) {
+      } else if (muscleGroups
+          .any((group) => ['Legs', 'Calves', 'Glutes'].contains(group))) {
         primaryType = 'Lower Body';
       } else {
         primaryType = muscleGroups.first;
@@ -540,31 +558,23 @@ class _HomePageState extends State<HomePage> {
           border: Border.all(color: Colors.grey.shade200),
         ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   workout.notes ?? primaryType,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold),
                 ),
-                Text(timeAgo, style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
+                Text(timeAgo,
+                    style:
+                        TextStyle(fontSize: 14, color: Colors.grey.shade600)),
               ],
             ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.timer_outlined, size: 16, color: Colors.grey),
-                const SizedBox(width: 4),
-                Text('${workout.duration ?? 0} minutes', 
-                    style: TextStyle(fontSize: 14, color: Colors.grey.shade700)),
-                const SizedBox(width: 16),
-                const Icon(Icons.fitness_center, size: 16, color: Colors.grey),
-                const SizedBox(width: 4),
-                Text('$exerciseCount exercises', 
-                    style: TextStyle(fontSize: 14, color: Colors.grey.shade700)),
-              ],
-            ),
+            Text('$exerciseCount exercises',
+                style: TextStyle(fontSize: 14, color: Colors.grey.shade700)),
             if (muscleGroups.isNotEmpty) ...[
               const SizedBox(height: 8),
               SizedBox(
@@ -644,12 +654,12 @@ class _HomePageState extends State<HomePage> {
     final goalId = _activeGoalData!['goalId'] as int?;
     final daysLeft = _activeGoalData!['daysLeft'] as int;
     final progress = _activeGoalData!['progress'] as double;
-    
+
     // For strength goals
     final current = _activeGoalData!['current'] as double?;
     final target = _activeGoalData!['target'] as double?;
     final exerciseName = _activeGoalData!['exerciseName'] as String?;
-    
+
     return GestureDetector(
       onTap: goalId != null
           ? () {

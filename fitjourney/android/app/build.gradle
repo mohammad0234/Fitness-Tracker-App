@@ -9,7 +9,7 @@ plugins {
 
 android {
     namespace = "com.example.fitjourney"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = flutter.compileSdkVersion 
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
