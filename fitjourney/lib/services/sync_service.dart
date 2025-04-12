@@ -223,8 +223,9 @@ class SyncService {
 
   // Manual sync trigger (can be called from UI)
   Future<bool> triggerManualSync() async {
-    // First ensure streak is included in sync
+    // Ensure streak and daily logs are included in sync
     await forceAddStreakToSyncQueue();
+    await forceAddDailyLogsToSyncQueue();
     return await syncAll();
   }
 
@@ -242,6 +243,34 @@ class SyncService {
       }
     } catch (e) {
       print('Error adding streak to sync queue: $e');
+    }
+  }
+
+  // Force add all daily logs to sync queue
+  Future<void> forceAddDailyLogsToSyncQueue() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
+      final db = await _dbHelper.database;
+
+      // Get all daily logs for user
+      final logs = await db.query(
+        'daily_log',
+        where: 'user_id = ?',
+        whereArgs: [user.uid],
+      );
+
+      print('Found ${logs.length} daily logs to add to sync queue');
+
+      for (final log in logs) {
+        final logId = log['daily_log_id'] as int;
+        await queueForSync('daily_log', logId.toString(), 'INSERT');
+      }
+
+      print('Added ${logs.length} daily logs to sync queue');
+    } catch (e) {
+      print('Error adding daily logs to sync queue: $e');
     }
   }
 
@@ -369,6 +398,39 @@ class SyncService {
                   break;
                 case 'user_metrics':
                   // Add implementation for user metrics
+                  break;
+                case 'daily_log':
+                  try {
+                    final db = await _dbHelper.database;
+                    final results = await db.query(
+                      'daily_log',
+                      where: 'daily_log_id = ?',
+                      whereArgs: [int.parse(recordId)],
+                    );
+
+                    if (results.isNotEmpty) {
+                      final log = results.first;
+
+                      // Create data to sync
+                      dataToSync = {
+                        'user_id': log['user_id'],
+                        'date': log['date'],
+                        'activity_type': log['activity_type'],
+                        'last_updated': FieldValue.serverTimestamp(),
+                      };
+
+                      // Add notes if it exists
+                      if (log.containsKey('notes') && log['notes'] != null) {
+                        dataToSync['notes'] = log['notes'];
+                      }
+                    } else {
+                      recordExists = false;
+                      print('Daily log not found: $recordId');
+                    }
+                  } catch (e) {
+                    print('Error getting daily log data: $e');
+                    recordExists = false;
+                  }
                   break;
               }
 

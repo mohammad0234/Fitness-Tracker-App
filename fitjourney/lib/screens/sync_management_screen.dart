@@ -304,21 +304,9 @@ class _SyncManagementScreenState extends State<SyncManagementScreen> {
           .queueForSync('user_metrics', metricId.toString(), 'INSERT');
     }
 
-    // Mark all daily logs for sync
-    final logs = await db.query(
-      'daily_log',
-      where: 'user_id = ?',
-      whereArgs: [userId],
-    );
-
-    for (final log in logs) {
-      final logId = log['daily_log_id'] as int;
-      await SyncService.instance
-          .queueForSync('daily_log', logId.toString(), 'INSERT');
-    }
-
-    // Mark streak for sync - explicitly add streak to ensure it's synced
+    // Force add streak and daily logs to sync queue
     await SyncService.instance.forceAddStreakToSyncQueue();
+    await SyncService.instance.forceAddDailyLogsToSyncQueue();
   }
 
   @override
