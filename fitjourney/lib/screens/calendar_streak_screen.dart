@@ -1,4 +1,5 @@
 // lib/screens/calendar_streak_screen.dart
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
@@ -8,8 +9,8 @@ import 'package:fitjourney/database_models/daily_log.dart';
 import 'package:fitjourney/database_models/streak.dart';
 import 'package:fitjourney/database_models/workout.dart';
 import 'package:fitjourney/screens/workout_detail_screen.dart';
+import 'package:fitjourney/services/sync_service.dart';
 //import 'package:fitjourney/utils/date_utils.dart';
-
 
 class CalendarStreakScreen extends StatefulWidget {
   const CalendarStreakScreen({Key? key}) : super(key: key);
@@ -21,7 +22,7 @@ class CalendarStreakScreen extends StatefulWidget {
 class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
   final StreakService _streakService = StreakService.instance;
   final WorkoutService _workoutService = WorkoutService.instance;
-  
+
   CalendarFormat _calendarFormat = CalendarFormat.month;
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
@@ -29,55 +30,95 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
   List<DailyLog> _dailyLogs = [];
   Streak? _streak;
   bool _isLoading = true;
-  
+
   // For selected day workouts
   List<Workout> _selectedDayWorkouts = [];
   bool _isLoadingWorkouts = false;
-  
+
+  // Stream subscription for sync events
+  StreamSubscription? _syncSubscription;
+
   @override
   void initState() {
     super.initState();
     _loadData();
+
+    // Add listener for sync events to refresh calendar
+    _syncSubscription = SyncService.instance.syncStatusStream.listen((status) {
+      if (status.lastSuccess != null && !status.isInProgress && mounted) {
+        // Reload data after successful sync
+        _loadData();
+      }
+    });
   }
-  
+
+  @override
+  void dispose() {
+    // Cancel the sync subscription to prevent memory leaks
+    _syncSubscription?.cancel();
+    super.dispose();
+  }
+
   Future<void> _loadData() async {
+    await _loadStreak();
+    await _loadActivities();
+  }
+
+  Future<void> _loadStreak() async {
+    try {
+      final streak = await _streakService.getUserStreak();
+
+      if (mounted) {
+        setState(() {
+          _streak = streak;
+        });
+      }
+    } catch (e) {
+      print('Error loading streak data: $e');
+    }
+  }
+
+  Future<void> _loadActivities() async {
+    if (!mounted) return;
+
     setState(() {
       _isLoading = true;
     });
-    
+
     try {
       // Calculate date range for past 6 months
       final today = DateTime.now();
       final sixMonthsAgo = DateTime(today.year, today.month - 6, today.day);
-      
-      // Load daily logs and streak data
+
+      // Load daily logs
       final logs = await _streakService.getDailyLogHistory(sixMonthsAgo, today);
-      final streak = await _streakService.getUserStreak();
-      
+
       // Process logs into a format suitable for the calendar
       final events = <DateTime, List<DailyLog>>{};
-      
+
       for (var log in logs) {
         // Normalize the date to remove time component
         final date = DateTime(log.date.year, log.date.month, log.date.day);
-        
+
         if (events[date] == null) {
           events[date] = [];
         }
         events[date]!.add(log);
       }
-      
+
       if (mounted) {
         setState(() {
           _dailyLogs = logs;
           _events = events;
-          _streak = streak;
           _isLoading = false;
-          _selectedDay = today; // Default select today
+
+          // If no day is selected yet, select today
+          if (_selectedDay == null) {
+            _selectedDay = today;
+            // Load workouts for today initially
+            _loadWorkoutsForSelectedDay(today);
+          }
         });
-        
-        // Load workouts for today initially
-        _loadWorkoutsForSelectedDay(today);
       }
     } catch (e) {
       print('Error loading calendar data: $e');
@@ -88,105 +129,112 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
       }
     }
   }
-  
+
   // Load workouts for a selected day
   Future<void> _loadWorkoutsForSelectedDay(DateTime date) async {
     if (date == null) return;
-    
+    if (!mounted) return;
+
     setState(() {
       _isLoadingWorkouts = true;
     });
-    
+
     try {
       // Get workouts for this specific date
       final workouts = await _getWorkoutsForDate(date);
-      
-      setState(() {
-        _selectedDayWorkouts = workouts;
-        _isLoadingWorkouts = false;
-      });
+
+      if (mounted) {
+        setState(() {
+          _selectedDayWorkouts = workouts;
+          _isLoadingWorkouts = false;
+        });
+      }
     } catch (e) {
       print('Error loading workouts for date: $e');
-      setState(() {
-        _selectedDayWorkouts = [];
-        _isLoadingWorkouts = false;
-      });
+      if (mounted) {
+        setState(() {
+          _selectedDayWorkouts = [];
+          _isLoadingWorkouts = false;
+        });
+      }
     }
   }
-  
+
   // Helper method to get workouts for a specific date
   Future<List<Workout>> _getWorkoutsForDate(DateTime date) async {
     // When you need the DateTime object
     final normalizedDate = DateTime(date.year, date.month, date.day);
-    
+
     // Check if the selected day has a workout activity
     final activities = _events[normalizedDate] ?? [];
-    bool hasWorkout = activities.any((activity) => activity.activityType == 'workout');
-    
+    bool hasWorkout =
+        activities.any((activity) => activity.activityType == 'workout');
+
     if (!hasWorkout) {
       return []; // No workouts on this day
     }
-    
+
     // Use WorkoutService to get workouts for this date
     return await _workoutService.getWorkoutsForDate(date);
   }
-  
+
   // Determine the event color based on activity type
   Color _getEventColor(List<DailyLog>? logs) {
     if (logs == null || logs.isEmpty) {
       return Colors.grey.shade200; // No activity
     }
-    
+
     // Prioritize workout over rest if both exist on the same day
     for (var log in logs) {
       if (log.activityType == 'workout') {
         return Colors.blue; // Workout day
       }
     }
-    
+
     return Colors.green.shade300; // Rest day
   }
-  
+
   // Check if a date is part of a milestone streak
   bool _isStreakMilestone(DateTime day) {
     // Create a normalized date for comparison
     final normalizedDate = DateTime(day.year, day.month, day.day);
-    
+
     // Find this date in the daily logs
     for (var log in _dailyLogs) {
       final logDate = DateTime(log.date.year, log.date.month, log.date.day);
-      
+
       // Check if dates match
       if (logDate == normalizedDate) {
         // Get all consecutive days from this date backward
         int consecutiveDays = 0;
         DateTime checkDate = normalizedDate;
-        
+
         while (true) {
           // Check if this date has an activity
           bool hasActivity = false;
           for (var checkLog in _dailyLogs) {
-            final checkLogDate = DateTime(checkLog.date.year, checkLog.date.month, checkLog.date.day);
+            final checkLogDate = DateTime(
+                checkLog.date.year, checkLog.date.month, checkLog.date.day);
             if (checkLogDate == checkDate) {
               hasActivity = true;
               break;
             }
           }
-          
+
           if (!hasActivity) break;
-          
+
           consecutiveDays++;
           checkDate = checkDate.subtract(const Duration(days: 1));
         }
-        
+
         // Check if this is a 7-day or 30-day milestone
         return consecutiveDays == 7 || consecutiveDays == 30;
       }
     }
-    
+
     return false;
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -207,20 +255,17 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
               child: SingleChildScrollView(
                 // Make the whole screen scrollable
                 child: Padding(
-                  padding: const EdgeInsets.only(bottom: 20), // Add extra bottom padding
+                  padding: const EdgeInsets.only(
+                      bottom: 20), // Add extra bottom padding
                   child: Column(
                     children: [
                       // Calendar header with streak info
                       _buildStreakHeader(),
-                      
+
                       // Month navigation
                       Padding(
                         padding: const EdgeInsets.only(
-                          left: 16, 
-                          right: 16, 
-                          top: 8,
-                          bottom: 0
-                        ),
+                            left: 16, right: 16, top: 8, bottom: 0),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -230,7 +275,8 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
                               constraints: const BoxConstraints(),
                               onPressed: () {
                                 setState(() {
-                                  _focusedDay = DateTime(_focusedDay.year, _focusedDay.month - 1, 1);
+                                  _focusedDay = DateTime(_focusedDay.year,
+                                      _focusedDay.month - 1, 1);
                                 });
                               },
                             ),
@@ -248,10 +294,12 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
                               onPressed: () {
                                 final now = DateTime.now();
                                 // Don't allow navigating to future months
-                                if (_focusedDay.year < now.year || 
-                                    (_focusedDay.year == now.year && _focusedDay.month < now.month)) {
+                                if (_focusedDay.year < now.year ||
+                                    (_focusedDay.year == now.year &&
+                                        _focusedDay.month < now.month)) {
                                   setState(() {
-                                    _focusedDay = DateTime(_focusedDay.year, _focusedDay.month + 1, 1);
+                                    _focusedDay = DateTime(_focusedDay.year,
+                                        _focusedDay.month + 1, 1);
                                   });
                                 }
                               },
@@ -259,7 +307,7 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
                           ],
                         ),
                       ),
-                      
+
                       // Format selector - with reduced vertical padding
                       Padding(
                         padding: const EdgeInsets.only(top: 4, bottom: 4),
@@ -286,7 +334,7 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
                           },
                         ),
                       ),
-                      
+
                       // Calendar view - reduce vertical padding to save space
                       TableCalendar(
                         firstDay: DateTime.utc(2023, 1, 1),
@@ -301,7 +349,7 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
                             _selectedDay = selectedDay;
                             _focusedDay = focusedDay;
                           });
-                          
+
                           // Load workouts for the selected day
                           _loadWorkoutsForSelectedDay(selectedDay);
                         },
@@ -312,7 +360,8 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
                         },
                         eventLoader: (day) {
                           // Normalize the date to remove time
-                          final normalized = DateTime(day.year, day.month, day.day);
+                          final normalized =
+                              DateTime(day.year, day.month, day.day);
                           return _events[normalized] ?? [];
                         },
                         headerVisible: false, // Hide default header
@@ -334,15 +383,16 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
                             shape: BoxShape.circle,
                           ),
                           // Reduce padding to save space
-                          cellPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                          cellPadding: const EdgeInsets.symmetric(
+                              horizontal: 4, vertical: 4),
                           cellMargin: EdgeInsets.zero,
                         ),
                         calendarBuilders: CalendarBuilders(
                           markerBuilder: (context, date, events) {
                             if (events.isEmpty) return null;
-                            
+
                             final isMilestone = _isStreakMilestone(date);
-                            
+
                             // Return a stack with the date number on top of the activity circle
                             return Stack(
                               alignment: Alignment.center,
@@ -352,10 +402,12 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
                                   width: 36,
                                   height: 36,
                                   decoration: BoxDecoration(
-                                    color: _getEventColor(events as List<DailyLog>?),
+                                    color: _getEventColor(
+                                        events as List<DailyLog>?),
                                     shape: BoxShape.circle,
                                     border: isMilestone
-                                        ? Border.all(color: Colors.orange, width: 2)
+                                        ? Border.all(
+                                            color: Colors.orange, width: 2)
                                         : null,
                                   ),
                                 ),
@@ -385,7 +437,9 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
                           // Override the default day cell builder to hide the default day number
                           defaultBuilder: (context, day, focusedDay) {
                             // Only show the default text for days without activity
-                            final events = _events[DateTime(day.year, day.month, day.day)] ?? [];
+                            final events = _events[
+                                    DateTime(day.year, day.month, day.day)] ??
+                                [];
                             if (events.isEmpty) {
                               return Container(
                                 alignment: Alignment.center,
@@ -401,7 +455,7 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
                           },
                         ),
                       ),
-                      
+
                       // Legend with reduced vertical padding
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 4.0),
@@ -412,28 +466,25 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
                             const SizedBox(width: 16),
                             _buildLegendItem('Rest Day', Colors.green.shade300),
                             const SizedBox(width: 16),
-                            _buildLegendItem('No Activity', Colors.grey.shade200),
+                            _buildLegendItem(
+                                'No Activity', Colors.grey.shade200),
                           ],
                         ),
                       ),
-                      
+
                       // Selected day details
-                      if (_selectedDay != null) 
+                      if (_selectedDay != null)
                         Padding(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 16.0, 
-                            vertical: 8.0
-                          ),
+                              horizontal: 16.0, vertical: 8.0),
                           child: _buildSelectedDayInfo(),
                         ),
-                      
+
                       // Workout list for selected day (NEW)
                       if (_selectedDayWorkouts.isNotEmpty)
                         Padding(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 16.0,
-                            vertical: 8.0
-                          ),
+                              horizontal: 16.0, vertical: 8.0),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -449,7 +500,7 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
                             ],
                           ),
                         ),
-                      
+
                       // Loading indicator for workouts
                       if (_isLoadingWorkouts)
                         const Padding(
@@ -463,7 +514,7 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
             ),
     );
   }
-  
+
   // NEW: Build workout cards
   List<Widget> _buildWorkoutsList() {
     if (_selectedDayWorkouts.isEmpty) {
@@ -480,7 +531,7 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
         )
       ];
     }
-    
+
     return _selectedDayWorkouts.map((workout) {
       return Card(
         margin: const EdgeInsets.only(bottom: 12),
@@ -494,7 +545,8 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => WorkoutDetailScreen(workoutId: workout.workoutId!),
+                builder: (context) =>
+                    WorkoutDetailScreen(workoutId: workout.workoutId!),
               ),
             );
           },
@@ -509,7 +561,8 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
                   children: [
                     Expanded(
                       child: Text(
-                        workout.notes ?? 'Workout ${DateFormat('h:mm a').format(workout.date)}',
+                        workout.notes ??
+                            'Workout ${DateFormat('h:mm a').format(workout.date)}',
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -530,7 +583,8 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    const Icon(Icons.timer_outlined, size: 16, color: Colors.grey),
+                    const Icon(Icons.timer_outlined,
+                        size: 16, color: Colors.grey),
                     const SizedBox(width: 4),
                     Text(
                       '${workout.duration ?? 0} minutes',
@@ -552,12 +606,14 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => WorkoutDetailScreen(workoutId: workout.workoutId!),
+                            builder: (context) => WorkoutDetailScreen(
+                                workoutId: workout.workoutId!),
                           ),
                         );
                       },
                       style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 0),
                         minimumSize: const Size(0, 0),
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
@@ -571,7 +627,7 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
       );
     }).toList();
   }
-  
+
   Widget _buildStreakHeader() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -602,6 +658,18 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
             ],
           ),
           const SizedBox(height: 8),
+          // Add a Deep Refresh button
+          TextButton.icon(
+            icon: const Icon(Icons.sync, size: 16),
+            label: const Text('Force Calendar Refresh'),
+            onPressed: _deepRefreshData,
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              minimumSize: const Size(0, 0),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              foregroundColor: Colors.blue.shade700,
+            ),
+          ),
           const Text(
             'Days with a star indicate milestone streaks (7 and 30 days)',
             style: TextStyle(
@@ -614,8 +682,9 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
       ),
     );
   }
-  
-  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
+
+  Widget _buildStatCard(
+      String label, String value, IconData icon, Color color) {
     return Column(
       children: [
         Container(
@@ -648,7 +717,7 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
       ],
     );
   }
-  
+
   Widget _buildLegendItem(String label, Color color) {
     return Row(
       children: [
@@ -668,7 +737,7 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
       ],
     );
   }
-  
+
   Widget _buildSelectedDayInfo() {
     // Normalize the selected date to remove time
     final normalizedDate = DateTime(
@@ -676,10 +745,10 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
       _selectedDay!.month,
       _selectedDay!.day,
     );
-    
+
     // Get activities for this date
     final activities = _events[normalizedDate] ?? [];
-    
+
     // Determine activity type
     String activityType = 'No Activity';
     if (activities.isNotEmpty) {
@@ -692,7 +761,7 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
         }
       }
     }
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -740,20 +809,20 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
       ),
     );
   }
-  
+
   String _calculateMonthlyActivity() {
     // Calculate activity for the current month
     final now = DateTime.now();
     final firstDayOfMonth = DateTime(now.year, now.month, 1);
-    
+
     int activeCount = 0;
     final countedDates = <String>{};
-    
+
     for (var log in _dailyLogs) {
       if (log.date.isAfter(firstDayOfMonth.subtract(const Duration(days: 1)))) {
         // Format date as string for comparison
         final dateStr = DateFormat('yyyy-MM-dd').format(log.date);
-        
+
         // Count each date only once
         if (!countedDates.contains(dateStr)) {
           activeCount++;
@@ -761,12 +830,51 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
         }
       }
     }
-    
+
     // Calculate days in the month
     final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
     final elapsedDays = min(now.day, daysInMonth);
-    
+
     return '$activeCount/$elapsedDays';
+  }
+
+  // Method to force a deep refresh of calendar data
+  Future<void> _deepRefreshData() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Force a sync first to ensure we have the latest data
+      if (SyncService.instance != null) {
+        await SyncService.instance.triggerManualSync();
+      }
+
+      // Calculate date range for past 6 months
+      final today = DateTime.now();
+      final sixMonthsAgo = DateTime(today.year, today.month - 6, today.day);
+
+      // Regenerate daily logs from workouts
+      await _streakService.regenerateDailyLogs(sixMonthsAgo, today);
+
+      // Now reload data normally
+      await _loadData();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Calendar data refreshed')),
+      );
+    } catch (e) {
+      print('Error in deep refresh: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error refreshing: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 }
 

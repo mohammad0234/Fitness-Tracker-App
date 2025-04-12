@@ -7,12 +7,14 @@ class DailyLog {
   final String userId;
   final DateTime date;
   final String activityType; // 'workout' or 'rest'
+  final String? notes; // Optional notes about the daily activity
 
   DailyLog({
     this.dailyLogId,
     required this.userId,
     required this.date,
     required this.activityType,
+    this.notes,
   });
 
   factory DailyLog.fromMap(Map<String, dynamic> map) {
@@ -21,6 +23,7 @@ class DailyLog {
       userId: map['user_id'],
       date: DateTime.parse(map['date']),
       activityType: map['activity_type'],
+      notes: map['notes'],
     );
   }
 
@@ -30,6 +33,7 @@ class DailyLog {
       'user_id': userId,
       'date': normaliseDate(date),
       'activity_type': activityType,
+      'notes': notes,
     };
   }
 }

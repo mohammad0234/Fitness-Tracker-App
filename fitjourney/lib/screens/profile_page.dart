@@ -4,6 +4,8 @@ import 'package:fitjourney/database/database_helper.dart';
 import 'package:fitjourney/database_models/user.dart';
 import 'package:fitjourney/screens/signup_page.dart'; // For privacy and terms pages
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fitjourney/widgets/sync_status_widget.dart';
+import 'package:fitjourney/services/account_service.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -24,13 +26,14 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _fetchUserData() async {
-    final firebase_auth.User? user = firebase_auth.FirebaseAuth.instance.currentUser;
+    final firebase_auth.User? user =
+        firebase_auth.FirebaseAuth.instance.currentUser;
     if (user != null) {
       final uid = user.uid;
-      
+
       // Try SQLite first
       final dbUser = await DatabaseHelper.instance.getUserById(uid);
-      
+
       if (dbUser == null) {
         // If not in SQLite, try Firestore
         try {
@@ -40,7 +43,7 @@ class _ProfilePageState extends State<ProfilePage> {
               .collection('profile')
               .doc(uid)
               .get();
-              
+
           if (docSnapshot.exists) {
             final userData = docSnapshot.data();
             if (userData != null) {
@@ -49,21 +52,21 @@ class _ProfilePageState extends State<ProfilePage> {
                 firstName: userData['first_name'] ?? userData['firstName'],
                 lastName: userData['last_name'] ?? userData['lastName'],
                 heightCm: userData['height_cm'] ?? userData['heightCm'],
-                registrationDate: userData['registration_date'] != null 
-                    ? DateTime.parse(userData['registration_date']) 
-                    : (userData['registrationDate'] != null 
-                        ? DateTime.parse(userData['registrationDate']) 
+                registrationDate: userData['registration_date'] != null
+                    ? DateTime.parse(userData['registration_date'])
+                    : (userData['registrationDate'] != null
+                        ? DateTime.parse(userData['registrationDate'])
                         : null),
-                lastLogin: userData['last_login'] != null 
-                    ? DateTime.parse(userData['last_login']) 
-                    : (userData['lastLogin'] != null 
-                        ? DateTime.parse(userData['lastLogin']) 
+                lastLogin: userData['last_login'] != null
+                    ? DateTime.parse(userData['last_login'])
+                    : (userData['lastLogin'] != null
+                        ? DateTime.parse(userData['lastLogin'])
                         : null),
               );
-              
+
               // Save to SQLite for future use
               await DatabaseHelper.instance.insertUser(appUser);
-              
+
               setState(() {
                 _currentUser = appUser;
                 _isLoading = false;
@@ -74,7 +77,7 @@ class _ProfilePageState extends State<ProfilePage> {
         } catch (e) {
           print('Error fetching from Firestore: $e');
         }
-        
+
         setState(() {
           _isLoading = false;
         });
@@ -93,18 +96,14 @@ class _ProfilePageState extends State<ProfilePage> {
 
   // Navigate to the Privacy Policy page
   void _navigateToPrivacyPolicy() async {
-    await Navigator.push(
-      context, 
-      MaterialPageRoute(builder: (context) => const PrivacyPolicyPage())
-    );
+    await Navigator.push(context,
+        MaterialPageRoute(builder: (context) => const PrivacyPolicyPage()));
   }
 
   // Navigate to the Terms of Use page
   void _navigateToTermsOfUse() async {
-    await Navigator.push(
-      context, 
-      MaterialPageRoute(builder: (context) => const TermsOfUsePage())
-    );
+    await Navigator.push(context,
+        MaterialPageRoute(builder: (context) => const TermsOfUsePage()));
   }
 
   Future<void> _signOut() async {
@@ -119,80 +118,155 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _deleteAccount() async {
-    // Confirm deletion
-    final bool confirmDelete = await showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Delete Account'),
-          content: const Text(
-            'Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently deleted.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('CANCEL'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text(
-                'DELETE',
-                style: TextStyle(color: Colors.red),
+    // Prompt for password re-authentication
+    final bool proceedWithReauth = await showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Confirm Your Identity'),
+              content: const Text(
+                'For security reasons, please re-enter your password before deleting your account.',
               ),
-            ),
-          ],
-        );
-      },
-    ) ?? false;
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('CANCEL'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('CONTINUE'),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
 
-    if (!confirmDelete) return;
+    if (!proceedWithReauth) return;
 
-    setState(() {
-      _isDeleting = true;
-    });
+    // If proceeding, get current user and show password input
+    final firebase_auth.User? user =
+        firebase_auth.FirebaseAuth.instance.currentUser;
+    if (user == null || user.email == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No logged in user found')),
+      );
+      return;
+    }
 
+    final TextEditingController passwordController = TextEditingController();
+    final bool passwordEntered = await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Re-enter Password'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Please enter your password for ${user.email}'),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: passwordController,
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Password',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('CANCEL'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('VERIFY'),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
+
+    if (!passwordEntered || passwordController.text.isEmpty) return;
+
+    // Re-authenticate user
     try {
-      final firebase_auth.User? user = firebase_auth.FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        //final String uid = user.uid;
-        
-        // TODO: Also delete data from Firestore
-        
-        // Delete user data from SQLite (this would need to be expanded to delete all related data)
-        // This is a placeholder for actual implementation
-        // Need to implement cascade deletion for all user-related data
-        
-        // Delete the user from Firebase Authentication
-        await user.delete();
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Account deleted successfully')),
-        );
-        
-        Navigator.pushReplacementNamed(context, '/login');
-      }
+      // Create credential
+      final firebase_auth.AuthCredential credential =
+          firebase_auth.EmailAuthProvider.credential(
+        email: user.email!,
+        password: passwordController.text,
+      );
+
+      // Re-authenticate
+      await user.reauthenticateWithCredential(credential);
+
+      // Now prompt for final confirmation
+      final bool confirmDelete = await showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text('Delete Account Permanently'),
+                content: const Text(
+                  'WARNING: This action cannot be undone. All your data will be permanently deleted from both your device and our servers.\n\nAre you absolutely sure you want to delete your account?',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: const Text('CANCEL'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    child: const Text(
+                      'DELETE PERMANENTLY',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ) ??
+          false;
+
+      if (!confirmDelete) return;
+
+      setState(() {
+        _isDeleting = true;
+      });
+
+      // Use the account service to handle deletion
+      final result = await AccountService.instance.deleteAccount();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result)),
+      );
+
+      // Navigate to login screen
+      Navigator.pushReplacementNamed(context, '/login');
     } on firebase_auth.FirebaseAuthException catch (e) {
       setState(() {
         _isDeleting = false;
       });
-      
-      if (e.code == 'requires-recent-login') {
+
+      if (e.code == 'wrong-password') {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Please log in again before deleting your account for security reasons.'),
-          ),
+              content: Text('Incorrect password. Please try again.')),
         );
-        await _signOut();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error deleting account: ${e.message}')),
+          SnackBar(content: Text('Authentication error: ${e.message}')),
         );
       }
     } catch (e) {
       setState(() {
         _isDeleting = false;
       });
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error deleting account: $e')),
       );
@@ -212,15 +286,23 @@ class _ProfilePageState extends State<ProfilePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Profile',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
+              // Header section
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Profile',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  // Add sync status indicator
+                  const SyncStatusWidget(),
+                ],
               ),
               const SizedBox(height: 24),
-              
+
               if (_currentUser != null) ...[
                 // Profile header with avatar and name
                 Center(
@@ -247,7 +329,9 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                       ),
                       Text(
-                        firebase_auth.FirebaseAuth.instance.currentUser?.email ?? '',
+                        firebase_auth
+                                .FirebaseAuth.instance.currentUser?.email ??
+                            '',
                         style: TextStyle(
                           fontSize: 16,
                           color: Colors.grey.shade600,
@@ -256,9 +340,28 @@ class _ProfilePageState extends State<ProfilePage> {
                     ],
                   ),
                 ),
-                
+
                 const SizedBox(height: 32),
-                
+
+                // Add sync status section before settings
+                const SizedBox(height: 16),
+                const Text(
+                  'Data Synchronization',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const SyncStatusWidget(showDetailedStatus: true),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.settings),
+                  label: const Text('Manage Data Sync'),
+                  onPressed: () =>
+                      Navigator.pushNamed(context, '/sync-management'),
+                ),
+
                 // Settings section
                 const Text(
                   'Settings',
@@ -268,7 +371,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                
+
                 // Privacy & Legal section
                 Container(
                   decoration: BoxDecoration(
@@ -285,7 +388,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         onTap: _navigateToPrivacyPolicy,
                       ),
                       Divider(height: 1, color: Colors.grey.shade200),
-                      
+
                       // Terms of Use
                       ListTile(
                         title: const Text('Terms of Use'),
@@ -295,9 +398,9 @@ class _ProfilePageState extends State<ProfilePage> {
                     ],
                   ),
                 ),
-                
+
                 const SizedBox(height: 32),
-                
+
                 // Account section
                 const Text(
                   'Account',
@@ -307,7 +410,6 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                
                 // Sign Out button
                 Container(
                   width: double.infinity,
@@ -324,20 +426,22 @@ class _ProfilePageState extends State<ProfilePage> {
                         onTap: _signOut,
                       ),
                       Divider(height: 1, color: Colors.grey.shade200),
-                      
+
                       // Delete Account
                       ListTile(
                         title: const Text(
                           'Delete Account',
                           style: TextStyle(color: Colors.red),
                         ),
-                        trailing: _isDeleting 
-                          ? const SizedBox(
-                              width: 20, 
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.delete_forever, color: Colors.red, size: 20),
+                        trailing: _isDeleting
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.delete_forever,
+                                color: Colors.red, size: 20),
                         onTap: _isDeleting ? null : _deleteAccount,
                       ),
                     ],

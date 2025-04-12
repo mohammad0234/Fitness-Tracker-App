@@ -7,7 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
-  
+
   @override
   State<SignUpPage> createState() => _SignUpPageState();
 }
@@ -15,9 +15,9 @@ class SignUpPage extends StatefulWidget {
 class _SignUpPageState extends State<SignUpPage> {
   // Controllers for text fields
   final TextEditingController _firstNameController = TextEditingController();
-  final TextEditingController _lastNameController  = TextEditingController();
-  final TextEditingController _emailController     = TextEditingController();
-  final TextEditingController _passwordController  = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
   // State variables
   bool _obscurePassword = true;
@@ -32,9 +32,9 @@ class _SignUpPageState extends State<SignUpPage> {
   /// and inserts the user into the local SQLite database.
   Future<void> _signUp() async {
     final String firstName = _firstNameController.text.trim();
-    final String lastName  = _lastNameController.text.trim();
-    final String email     = _emailController.text.trim();
-    final String password  = _passwordController.text.trim();
+    final String lastName = _lastNameController.text.trim();
+    final String email = _emailController.text.trim();
+    final String password = _passwordController.text.trim();
 
     // Basic validations
     if (firstName.isEmpty || lastName.isEmpty) {
@@ -45,21 +45,19 @@ class _SignUpPageState extends State<SignUpPage> {
       _showError("Email and password cannot be empty.");
       return;
     }
-    
+
     // Check if user has viewed both documents
     if (!_hasViewedPrivacyPolicy || !_hasViewedTerms) {
-      _showDialog(
-        "Please Review Documents",
-        "You must review both the Privacy Policy and Terms of Use before continuing."
-      );
+      _showDialog("Please Review Documents",
+          "You must review both the Privacy Policy and Terms of Use before continuing.");
       return;
     }
-    
+
     if (!_acceptTerms) {
       _showError("You must accept the Privacy Policy and Terms of Use.");
       return;
     }
-    
+
     // Show loading state
     setState(() {
       _isRegistering = true;
@@ -67,12 +65,12 @@ class _SignUpPageState extends State<SignUpPage> {
 
     try {
       // Create user in Firebase
-      final firebase_auth.UserCredential userCredential =
-          await _auth.createUserWithEmailAndPassword(email: email, password: password);
+      final firebase_auth.UserCredential userCredential = await _auth
+          .createUserWithEmailAndPassword(email: email, password: password);
 
       // Optionally update the display name
       await userCredential.user?.updateDisplayName("$firstName $lastName");
-      
+
       // Send email verification
       await userCredential.user?.sendEmailVerification();
 
@@ -93,19 +91,21 @@ class _SignUpPageState extends State<SignUpPage> {
       await DatabaseHelper.instance.insertUser(newUser);
 
       await FirebaseFirestore.instance
-      .collection('users')
-      .doc(firebaseUID)
-      .collection('profile')
-      .doc(firebaseUID)
-      .set(newUser.toMap());
-
+          .collection('users')
+          .doc(firebaseUID)
+          .collection('profile')
+          .doc(firebaseUID)
+          .set(newUser.toMap());
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Account created successfully! Please verify your email.")),
+        const SnackBar(
+            content: Text(
+                "Account created successfully! Please verify your email.")),
       );
-      
+
       // Navigate to verification pending screen
-      Navigator.pushReplacementNamed(context, '/verification-pending', arguments: email);
+      Navigator.pushReplacementNamed(context, '/verification-pending',
+          arguments: email);
     } on firebase_auth.FirebaseAuthException catch (e) {
       if (e.code == 'email-already-in-use') {
         _showError("This email is already registered. Try logging in.");
@@ -126,11 +126,9 @@ class _SignUpPageState extends State<SignUpPage> {
 
   /// Navigate to the Privacy Policy page
   void _navigateToPrivacyPolicy() async {
-    final result = await Navigator.push(
-      context, 
-      MaterialPageRoute(builder: (context) => const PrivacyPolicyPage())
-    );
-    
+    final result = await Navigator.push(context,
+        MaterialPageRoute(builder: (context) => const PrivacyPolicyPage()));
+
     // Update flag when returned from the page
     if (result == true) {
       setState(() {
@@ -141,11 +139,9 @@ class _SignUpPageState extends State<SignUpPage> {
 
   /// Navigate to the Terms of Use page
   void _navigateToTermsOfUse() async {
-    final result = await Navigator.push(
-      context, 
-      MaterialPageRoute(builder: (context) => const TermsOfUsePage())
-    );
-    
+    final result = await Navigator.push(context,
+        MaterialPageRoute(builder: (context) => const TermsOfUsePage()));
+
     // Update flag when returned from the page
     if (result == true) {
       setState(() {
@@ -219,7 +215,8 @@ class _SignUpPageState extends State<SignUpPage> {
                   controller: _firstNameController,
                   autofillHints: const [AutofillHints.givenName],
                   decoration: InputDecoration(
-                    prefixIcon: Icon(Icons.person_outline, color: Colors.grey.shade600),
+                    prefixIcon:
+                        Icon(Icons.person_outline, color: Colors.grey.shade600),
                     hintText: 'First Name',
                     hintStyle: TextStyle(color: Colors.grey.shade500),
                     border: InputBorder.none,
@@ -239,7 +236,8 @@ class _SignUpPageState extends State<SignUpPage> {
                   controller: _lastNameController,
                   autofillHints: const [AutofillHints.familyName],
                   decoration: InputDecoration(
-                    prefixIcon: Icon(Icons.person_outline, color: Colors.grey.shade600),
+                    prefixIcon:
+                        Icon(Icons.person_outline, color: Colors.grey.shade600),
                     hintText: 'Last Name',
                     hintStyle: TextStyle(color: Colors.grey.shade500),
                     border: InputBorder.none,
@@ -260,7 +258,8 @@ class _SignUpPageState extends State<SignUpPage> {
                   keyboardType: TextInputType.emailAddress,
                   autofillHints: const [AutofillHints.email],
                   decoration: InputDecoration(
-                    prefixIcon: Icon(Icons.email_outlined, color: Colors.grey.shade600),
+                    prefixIcon:
+                        Icon(Icons.email_outlined, color: Colors.grey.shade600),
                     hintText: 'Email',
                     hintStyle: TextStyle(color: Colors.grey.shade500),
                     border: InputBorder.none,
@@ -280,14 +279,17 @@ class _SignUpPageState extends State<SignUpPage> {
                   controller: _passwordController,
                   obscureText: _obscurePassword,
                   decoration: InputDecoration(
-                    prefixIcon: Icon(Icons.lock_outline, color: Colors.grey.shade600),
+                    prefixIcon:
+                        Icon(Icons.lock_outline, color: Colors.grey.shade600),
                     hintText: 'Password',
                     hintStyle: TextStyle(color: Colors.grey.shade500),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(vertical: 15),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                        _obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
                         color: Colors.grey.shade600,
                       ),
                       onPressed: () {
@@ -373,16 +375,16 @@ class _SignUpPageState extends State<SignUpPage> {
                     ),
                   ),
                   onPressed: _isRegistering ? null : _signUp,
-                  child: _isRegistering 
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text(
-                      'Register',
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: Colors.white,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+                  child: _isRegistering
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                          'Register',
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                 ),
               ),
               const SizedBox(height: 25),
@@ -458,7 +460,7 @@ class PrivacyPolicyPage extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               const Text(
-                "Last Updated: March 12, 2025",
+                "Last Updated: April 12, 2025",
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.grey,
@@ -490,7 +492,7 @@ class PrivacyPolicyPage extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                "We collect the following information:\n\n• Personal Information: Name, email address, and optional height measurements.\n• Workout Data: Exercise types, repetitions, sets, weights used, and workout duration.\n• Usage Information: How you interact with the app, including features used and time spent.",
+                "We collect the following information:\n\n• Personal Information: Name, email address, and optional height measurements.\n• Workout Data: Exercise types, repetitions, sets, weights used, and workout duration.\n• Fitness Goals: Your fitness targets and progress toward them.\n• Streak Data: Information about your workout consistency and streaks.\n• Usage Information: How you interact with the app, including features used and time spent.",
                 style: TextStyle(
                   fontSize: 16,
                   color: Colors.grey.shade800,
@@ -506,7 +508,7 @@ class PrivacyPolicyPage extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                "We use your information to:\n\n• Provide and improve our services\n• Track your fitness progress\n• Personalize your experience\n• Communicate with you about app updates",
+                "We use your information to:\n\n• Provide and improve our services\n• Track your fitness progress\n• Personalize your experience\n• Sync your data between devices\n• Communicate with you about app updates",
                 style: TextStyle(
                   fontSize: 16,
                   color: Colors.grey.shade800,
@@ -514,7 +516,7 @@ class PrivacyPolicyPage extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               const Text(
-                "4. Data Storage",
+                "4. Data Storage and Syncing",
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -522,7 +524,39 @@ class PrivacyPolicyPage extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                "Your workout data is stored locally on your device using SQLite. Your authentication information is securely managed by Firebase Authentication.",
+                "Your workout data is stored both locally on your device using SQLite and in the cloud using Firebase Firestore for synchronization purposes. Your authentication information is securely managed by Firebase Authentication. Cloud syncing allows you to access your fitness data across multiple devices using the same account.\n\nYou can manage your sync preferences through the Data Synchronization settings in the app.",
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey.shade800,
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                "5. Data Security",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "We implement appropriate technical and organizational measures to protect your personal data against unauthorized or unlawful processing, accidental loss, destruction, or damage. All data synchronized to the cloud is transmitted using secure connections.",
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey.shade800,
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                "6. Your Data Rights",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "You have the right to access, correct, or delete your personal data. You can manage most of this directly within the app. To delete all your data, including cloud data, you can use the account deletion feature. ",
                 style: TextStyle(
                   fontSize: 16,
                   color: Colors.grey.shade800,
@@ -574,7 +608,7 @@ class TermsOfUsePage extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               const Text(
-                "Last Updated: March 12, 2025",
+                "Last Updated: April 12, 2025",
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.grey,
@@ -638,7 +672,39 @@ class TermsOfUsePage extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                "You retain ownership of all workout and personal data you enter into the application. By using FitJourney, you grant us permission to store and process this data as described in our Privacy Policy.",
+                "You retain ownership of all workout and personal data you enter into the application. By using FitJourney, you grant us permission to store and process this data both locally on your device and in the cloud as described in our Privacy Policy. This includes the synchronization of data between your devices using the same account.",
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey.shade800,
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                "5. Cloud Synchronization",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "FitJourney offers cloud synchronization features to enhance your experience across multiple devices. By using these features, you consent to the transfer and storage of your fitness data in our cloud services, powered by Firebase.",
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey.shade800,
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                "6. Limitations of Liability",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "While we strive to maintain continuous access to our cloud synchronization services, we are not liable for any temporary disruptions, data synchronization errors, or loss of data resulting from technical issues, scheduled maintenance, or factors beyond our control.",
                 style: TextStyle(
                   fontSize: 16,
                   color: Colors.grey.shade800,
