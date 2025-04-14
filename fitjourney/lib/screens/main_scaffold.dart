@@ -18,7 +18,7 @@ class MainScaffold extends StatefulWidget {
 class _MainScaffoldState extends State<MainScaffold> {
   int _selectedIndex = 0;
   Timer? _notificationTimer;
-  
+
   // List of screens to navigate between
   final List<Widget> _screens = [
     const HomePage(),
@@ -27,7 +27,7 @@ class _MainScaffoldState extends State<MainScaffold> {
     const GoalsPage(),
     const ProfilePage(),
   ];
-  
+
   // Navigation item icons and labels
   final List<BottomNavigationBarItem> _navItems = [
     const BottomNavigationBarItem(
@@ -83,39 +83,39 @@ class _MainScaffoldState extends State<MainScaffold> {
   @override
   Widget build(BuildContext context) {
     // Get appBar title based on selected index
-    final String appBarTitle = [
-      'Home',
-      'Workouts',
-      'Progress',
-      'Goals',
-      'Profile'
-    ][_selectedIndex];
+    final String appBarTitle =
+        ['Home', 'Workouts', 'Progress', 'Goals', 'Profile'][_selectedIndex];
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(appBarTitle),
-        actions: [
-          NotificationBadge(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const NotificationScreen()),
-              );
-            },
-          ),
-          // Add a little spacing
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: _screens[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.blue,
-        unselectedItemColor: Colors.grey,
-        showUnselectedLabels: true,
-        items: _navItems,
-        onTap: _onItemTapped,
+    return WillPopScope(
+      // Prevent back button from navigating to previous screens
+      onWillPop: () async => false,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(appBarTitle),
+          actions: [
+            NotificationBadge(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const NotificationScreen()),
+                );
+              },
+            ),
+            // Add a little spacing
+            const SizedBox(width: 8),
+          ],
+        ),
+        body: _screens[_selectedIndex],
+        bottomNavigationBar: BottomNavigationBar(
+          type: BottomNavigationBarType.fixed,
+          currentIndex: _selectedIndex,
+          selectedItemColor: Colors.blue,
+          unselectedItemColor: Colors.grey,
+          showUnselectedLabels: true,
+          items: _navItems,
+          onTap: _onItemTapped,
+        ),
       ),
     );
   }
