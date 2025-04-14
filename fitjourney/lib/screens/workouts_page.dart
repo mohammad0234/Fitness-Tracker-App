@@ -69,10 +69,17 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
                 .toSet()
                 .toList();
 
+            // Extract exercise names
+            final exerciseNames = (details['exercises'] as List)
+                .map((e) => e['name'] as String)
+                .toList();
+
             return {
               'workout': workout,
               'exerciseCount': exerciseCount,
               'muscleGroups': muscleGroups,
+              'exerciseNames': exerciseNames,
+              'exercises': details['exercises'],
             };
           } catch (e) {
             print('Error loading workout details: $e');
@@ -80,6 +87,8 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
               'workout': workout,
               'exerciseCount': 0,
               'muscleGroups': <String>[],
+              'exerciseNames': <String>[],
+              'exercises': [],
             };
           }
         }),
@@ -528,10 +537,27 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
     final workout = workoutDetail['workout'] as Workout;
     final exerciseCount = workoutDetail['exerciseCount'] as int;
     final muscleGroups = workoutDetail['muscleGroups'] as List<String>;
+    final exerciseNames = workoutDetail['exerciseNames'] as List<String>;
+    final exercises = workoutDetail['exercises'] as List;
+
+    // Determine a color based on muscle groups
+    Color cardColor = _getColorForWorkout(muscleGroups);
+
+    // Determine darker shade for text
+    Color darkCardColor = cardColor;
+    if (cardColor == Colors.blue) {
+      darkCardColor = Colors.blue.shade600;
+    } else if (cardColor == Colors.green) {
+      darkCardColor = Colors.green.shade600;
+    } else if (cardColor == Colors.orange) {
+      darkCardColor = Colors.orange.shade600;
+    } else if (cardColor == Colors.purple) {
+      darkCardColor = Colors.purple.shade600;
+    }
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12.0),
-      elevation: 0,
+      elevation: 1,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(color: Colors.grey.shade200),
@@ -553,58 +579,258 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
           });
         },
         borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    workout.notes ??
-                        'Workout ${DateFormat('MM/dd').format(workout.date)}',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white,
+                cardColor.withOpacity(0.08),
+              ],
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: cardColor.withOpacity(0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            _getIconForWorkout(muscleGroups),
+                            color: darkCardColor,
+                            size: 18,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          workout.notes ??
+                              'Workout ${DateFormat('MM/dd').format(workout.date)}',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  Text(
-                    DateFormat('h:mm a').format(workout.date),
+                    Text(
+                      DateFormat('h:mm a').format(workout.date),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 46.0),
+                  child: Text(
+                    exerciseCount == 1
+                        ? '$exerciseCount exercise'
+                        : '$exerciseCount exercises',
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey.shade700,
                     ),
                   ),
-                ],
-              ),
-              Text(
-                '$exerciseCount exercises',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade700,
                 ),
-              ),
-              Wrap(
-                spacing: 8,
-                children: muscleGroups.map((muscle) {
-                  return Chip(
-                    label: Text(
-                      muscle,
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                    backgroundColor: Colors.grey.shade100,
-                    padding: EdgeInsets.zero,
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    visualDensity: VisualDensity.compact,
-                  );
-                }).toList(),
-              ),
-            ],
+                const SizedBox(height: 12),
+
+                // Exercise list with chips
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    ...exercises.map((exercise) {
+                      final exerciseName = exercise['name'] as String;
+                      final muscleGroup = exercise['muscle_group'] as String;
+                      final exerciseSets = exercise['sets'] as List;
+
+                      // Get the max weight if available
+                      double? maxWeight;
+                      if (exerciseSets.isNotEmpty) {
+                        maxWeight = exerciseSets
+                            .map((set) => set.weight ?? 0.0)
+                            .reduce(
+                                (max, weight) => weight > max ? weight : max);
+                      }
+
+                      final color = _getColorForMuscleGroup(muscleGroup);
+
+                      // Determine darker shade for text in the chip
+                      Color darkColor = color;
+                      if (color == Colors.blue) {
+                        darkColor = Colors.blue.shade700;
+                      } else if (color == Colors.green) {
+                        darkColor = Colors.green.shade700;
+                      } else if (color == Colors.cyan) {
+                        darkColor = Colors.cyan.shade700;
+                      } else if (color == Colors.teal) {
+                        darkColor = Colors.teal.shade700;
+                      } else if (color == Colors.indigo) {
+                        darkColor = Colors.indigo.shade700;
+                      } else if (color == Colors.orange) {
+                        darkColor = Colors.orange.shade700;
+                      } else if (color == Colors.amber) {
+                        darkColor = Colors.amber.shade800;
+                      } else if (color == Colors.deepOrange) {
+                        darkColor = Colors.deepOrange.shade700;
+                      } else if (color == Colors.purple) {
+                        darkColor = Colors.purple.shade700;
+                      } else {
+                        darkColor = Colors.blueGrey.shade700;
+                      }
+
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 4),
+                        child: Chip(
+                          avatar: CircleAvatar(
+                            radius: 10,
+                            backgroundColor: color.withOpacity(0.15),
+                            child: Icon(
+                              _getIconForMuscleGroup(muscleGroup),
+                              size: 12,
+                              color: darkColor,
+                            ),
+                          ),
+                          label: Text(
+                            maxWeight != null && maxWeight > 0
+                                ? '$exerciseName (${maxWeight.toStringAsFixed(1)}kg)'
+                                : exerciseName,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade700,
+                            ),
+                          ),
+                          backgroundColor: color.withOpacity(0.08),
+                          side: BorderSide(color: Colors.grey.shade300),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 0),
+                          visualDensity: VisualDensity.compact,
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
+  }
+
+  // Helper method to determine card color based on muscle groups
+  Color _getColorForWorkout(List<String> muscleGroups) {
+    if (muscleGroups.isEmpty) return Colors.blue;
+
+    // Check for muscle group categories
+    if (muscleGroups
+        .any((group) => ['Chest', 'Shoulders', 'Triceps'].contains(group))) {
+      return Colors.blue;
+    } else if (muscleGroups
+        .any((group) => ['Back', 'Biceps'].contains(group))) {
+      return Colors.green;
+    } else if (muscleGroups
+        .any((group) => ['Legs', 'Glutes', 'Calves'].contains(group))) {
+      return Colors.orange;
+    } else if (muscleGroups.any((group) => ['Core', 'Abs'].contains(group))) {
+      return Colors.purple;
+    }
+
+    // Default color
+    return Colors.blue;
+  }
+
+  // Helper method to get icon for workout
+  IconData _getIconForWorkout(List<String> muscleGroups) {
+    if (muscleGroups.isEmpty) return Icons.fitness_center;
+
+    if (muscleGroups
+        .any((group) => ['Chest', 'Shoulders', 'Triceps'].contains(group))) {
+      return Icons.fitness_center; // Dumbbell for upper body push
+    } else if (muscleGroups
+        .any((group) => ['Back', 'Biceps'].contains(group))) {
+      return Icons.fitness_center; // Dumbbell for upper body pull
+    } else if (muscleGroups
+        .any((group) => ['Legs', 'Glutes', 'Calves'].contains(group))) {
+      return Icons.directions_run; // Running for lower body
+    } else if (muscleGroups.any((group) => ['Core', 'Abs'].contains(group))) {
+      return Icons.fitness_center; // Dumbbell for core
+    }
+
+    return Icons.fitness_center; // Default to dumbbell
+  }
+
+  // Helper method to get color for specific muscle group
+  Color _getColorForMuscleGroup(String muscleGroup) {
+    switch (muscleGroup) {
+      case 'Chest':
+        return Colors.blue;
+      case 'Back':
+        return Colors.green;
+      case 'Shoulders':
+        return Colors.cyan;
+      case 'Biceps':
+        return Colors.teal;
+      case 'Triceps':
+        return Colors.indigo;
+      case 'Legs':
+        return Colors.orange;
+      case 'Calves':
+        return Colors.amber;
+      case 'Glutes':
+        return Colors.deepOrange;
+      case 'Core':
+      case 'Abs':
+        return Colors.purple;
+      default:
+        return Colors.blueGrey;
+    }
+  }
+
+  // Helper method to get icon for specific muscle group
+  IconData _getIconForMuscleGroup(String muscleGroup) {
+    switch (muscleGroup) {
+      case 'Chest':
+        return Icons.fitness_center; // Dumbbell for chest
+      case 'Back':
+        return Icons.fitness_center; // Dumbbell for back
+      case 'Shoulders':
+        return Icons.fitness_center; // Dumbbell for shoulders
+      case 'Biceps':
+        return Icons.fitness_center; // Dumbbell for biceps
+      case 'Triceps':
+        return Icons.fitness_center; // Dumbbell for triceps
+      case 'Legs':
+        return Icons.directions_run; // Running for legs
+      case 'Calves':
+        return Icons.directions_run; // Running for calves
+      case 'Glutes':
+        return Icons.directions_run; // Running for glutes
+      case 'Core':
+      case 'Abs':
+        return Icons.fitness_center; // Dumbbell for core/abs
+      default:
+        return Icons.fitness_center; // Default to dumbbell
+    }
   }
 
   bool _isToday(DateTime date) {

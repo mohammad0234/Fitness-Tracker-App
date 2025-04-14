@@ -16,7 +16,6 @@ class GoalsPage extends StatefulWidget {
 class _GoalsPageState extends State<GoalsPage> {
   // Data holders
   List<Map<String, dynamic>> _activeGoals = [];
-  List<Map<String, dynamic>> _achievements = [];
   List<Map<String, dynamic>> _completedGoals = [];
 
   // UI states
@@ -62,14 +61,10 @@ class _GoalsPageState extends State<GoalsPage> {
         });
       }
 
-      // Get achievements
-      final achievements = await _loadAchievements();
-
       // Update state with the loaded data
       setState(() {
         _activeGoals = formattedActiveGoals;
         _completedGoals = formattedCompletedGoals;
-        _achievements = achievements;
         _isLoading = false;
       });
     } catch (e) {
@@ -80,86 +75,6 @@ class _GoalsPageState extends State<GoalsPage> {
       });
       print('Error loading goals: $e');
     }
-  }
-
-  Future<List<Map<String, dynamic>>> _loadAchievements() async {
-    try {
-      // For now, we'll use milestone data to create achievement badges
-      // This could be expanded in the future
-
-      final milestones = await _fetchRecentMilestones();
-      final achievements = <Map<String, dynamic>>[];
-
-      // Convert milestones to achievement badge format
-      for (final milestone in milestones) {
-        final Map<String, dynamic> achievement = {};
-
-        switch (milestone['type']) {
-          case 'PersonalBest':
-            achievement['name'] = 'Strength Master';
-            achievement['icon'] = Icons.fitness_center;
-            achievement['color'] = Colors.blue;
-            break;
-          case 'LongestStreak':
-            achievement['name'] = '${milestone['value']} Day Streak';
-            achievement['icon'] = Icons.local_fire_department;
-            achievement['color'] = Colors.orange;
-            break;
-          case 'GoalAchieved':
-            achievement['name'] = 'Goal Crusher';
-            achievement['icon'] = Icons.emoji_events;
-            achievement['color'] = Colors.green;
-            break;
-        }
-
-        if (achievement.isNotEmpty) {
-          achievements.add(achievement);
-        }
-      }
-
-      // If we have no achievements yet, add placeholder achievements
-      // This ensures the UI doesn't look empty for new users
-      if (achievements.isEmpty) {
-        achievements.addAll([
-          {
-            'name': 'Get Started',
-            'icon': Icons.star,
-            'color': Colors.amber,
-          },
-        ]);
-      }
-
-      return achievements;
-    } catch (e) {
-      print('Error loading achievements: $e');
-      // Return some default achievements in case of error
-      return [
-        {
-          'name': 'Get Started',
-          'icon': Icons.star,
-          'color': Colors.amber,
-        },
-      ];
-    }
-  }
-
-  Future<List<Map<String, dynamic>>> _fetchRecentMilestones() async {
-    // This would typically be fetched from the database
-    // For now, we'll return a simple placeholder list
-    return [
-      {
-        'type': 'PersonalBest',
-        'value': 100,
-      },
-      {
-        'type': 'LongestStreak',
-        'value': 7,
-      },
-      {
-        'type': 'GoalAchieved',
-        'value': null,
-      },
-    ];
   }
 
   @override
@@ -289,59 +204,6 @@ class _GoalsPageState extends State<GoalsPage> {
                           _buildEmptyGoalsMessage()
                         else
                           ..._activeGoals.map((goal) => _buildGoalItem(goal)),
-
-                        const SizedBox(height: 32),
-
-                        // Achievements Section
-                        const Text(
-                          'Achievements',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Achievement badges
-                        SizedBox(
-                          height: 100,
-                          child: ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: _achievements.length,
-                            itemBuilder: (context, index) {
-                              final achievement = _achievements[index];
-                              return Padding(
-                                padding: const EdgeInsets.only(right: 16.0),
-                                child: Column(
-                                  children: [
-                                    Container(
-                                      width: 60,
-                                      height: 60,
-                                      decoration: BoxDecoration(
-                                        color: achievement['color']
-                                            .withOpacity(0.2),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Icon(
-                                        achievement['icon'],
-                                        color: achievement['color'],
-                                        size: 30,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      achievement['name'],
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                        ),
 
                         const SizedBox(height: 32),
 
@@ -642,7 +504,7 @@ class _GoalsPageState extends State<GoalsPage> {
             ),
           ),
           Text(
-            'Target: ${goalInfo['weeklyTarget']?.toStringAsFixed(1) ?? '0'}/week',
+            'Target: ${goalInfo['weeklyTarget']?.toStringAsFixed(1) ?? '0'} workouts per week',
             style: TextStyle(
               fontSize: 12,
               color: Colors.grey.shade700,

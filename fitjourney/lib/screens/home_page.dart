@@ -15,6 +15,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fitjourney/services/goal_service.dart';
 import 'package:fitjourney/database_models/goal.dart';
 import 'package:fitjourney/screens/goal_detail_screen.dart';
+import 'package:fitjourney/screens/weight_goal_detail_screen.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -160,6 +161,11 @@ class _HomePageState extends State<HomePage> {
             .toSet()
             .toList();
 
+        // Extract exercise names
+        final exerciseNames = (details['exercises'] as List)
+            .map((e) => e['name'] as String)
+            .toList();
+
         // Calculate how long ago this workout was
         final now = DateTime.now();
         final difference = now.difference(mostRecentWorkout.date);
@@ -181,6 +187,8 @@ class _HomePageState extends State<HomePage> {
             'muscleGroups': muscleGroups,
             'timeAgo': timeAgo,
             'workoutId': mostRecentWorkout.workoutId,
+            'exerciseNames': exerciseNames,
+            'exercises': details['exercises'],
           };
           _isLoadingRecentWorkout = false;
         });
@@ -516,6 +524,7 @@ class _HomePageState extends State<HomePage> {
     final muscleGroups = _recentWorkoutData!['muscleGroups'] as List<String>;
     final timeAgo = _recentWorkoutData!['timeAgo'] as String;
     final workoutId = _recentWorkoutData!['workoutId'] as int;
+    final exercises = _recentWorkoutData!['exercises'] as List;
 
     // Determine the primary muscle group for display
     String primaryType = 'Workout';
@@ -537,6 +546,21 @@ class _HomePageState extends State<HomePage> {
       }
     }
 
+    // Determine a color based on muscle groups
+    Color cardColor = _getWorkoutColor(muscleGroups);
+
+    // Determine darker shade for text
+    Color darkCardColor = cardColor;
+    if (cardColor == Colors.blue) {
+      darkCardColor = Colors.blue.shade600;
+    } else if (cardColor == Colors.green) {
+      darkCardColor = Colors.green.shade600;
+    } else if (cardColor == Colors.orange) {
+      darkCardColor = Colors.orange.shade600;
+    } else if (cardColor == Colors.purple) {
+      darkCardColor = Colors.purple.shade600;
+    }
+
     return GestureDetector(
       onTap: () {
         // Navigate to the workout details screen when tapped
@@ -550,57 +574,164 @@ class _HomePageState extends State<HomePage> {
           _fetchRecentWorkout();
         });
       },
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
+      child: Card(
+        elevation: 1,
+        shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
+          side: BorderSide(color: Colors.grey.shade200),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  workout.notes ?? primaryType,
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                Text(timeAgo,
-                    style:
-                        TextStyle(fontSize: 14, color: Colors.grey.shade600)),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white,
+                cardColor.withOpacity(0.08),
               ],
             ),
-            Text('$exerciseCount exercises',
-                style: TextStyle(fontSize: 14, color: Colors.grey.shade700)),
-            if (muscleGroups.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              SizedBox(
-                height: 28, // Fixed height for the chip list
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: muscleGroups.length,
-                  itemBuilder: (context, index) {
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 6.0),
-                      child: Chip(
-                        label: Text(
-                          muscleGroups[index],
-                          style: const TextStyle(fontSize: 10),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: cardColor.withOpacity(0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            _getWorkoutIcon(muscleGroups),
+                            color: darkCardColor,
+                            size: 18,
+                          ),
                         ),
-                        backgroundColor: Colors.grey.shade100,
-                        visualDensity: VisualDensity.compact,
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        padding: EdgeInsets.zero,
+                        const SizedBox(width: 12),
+                        Text(
+                          workout.notes ?? primaryType,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      timeAgo,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade700,
                       ),
-                    );
-                  },
+                    ),
+                  ],
                 ),
-              ),
-            ],
-          ],
+                Padding(
+                  padding: const EdgeInsets.only(left: 46.0),
+                  child: Text(
+                    exerciseCount == 1
+                        ? '$exerciseCount exercise'
+                        : '$exerciseCount exercises',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Exercise list with chips
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    ...exercises.map((exercise) {
+                      final exerciseName = exercise['name'] as String;
+                      final muscleGroup = exercise['muscle_group'] as String;
+                      final exerciseSets = exercise['sets'] as List;
+
+                      // Get the max weight if available
+                      double? maxWeight;
+                      if (exerciseSets.isNotEmpty) {
+                        maxWeight = exerciseSets
+                            .map((set) => set.weight ?? 0.0)
+                            .reduce(
+                                (max, weight) => weight > max ? weight : max);
+                      }
+
+                      final color = _getMuscleGroupColor(muscleGroup);
+
+                      // Determine darker shade for text in the chip
+                      Color darkColor = color;
+                      if (color == Colors.blue) {
+                        darkColor = Colors.blue.shade700;
+                      } else if (color == Colors.green) {
+                        darkColor = Colors.green.shade700;
+                      } else if (color == Colors.cyan) {
+                        darkColor = Colors.cyan.shade700;
+                      } else if (color == Colors.teal) {
+                        darkColor = Colors.teal.shade700;
+                      } else if (color == Colors.indigo) {
+                        darkColor = Colors.indigo.shade700;
+                      } else if (color == Colors.orange) {
+                        darkColor = Colors.orange.shade700;
+                      } else if (color == Colors.amber) {
+                        darkColor = Colors.amber.shade800;
+                      } else if (color == Colors.deepOrange) {
+                        darkColor = Colors.deepOrange.shade700;
+                      } else if (color == Colors.purple) {
+                        darkColor = Colors.purple.shade700;
+                      } else {
+                        darkColor = Colors.blueGrey.shade700;
+                      }
+
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 4),
+                        child: Chip(
+                          avatar: CircleAvatar(
+                            radius: 10,
+                            backgroundColor: color.withOpacity(0.15),
+                            child: Icon(
+                              _getMuscleGroupIcon(muscleGroup),
+                              size: 12,
+                              color: darkColor,
+                            ),
+                          ),
+                          label: Text(
+                            maxWeight != null && maxWeight > 0
+                                ? '$exerciseName (${maxWeight.toStringAsFixed(1)}kg)'
+                                : exerciseName,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade700,
+                            ),
+                          ),
+                          backgroundColor: color.withOpacity(0.08),
+                          side: BorderSide(color: Colors.grey.shade300),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 0),
+                          visualDensity: VisualDensity.compact,
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -654,132 +785,365 @@ class _HomePageState extends State<HomePage> {
     final goalId = _activeGoalData!['goalId'] as int?;
     final daysLeft = _activeGoalData!['daysLeft'] as int;
     final progress = _activeGoalData!['progress'] as double;
+    final goalType = _activeGoalData!['type'] as String? ?? 'ExerciseTarget';
 
     // For strength goals
     final current = _activeGoalData!['current'] as double?;
     final target = _activeGoalData!['target'] as double?;
-    final exerciseName = _activeGoalData!['exerciseName'] as String?;
     final formattedImprovement =
         _activeGoalData!['formattedImprovement'] as String?;
     final startingWeight = _activeGoalData!['startingWeight'] as double?;
 
+    // Get the color and icon based on goal type
+    final Color goalColor = _getGoalColor(goalType);
+    final Widget goalIcon = _getGoalIcon(goalType);
+
     return GestureDetector(
       onTap: goalId != null
           ? () {
-              // Navigate to the goal detail screen
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => GoalDetailScreen(goalId: goalId),
-                ),
-              ).then((_) {
-                // Refresh goals when returning
-                _fetchMostImportantGoal();
-              });
+              // Navigate to the appropriate goal detail screen based on type
+              if (goalType == 'WeightTarget') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        WeightGoalDetailScreen(goalId: goalId),
+                  ),
+                ).then((_) {
+                  // Refresh goals when returning
+                  _fetchMostImportantGoal();
+                });
+              } else {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => GoalDetailScreen(goalId: goalId),
+                  ),
+                ).then((_) {
+                  // Refresh goals when returning
+                  _fetchMostImportantGoal();
+                });
+              }
             }
           : null,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
+      child: Card(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
+          side: BorderSide(color: Colors.grey.shade200),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    goalTitle,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                Text(
-                  '$daysLeft days left',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.blue.shade700,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: progress,
-                backgroundColor: Colors.grey.shade200,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-                minHeight: 8,
-              ),
-            ),
-            if (exerciseName != null && current != null && target != null) ...[
-              const SizedBox(height: 12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Current: ${current.toStringAsFixed(1)}kg',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade700,
-                    ),
+                  CircleAvatar(
+                    radius: 20,
+                    backgroundColor: goalColor.withOpacity(0.1),
+                    child: goalIcon,
                   ),
-                  Text(
-                    'Target: ${target.toStringAsFixed(1)}kg',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade700,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            goalTitle,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '$daysLeft days left',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade700,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
-              if (startingWeight != null && formattedImprovement != null) ...[
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Starting: ${startingWeight.toStringAsFixed(1)}kg',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade700,
-                      ),
-                    ),
-                    Text(
-                      formattedImprovement,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.green.shade600,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ] else if (formattedImprovement != null) ...[
-                const SizedBox(height: 8),
-                Text(
-                  formattedImprovement,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.green.shade600,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
+              const SizedBox(height: 16),
+              LinearProgressIndicator(
+                value: progress,
+                backgroundColor: Colors.grey.shade200,
+                valueColor: AlwaysStoppedAnimation<Color>(goalColor),
+                minHeight: 8,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              const SizedBox(height: 8),
+              _buildGoalDetails(_activeGoalData!),
             ],
-          ],
+          ),
         ),
       ),
     );
+  }
+
+  Widget _buildGoalDetails(Map<String, dynamic> goalInfo) {
+    if (goalInfo['type'] == 'ExerciseTarget') {
+      // For strength goals
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${goalInfo['current']?.toStringAsFixed(1) ?? '0'} / ${goalInfo['target']?.toStringAsFixed(1) ?? '0'} kg',
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          if (goalInfo.containsKey('startingWeight'))
+            Row(
+              children: [
+                Text(
+                  'From ${goalInfo['startingWeight']?.toStringAsFixed(1) ?? '0'} kg · ',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+                if (goalInfo.containsKey('formattedImprovement'))
+                  Text(
+                    goalInfo['formattedImprovement']
+                        .replaceAll('since starting', ''),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.green.shade700,
+                    ),
+                  ),
+              ],
+            )
+          else if (goalInfo.containsKey('formattedImprovement'))
+            Text(
+              goalInfo['formattedImprovement'],
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.green.shade700,
+              ),
+            ),
+        ],
+      );
+    } else if (goalInfo['type'] == 'WorkoutFrequency') {
+      // For frequency goals
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${goalInfo['current']?.toInt() ?? 0} / ${goalInfo['target']?.toInt() ?? 0} workouts',
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            'Target: ${goalInfo['weeklyTarget']?.toStringAsFixed(1) ?? '0'}/week',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey.shade700,
+            ),
+          ),
+        ],
+      );
+    } else if (goalInfo['type'] == 'WeightTarget') {
+      // For weight goals
+      final isWeightLoss = goalInfo['isWeightLoss'] ?? false;
+      final isWeightGain = goalInfo['isWeightGain'] ?? false;
+      final currentWeight = goalInfo['current']?.toStringAsFixed(1) ?? '0';
+      final targetWeight = goalInfo['target']?.toStringAsFixed(1) ?? '0';
+      final startingWeight =
+          goalInfo['startingWeight']?.toStringAsFixed(1) ?? '0';
+      final progressChange = goalInfo['formattedChange'] ?? '';
+      final textColor =
+          isWeightLoss ? Colors.green.shade700 : Colors.blue.shade700;
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$currentWeight / $targetWeight kg',
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Row(
+            children: [
+              Text(
+                'From $startingWeight kg · ',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade700,
+                ),
+              ),
+              Text(
+                progressChange.replaceAll('since starting', ''),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: textColor,
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+    } else {
+      return const Text('Unknown goal type');
+    }
+  }
+
+  Color _getGoalColor(String type) {
+    switch (type) {
+      case 'ExerciseTarget':
+        return Colors.orange;
+      case 'WorkoutFrequency':
+        return Colors.blue;
+      case 'WeightTarget':
+        return Colors.green;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  Widget _getGoalIcon(String type) {
+    switch (type) {
+      case 'ExerciseTarget':
+        return Icon(
+          Icons.fitness_center,
+          color: Colors.orange,
+          size: 24,
+        );
+      case 'WorkoutFrequency':
+        return Icon(
+          Icons.calendar_today,
+          color: Colors.blue,
+          size: 24,
+        );
+      case 'WeightTarget':
+        return Icon(
+          Icons.monitor_weight_outlined,
+          color: Colors.green,
+          size: 24,
+        );
+      default:
+        return Icon(
+          Icons.help_outline,
+          color: Colors.grey,
+          size: 24,
+        );
+    }
+  }
+
+  // Helper method to determine card color based on muscle groups
+  Color _getWorkoutColor(List<String> muscleGroups) {
+    if (muscleGroups.isEmpty) return Colors.blue;
+
+    // Check for muscle group categories
+    if (muscleGroups
+        .any((group) => ['Chest', 'Shoulders', 'Triceps'].contains(group))) {
+      return Colors.blue;
+    } else if (muscleGroups
+        .any((group) => ['Back', 'Biceps'].contains(group))) {
+      return Colors.green;
+    } else if (muscleGroups
+        .any((group) => ['Legs', 'Glutes', 'Calves'].contains(group))) {
+      return Colors.orange;
+    } else if (muscleGroups.any((group) => ['Core', 'Abs'].contains(group))) {
+      return Colors.purple;
+    }
+
+    // Default color
+    return Colors.blue;
+  }
+
+  // Helper method to get icon for workout
+  IconData _getWorkoutIcon(List<String> muscleGroups) {
+    if (muscleGroups.isEmpty) return Icons.fitness_center;
+
+    if (muscleGroups
+        .any((group) => ['Chest', 'Shoulders', 'Triceps'].contains(group))) {
+      return Icons.fitness_center; // Dumbbell for upper body push
+    } else if (muscleGroups
+        .any((group) => ['Back', 'Biceps'].contains(group))) {
+      return Icons.fitness_center; // Dumbbell for upper body pull
+    } else if (muscleGroups
+        .any((group) => ['Legs', 'Glutes', 'Calves'].contains(group))) {
+      return Icons.directions_run; // Running for lower body
+    } else if (muscleGroups.any((group) => ['Core', 'Abs'].contains(group))) {
+      return Icons.fitness_center; // Dumbbell for core
+    }
+
+    return Icons.fitness_center; // Default to dumbbell
+  }
+
+  // Helper method to get color for specific muscle group
+  Color _getMuscleGroupColor(String muscleGroup) {
+    switch (muscleGroup) {
+      case 'Chest':
+        return Colors.blue;
+      case 'Back':
+        return Colors.green;
+      case 'Shoulders':
+        return Colors.cyan;
+      case 'Biceps':
+        return Colors.teal;
+      case 'Triceps':
+        return Colors.indigo;
+      case 'Legs':
+        return Colors.orange;
+      case 'Calves':
+        return Colors.amber;
+      case 'Glutes':
+        return Colors.deepOrange;
+      case 'Core':
+      case 'Abs':
+        return Colors.purple;
+      default:
+        return Colors.blueGrey;
+    }
+  }
+
+  // Helper method to get icon for specific muscle group
+  IconData _getMuscleGroupIcon(String muscleGroup) {
+    switch (muscleGroup) {
+      case 'Chest':
+        return Icons.fitness_center; // Dumbbell for chest
+      case 'Back':
+        return Icons.fitness_center; // Dumbbell for back
+      case 'Shoulders':
+        return Icons.fitness_center; // Dumbbell for shoulders
+      case 'Biceps':
+        return Icons.fitness_center; // Dumbbell for biceps
+      case 'Triceps':
+        return Icons.fitness_center; // Dumbbell for triceps
+      case 'Legs':
+        return Icons.directions_run; // Running for legs
+      case 'Calves':
+        return Icons.directions_run; // Running for calves
+      case 'Glutes':
+        return Icons.directions_run; // Running for glutes
+      case 'Core':
+      case 'Abs':
+        return Icons.fitness_center; // Dumbbell for core/abs
+      default:
+        return Icons.fitness_center; // Default to dumbbell
+    }
   }
 }

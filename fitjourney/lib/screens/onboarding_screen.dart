@@ -32,19 +32,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   /// List of onboarding pages.
   final List<OnboardingPageData> pages = [
     OnboardingPageData(
-      image: 'assets/images/onboarding1.png',
+      image: 'assets/images/appIcon.png',
       title: 'Welcome To FitJourney',
-      description: "Your all-in-one fitness companion. Let's get you started on a healthier, stronger path!",
+      description:
+          "Your all-in-one fitness companion. Let's get you started on a healthier, stronger path!",
     ),
     OnboardingPageData(
       image: 'assets/images/onboarding2.png',
       title: 'Track Your Progress',
-      description: "Effortlessly log workouts, monitor results, celebrate milestones and watch your performance improve day by day.",
+      description:
+          "Effortlessly log workouts, monitor results, celebrate milestones and watch your performance improve day by day.",
     ),
     OnboardingPageData(
       image: 'assets/images/onboarding3.png',
       title: 'Consistency is Key',
-      description: "Set goals, build healthy habits, stay motivated and never lose momentum on your journey to peak fitness.",
+      description:
+          "Set goals, build healthy habits, stay motivated and never lose momentum on your journey to peak fitness.",
     ),
   ];
 
@@ -94,14 +97,37 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               decoration: const BoxDecoration(
                 color: Colors.white,
                 shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 5,
+                    offset: Offset(0, 2),
+                  ),
+                ],
               ),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: Image.asset(
-                  data.image,
-                  fit: BoxFit.contain,
-                  semanticLabel: data.title, // Accessibility support
-                ),
+                child: data.image.contains('appIcon.png')
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(100),
+                        child: Container(
+                          color: Colors.blue.shade800,
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Image.asset(
+                              data.image,
+                              fit: BoxFit.contain,
+                              semanticLabel:
+                                  data.title, // Accessibility support
+                            ),
+                          ),
+                        ),
+                      )
+                    : Image.asset(
+                        data.image,
+                        fit: BoxFit.contain,
+                        semanticLabel: data.title, // Accessibility support
+                      ),
               ),
             ),
             const SizedBox(height: 24),
@@ -189,7 +215,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         width: currentIndex == index ? 12 : 8,
                         height: currentIndex == index ? 12 : 8,
                         decoration: BoxDecoration(
-                          color: currentIndex == index ? Colors.pinkAccent : Colors.grey,
+                          color: currentIndex == index
+                              ? Colors.pinkAccent
+                              : Colors.grey,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -204,7 +232,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 40, vertical: 14),
                     ),
                     child: Text(
                       currentIndex == pages.length - 1 ? 'Get Started' : 'Next',
