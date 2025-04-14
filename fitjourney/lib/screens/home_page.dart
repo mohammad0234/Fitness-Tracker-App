@@ -46,6 +46,8 @@ class _HomePageState extends State<HomePage> {
     _fetchStreakData();
     _fetchRecentWorkout();
     _fetchMostImportantGoal(); // Fetch the active goal
+    _insertNewExercises(); // Add the new exercises
+    _removeUnwantedExercises(); // Remove unwanted exercises
   }
 
   Future<void> _fetchUserData() async {
@@ -295,6 +297,104 @@ class _HomePageState extends State<HomePage> {
           _isLoggingRestDay = false;
         });
       }
+    }
+  }
+
+  // Function to insert new exercises into the database
+  Future<void> _insertNewExercises() async {
+    final db = await DatabaseHelper.instance.database;
+
+    // List of new exercises to add
+    final newExercises = [
+      {
+        'name': 'Cable Fly',
+        'muscle_group': 'Chest',
+        'description':
+            'Stand between cable pulleys and bring handles together in front of your chest in an arc motion.'
+      },
+      {
+        'name': 'Barbell Row',
+        'muscle_group': 'Back',
+        'description':
+            'Bend forward with a slight knee bend and pull a barbell towards your lower chest/upper abdomen.'
+      },
+      {
+        'name': 'T-Bar Row',
+        'muscle_group': 'Back',
+        'description':
+            'Using a T-bar row machine or landmine setup, pull the weight toward your torso while maintaining a hinged position.'
+      },
+      {
+        'name': 'Military Press',
+        'muscle_group': 'Shoulders',
+        'description':
+            'Standing barbell press where you push the weight from shoulder level to overhead with strict form.'
+      },
+      {
+        'name': 'Rear Delt Fly',
+        'muscle_group': 'Shoulders',
+        'description':
+            'Bend forward and raise weights out to sides, targeting the rear shoulder muscles.'
+      },
+      {
+        'name': 'Bulgarian Split Squat',
+        'muscle_group': 'Legs',
+        'description':
+            'Perform a single-leg squat with your rear foot elevated on a bench or platform.'
+      },
+      {
+        'name': 'Calf Raise',
+        'muscle_group': 'Legs',
+        'description':
+            'Rise onto your toes, lifting your heels off the ground against resistance.'
+      },
+      {
+        'name': 'Overhead Tricep Extension',
+        'muscle_group': 'Triceps',
+        'description':
+            'Hold weight overhead and lower it behind your head, then extend arms to work the triceps.'
+      },
+      {
+        'name': 'Skull Crusher',
+        'muscle_group': 'Triceps',
+        'description':
+            'Lie on a bench, hold weight above your face, bend elbows to lower weight toward your forehead, then extend.'
+      },
+    ];
+
+    // Insert each exercise if it doesn't already exist
+    for (final exercise in newExercises) {
+      // Check if exercise already exists
+      final exists = await db.rawQuery(
+          "SELECT 1 FROM exercise WHERE name = ? AND muscle_group = ?",
+          [exercise['name'], exercise['muscle_group']]);
+
+      // Only insert if it doesn't exist
+      if (exists.isEmpty) {
+        await db.insert('exercise', exercise);
+        print('Added new exercise: ${exercise['name']}');
+      }
+    }
+  }
+
+  // Function to remove specific exercises from the database
+  Future<void> _removeUnwantedExercises() async {
+    final db = await DatabaseHelper.instance.database;
+
+    // List of exercises to remove
+    final exercisesToRemove = [
+      {'name': 'Pull-Up', 'muscle_group': 'Back'},
+      {'name': 'Tricep Dip', 'muscle_group': 'Triceps'},
+    ];
+
+    // Remove each exercise
+    for (final exercise in exercisesToRemove) {
+      await db.delete(
+        'exercise',
+        where: "name = ? AND muscle_group = ?",
+        whereArgs: [exercise['name'], exercise['muscle_group']],
+      );
+      print('Removed exercise: ${exercise['name']}');
     }
   }
 
@@ -1065,7 +1165,7 @@ class _HomePageState extends State<HomePage> {
     } else if (muscleGroups
         .any((group) => ['Legs', 'Glutes', 'Calves'].contains(group))) {
       return Colors.orange;
-    } else if (muscleGroups.any((group) => ['Core', 'Abs'].contains(group))) {
+    } else if (muscleGroups.any((group) => ['Core'].contains(group))) {
       return Colors.purple;
     }
 
@@ -1086,7 +1186,7 @@ class _HomePageState extends State<HomePage> {
     } else if (muscleGroups
         .any((group) => ['Legs', 'Glutes', 'Calves'].contains(group))) {
       return Icons.directions_run; // Running for lower body
-    } else if (muscleGroups.any((group) => ['Core', 'Abs'].contains(group))) {
+    } else if (muscleGroups.any((group) => ['Core'].contains(group))) {
       return Icons.fitness_center; // Dumbbell for core
     }
 
@@ -1113,7 +1213,6 @@ class _HomePageState extends State<HomePage> {
       case 'Glutes':
         return Colors.deepOrange;
       case 'Core':
-      case 'Abs':
         return Colors.purple;
       default:
         return Colors.blueGrey;
@@ -1140,8 +1239,7 @@ class _HomePageState extends State<HomePage> {
       case 'Glutes':
         return Icons.directions_run; // Running for glutes
       case 'Core':
-      case 'Abs':
-        return Icons.fitness_center; // Dumbbell for core/abs
+        return Icons.fitness_center; // Dumbbell for core
       default:
         return Icons.fitness_center; // Default to dumbbell
     }

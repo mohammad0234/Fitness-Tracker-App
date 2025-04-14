@@ -446,7 +446,11 @@ class DatabaseHelper {
   // Get all exercises
   Future<List<Exercise>> getAllExercises() async {
     final db = await database;
-    final result = await db.query('exercise');
+    final result = await db.query(
+      'exercise',
+      where: "muscle_group != 'Abs' AND name != 'Push-Up'",
+      orderBy: 'name ASC',
+    );
 
     return result.map((map) => Exercise.fromMap(map)).toList();
   }
@@ -456,7 +460,7 @@ class DatabaseHelper {
     final db = await database;
     final result = await db.query(
       'exercise',
-      where: 'muscle_group = ?',
+      where: "muscle_group = ? AND name != 'Push-Up'",
       whereArgs: [muscleGroup],
       orderBy: 'name ASC',
     );
@@ -716,10 +720,10 @@ class DatabaseHelper {
           'description': 'Lie on a bench and move weights in an arc motion.'
         });
         await txn.insert('exercise', {
-          'name': 'Push-Up',
+          'name': 'Cable Fly',
           'muscle_group': 'Chest',
           'description':
-              'A bodyweight exercise where you push your body up from the ground.'
+              'Stand between cable pulleys and bring handles together in front of your chest in an arc motion.'
         });
 
         // Back exercises
@@ -727,11 +731,6 @@ class DatabaseHelper {
           'name': 'Deadlift',
           'muscle_group': 'Back',
           'description': 'Lift a weighted barbell off the ground to hip level.'
-        });
-        await txn.insert('exercise', {
-          'name': 'Pull-Up',
-          'muscle_group': 'Back',
-          'description': 'Pull your body upward while hanging from a bar.'
         });
         await txn.insert('exercise', {
           'name': 'Bent Over Row',
@@ -743,6 +742,18 @@ class DatabaseHelper {
           'name': 'Lat Pulldown',
           'muscle_group': 'Back',
           'description': 'Pull a weighted bar down while seated.'
+        });
+        await txn.insert('exercise', {
+          'name': 'Barbell Row',
+          'muscle_group': 'Back',
+          'description':
+              'Bend forward with a slight knee bend and pull a barbell towards your lower chest/upper abdomen.'
+        });
+        await txn.insert('exercise', {
+          'name': 'T-Bar Row',
+          'muscle_group': 'Back',
+          'description':
+              'Using a T-bar row machine or landmine setup, pull the weight toward your torso while maintaining a hinged position.'
         });
 
         // Leg exercises
@@ -769,6 +780,18 @@ class DatabaseHelper {
           'description':
               'Curl your legs toward your backside against resistance.'
         });
+        await txn.insert('exercise', {
+          'name': 'Bulgarian Split Squat',
+          'muscle_group': 'Legs',
+          'description':
+              'Perform a single-leg squat with your rear foot elevated on a bench or platform.'
+        });
+        await txn.insert('exercise', {
+          'name': 'Calf Raise',
+          'muscle_group': 'Legs',
+          'description':
+              'Rise onto your toes, lifting your heels off the ground against resistance.'
+        });
 
         // Shoulder exercises
         await txn.insert('exercise', {
@@ -787,6 +810,18 @@ class DatabaseHelper {
           'muscle_group': 'Shoulders',
           'description':
               'Raise weights in front of you until arms are parallel to the floor.'
+        });
+        await txn.insert('exercise', {
+          'name': 'Military Press',
+          'muscle_group': 'Shoulders',
+          'description':
+              'Standing barbell press where you push the weight from shoulder level to overhead with strict form.'
+        });
+        await txn.insert('exercise', {
+          'name': 'Rear Delt Fly',
+          'muscle_group': 'Shoulders',
+          'description':
+              'Bend forward and raise weights out to sides, targeting the rear shoulder muscles.'
         });
 
         // Biceps exercises
@@ -808,28 +843,16 @@ class DatabaseHelper {
           'description': 'Extend your arms against resistance.'
         });
         await txn.insert('exercise', {
-          'name': 'Tricep Dip',
+          'name': 'Overhead Tricep Extension',
           'muscle_group': 'Triceps',
           'description':
-              'Lower and raise your body using your arms while supported.'
-        });
-
-        // Abs exercises
-        await txn.insert('exercise', {
-          'name': 'Crunch',
-          'muscle_group': 'Abs',
-          'description': 'Raise your torso toward your knees while lying down.'
+              'Hold weight overhead and lower it behind your head, then extend arms to work the triceps.'
         });
         await txn.insert('exercise', {
-          'name': 'Plank',
-          'muscle_group': 'Abs',
+          'name': 'Skull Crusher',
+          'muscle_group': 'Triceps',
           'description':
-              'Hold a position similar to a push-up, supporting your weight on forearms and toes.'
-        });
-        await txn.insert('exercise', {
-          'name': 'Leg Raise',
-          'muscle_group': 'Abs',
-          'description': 'Raise your legs while lying on your back.'
+              'Lie on a bench, hold weight above your face, bend elbows to lower weight toward your forehead, then extend.'
         });
       });
     }

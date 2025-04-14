@@ -16,7 +16,7 @@ class _LogWorkoutFlowState extends State<LogWorkoutFlow> {
   final WorkoutService _workoutService = WorkoutService.instance;
   DateTime _startTime = DateTime.now();
   Timer? _workoutTimer;
-  
+
   @override
   void initState() {
     super.initState();
@@ -25,7 +25,7 @@ class _LogWorkoutFlowState extends State<LogWorkoutFlow> {
       // Empty - duration will be calculated when saving
     });
   }
-  
+
   @override
   void dispose() {
     _workoutTimer?.cancel();
@@ -44,17 +44,19 @@ class _LogWorkoutFlowState extends State<LogWorkoutFlow> {
 // First screen: Muscle Group Selection
 class MuscleGroupSelectionScreen extends StatefulWidget {
   final DateTime startTime;
-  
+
   const MuscleGroupSelectionScreen({
     super.key,
     required this.startTime,
   });
 
   @override
-  State<MuscleGroupSelectionScreen> createState() => _MuscleGroupSelectionScreenState();
+  State<MuscleGroupSelectionScreen> createState() =>
+      _MuscleGroupSelectionScreenState();
 }
 
-class _MuscleGroupSelectionScreenState extends State<MuscleGroupSelectionScreen> {
+class _MuscleGroupSelectionScreenState
+    extends State<MuscleGroupSelectionScreen> {
   final WorkoutService _workoutService = WorkoutService.instance;
   List<String> _muscleGroups = [];
   bool _isLoading = true;
@@ -64,7 +66,7 @@ class _MuscleGroupSelectionScreenState extends State<MuscleGroupSelectionScreen>
     super.initState();
     _loadMuscleGroups();
   }
-  
+
   Future<void> _loadMuscleGroups() async {
     try {
       final muscleGroups = await _workoutService.getAllMuscleGroups();
@@ -89,14 +91,6 @@ class _MuscleGroupSelectionScreenState extends State<MuscleGroupSelectionScreen>
           icon: const Icon(Icons.close),
           onPressed: () => Navigator.pop(context),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {
-              // TODO: Implement search functionality
-            },
-          ),
-        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -135,15 +129,16 @@ class _MuscleGroupSelectionScreenState extends State<MuscleGroupSelectionScreen>
 class ExerciseSelectionScreen extends StatefulWidget {
   final String muscleGroup;
   final DateTime startTime;
-  
+
   const ExerciseSelectionScreen({
-    super.key, 
+    super.key,
     required this.muscleGroup,
     required this.startTime,
   });
 
   @override
-  State<ExerciseSelectionScreen> createState() => _ExerciseSelectionScreenState();
+  State<ExerciseSelectionScreen> createState() =>
+      _ExerciseSelectionScreenState();
 }
 
 class _ExerciseSelectionScreenState extends State<ExerciseSelectionScreen> {
@@ -156,10 +151,11 @@ class _ExerciseSelectionScreenState extends State<ExerciseSelectionScreen> {
     super.initState();
     _loadExercises();
   }
-  
+
   Future<void> _loadExercises() async {
     try {
-      final exercises = await _workoutService.getExercisesByMuscleGroup(widget.muscleGroup);
+      final exercises =
+          await _workoutService.getExercisesByMuscleGroup(widget.muscleGroup);
       setState(() {
         _exercises = exercises;
         _isLoading = false;
@@ -181,19 +177,12 @@ class _ExerciseSelectionScreenState extends State<ExerciseSelectionScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {
-              // TODO: Implement search functionality
-            },
-          ),
-        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _exercises.isEmpty
-              ? const Center(child: Text('No exercises found for this muscle group'))
+              ? const Center(
+                  child: Text('No exercises found for this muscle group'))
               : ListView.builder(
                   itemCount: _exercises.length,
                   itemBuilder: (context, index) {
@@ -221,7 +210,6 @@ class _ExerciseSelectionScreenState extends State<ExerciseSelectionScreen> {
                               },
                             )
                           : null,
-                      trailing: const Icon(Icons.more_vert),
                       onTap: () {
                         Navigator.push(
                           context,
@@ -246,9 +234,9 @@ class _ExerciseSelectionScreenState extends State<ExerciseSelectionScreen> {
 class ExerciseInfoDialog extends StatelessWidget {
   final String exerciseName;
   final String description;
-  
+
   const ExerciseInfoDialog({
-    super.key, 
+    super.key,
     required this.exerciseName,
     required this.description,
   });
@@ -303,11 +291,11 @@ class SetEntryScreen extends StatefulWidget {
   final String muscleGroup;
   final String exerciseName;
   final DateTime startTime;
-  
+
   const SetEntryScreen({
-    super.key, 
+    super.key,
     required this.exerciseId,
-    required this.muscleGroup, 
+    required this.muscleGroup,
     required this.exerciseName,
     required this.startTime,
   });
@@ -322,14 +310,14 @@ class _SetEntryScreenState extends State<SetEntryScreen> {
   bool _isMetric = true; // kg vs lbs
   final TextEditingController _notesController = TextEditingController();
   bool _isSaving = false;
-  
+
   @override
   void initState() {
     super.initState();
     // Add the first set automatically
     _addSet();
   }
-  
+
   @override
   void dispose() {
     _notesController.dispose();
@@ -340,13 +328,13 @@ class _SetEntryScreenState extends State<SetEntryScreen> {
     }
     super.dispose();
   }
-  
+
   void _addSet() {
     setState(() {
       // Get previous set values if available
       final prevWeight = _sets.isNotEmpty ? _sets.last['weight'] : '';
       final prevReps = _sets.isNotEmpty ? _sets.last['reps'] : '';
-      
+
       _sets.add({
         'setNumber': _sets.length + 1,
         'weight': prevWeight,
@@ -356,13 +344,13 @@ class _SetEntryScreenState extends State<SetEntryScreen> {
       });
     });
   }
-  
+
   void _removeSet(int index) {
     setState(() {
       // Dispose controllers for the removed set
       _sets[index]['weightController'].dispose();
       _sets[index]['repsController'].dispose();
-      
+
       _sets.removeAt(index);
       // Update set numbers
       for (int i = 0; i < _sets.length; i++) {
@@ -370,7 +358,7 @@ class _SetEntryScreenState extends State<SetEntryScreen> {
       }
     });
   }
-  
+
   Future<void> _saveExercise() async {
     // Validate inputs
     bool hasEmptyFields = false;
@@ -380,35 +368,37 @@ class _SetEntryScreenState extends State<SetEntryScreen> {
         break;
       }
     }
-    
+
     if (hasEmptyFields) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all weight and rep values')),
+        const SnackBar(
+            content: Text('Please fill in all weight and rep values')),
       );
       return;
     }
-    
+
     setState(() {
       _isSaving = true;
     });
-    
+
     try {
       // 1. Create the workout only now when user is saving
-      final durationInMinutes = DateTime.now().difference(widget.startTime).inMinutes;
-      
+      final durationInMinutes =
+          DateTime.now().difference(widget.startTime).inMinutes;
+
       // Create a new workout
       final workoutId = await _workoutService.createWorkout(
         date: widget.startTime,
         duration: durationInMinutes,
         notes: _notesController.text.isEmpty ? null : _notesController.text,
       );
-      
+
       // 2. Add the exercise to the workout
       final workoutExerciseId = await _workoutService.addExerciseToWorkout(
         workoutId: workoutId,
         exerciseId: widget.exerciseId,
       );
-      
+
       // 3. Save each set to the database
       for (var set in _sets) {
         await _workoutService.addSetToWorkoutExercise(
@@ -418,9 +408,9 @@ class _SetEntryScreenState extends State<SetEntryScreen> {
           weight: double.tryParse(set['weight'].toString()) ?? 0.0,
         );
       }
-      
+
       if (!mounted) return;
-      
+
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -428,13 +418,13 @@ class _SetEntryScreenState extends State<SetEntryScreen> {
           backgroundColor: Colors.green,
         ),
       );
-      
+
       // Pop back to exercise selection
       Navigator.pop(context);
     } catch (e) {
       print('Error saving workout: $e');
       if (!mounted) return;
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error saving exercise: $e')),
       );
@@ -505,7 +495,7 @@ class _SetEntryScreenState extends State<SetEntryScreen> {
                 ],
               ),
             ),
-            
+
             // Weight unit selector
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -538,13 +528,16 @@ class _SetEntryScreenState extends State<SetEntryScreen> {
                 ],
               ),
             ),
-            
+
             // Header
             Padding(
               padding: const EdgeInsets.all(16).copyWith(bottom: 0),
               child: Row(
                 children: [
-                  const SizedBox(width: 50, child: Text('SET', style: TextStyle(fontWeight: FontWeight.bold))),
+                  const SizedBox(
+                      width: 50,
+                      child: Text('SET',
+                          style: TextStyle(fontWeight: FontWeight.bold))),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Text(
@@ -554,13 +547,14 @@ class _SetEntryScreenState extends State<SetEntryScreen> {
                   ),
                   const SizedBox(width: 16),
                   const Expanded(
-                    child: Text('REPS', style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: Text('REPS',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                   const SizedBox(width: 48), // For delete button
                 ],
               ),
             ),
-            
+
             // Set rows
             Padding(
               padding: const EdgeInsets.all(16),
@@ -583,7 +577,7 @@ class _SetEntryScreenState extends State<SetEntryScreen> {
                           ),
                         ),
                         const SizedBox(width: 16),
-                        
+
                         // Weight input
                         Expanded(
                           child: TextField(
@@ -593,7 +587,8 @@ class _SetEntryScreenState extends State<SetEntryScreen> {
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
                             ),
                             onChanged: (value) {
                               set['weight'] = value;
@@ -601,7 +596,7 @@ class _SetEntryScreenState extends State<SetEntryScreen> {
                           ),
                         ),
                         const SizedBox(width: 16),
-                        
+
                         // Reps input
                         Expanded(
                           child: TextField(
@@ -611,7 +606,8 @@ class _SetEntryScreenState extends State<SetEntryScreen> {
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
                             ),
                             onChanged: (value) {
                               set['reps'] = value;
@@ -619,13 +615,15 @@ class _SetEntryScreenState extends State<SetEntryScreen> {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        
+
                         // Delete button
                         SizedBox(
                           width: 40,
                           child: IconButton(
                             icon: const Icon(Icons.delete_outline),
-                            onPressed: _sets.length > 1 ? () => _removeSet(index) : null,
+                            onPressed: _sets.length > 1
+                                ? () => _removeSet(index)
+                                : null,
                             color: Colors.red.shade400,
                           ),
                         ),
@@ -635,7 +633,7 @@ class _SetEntryScreenState extends State<SetEntryScreen> {
                 }).toList(),
               ),
             ),
-            
+
             // Add set button
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -648,7 +646,7 @@ class _SetEntryScreenState extends State<SetEntryScreen> {
                 ),
               ),
             ),
-            
+
             // Notes
             Padding(
               padding: const EdgeInsets.all(16),
@@ -659,12 +657,13 @@ class _SetEntryScreenState extends State<SetEntryScreen> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
                 maxLines: 2,
               ),
             ),
-            
+
             // Save button
             Padding(
               padding: const EdgeInsets.all(16).copyWith(top: 0),
@@ -677,7 +676,8 @@ class _SetEntryScreenState extends State<SetEntryScreen> {
                 ),
                 child: _isSaving
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('Save Exercise', style: TextStyle(fontSize: 16)),
+                    : const Text('Save Exercise',
+                        style: TextStyle(fontSize: 16)),
               ),
             ),
           ],

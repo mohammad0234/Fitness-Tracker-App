@@ -26,7 +26,6 @@ class _MuscleGroupPieChartState extends State<MuscleGroupPieChart> {
     'Shoulders': Colors.purple.shade400,
     'Biceps': Colors.orange.shade400,
     'Triceps': Colors.cyan.shade400,
-    'Abs': Colors.yellow.shade700,
     'Calves': Colors.pink.shade400,
     'Forearms': Colors.teal.shade400,
     'Traps': Colors.indigo.shade400,
@@ -78,7 +77,8 @@ class _MuscleGroupPieChartState extends State<MuscleGroupPieChart> {
                           touchedIndex = -1;
                           return;
                         }
-                        touchedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
+                        touchedIndex = pieTouchResponse
+                            .touchedSection!.touchedSectionIndex;
                       });
                     },
                   ),
@@ -117,7 +117,7 @@ class _MuscleGroupPieChartState extends State<MuscleGroupPieChart> {
   Widget _buildLegendItem(int index) {
     final data = widget.muscleGroupData[index];
     final isHighlighted = touchedIndex == index;
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
@@ -162,7 +162,7 @@ class _MuscleGroupPieChartState extends State<MuscleGroupPieChart> {
         final isTouched = i == touchedIndex;
         final fontSize = isTouched ? 18.0 : 14.0;
         final radius = isTouched ? 60.0 : 50.0;
-        
+
         return PieChartSectionData(
           color: _getColorForMuscleGroup(data['muscleGroup']),
           value: data['percentage'],
@@ -178,7 +178,7 @@ class _MuscleGroupPieChartState extends State<MuscleGroupPieChart> {
     );
   }
 
-Widget _buildEmptyState() {
+  Widget _buildEmptyState() {
     return SizedBox(
       height: 200,
       child: Center(
