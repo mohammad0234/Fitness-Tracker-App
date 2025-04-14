@@ -16,6 +16,23 @@ class NotificationMessages {
     return "Your $goalName goal expires in $daysLeft days!";
   }
 
+  // Weight goal specific notifications
+  static String weightMilestone(bool isLoss, double amount) {
+    final changeType = isLoss ? "lost" : "gained";
+    return "Weight milestone: You've $changeType ${amount.abs().toStringAsFixed(1)}kg so far!";
+  }
+
+  static String weightGoalPace(bool isLoss, bool onTrack) {
+    final direction = isLoss ? "loss" : "gain";
+    return onTrack
+        ? "You're on pace to reach your weight $direction goal!"
+        : "Your weight $direction is slower than needed to reach your goal on time.";
+  }
+
+  static String weightLogReminder() {
+    return "Remember to log your weight today to track your progress!";
+  }
+
   // Streak-related notification messages
   static String streakMaintenance(int currentStreak) {
     return "Don't break your $currentStreak-day streak - log a workout today!";

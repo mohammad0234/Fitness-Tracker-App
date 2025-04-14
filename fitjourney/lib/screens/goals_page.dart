@@ -4,6 +4,7 @@ import 'package:fitjourney/services/goal_service.dart';
 import 'package:intl/intl.dart';
 import 'log_goal_flow.dart';
 import 'package:fitjourney/screens/goal_detail_screen.dart';
+import 'package:fitjourney/screens/weight_goal_detail_screen.dart';
 
 class GoalsPage extends StatefulWidget {
   const GoalsPage({super.key});
@@ -287,7 +288,7 @@ class _GoalsPageState extends State<GoalsPage> {
                         if (_activeGoals.isEmpty)
                           _buildEmptyGoalsMessage()
                         else
-                          ..._activeGoals.map((goal) => _buildGoalCard(goal)),
+                          ..._activeGoals.map((goal) => _buildGoalItem(goal)),
 
                         const SizedBox(height: 32),
 
@@ -466,9 +467,13 @@ class _GoalsPageState extends State<GoalsPage> {
     );
   }
 
-  Widget _buildGoalCard(Map<String, dynamic> goal) {
+  Widget _buildGoalItem(Map<String, dynamic> goalInfo) {
+    final Color goalColor = _getGoalColor(goalInfo['type']);
+    final Widget goalIcon = _getGoalIcon(goalInfo['type']);
+    final int goalId = goalInfo['goalId'];
+    final double progress = goalInfo['progress'].clamp(0.0, 1.0);
+
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
@@ -476,160 +481,232 @@ class _GoalsPageState extends State<GoalsPage> {
       ),
       child: InkWell(
         onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => GoalDetailScreen(goalId: goal['goalId']),
-            ),
-          ).then((result) {
-            if (result == true) {
-              _loadGoalData();
-            }
-          });
+          // Navigate to the appropriate goal detail screen based on type
+          if (goalInfo['type'] == 'ExerciseTarget') {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => GoalDetailScreen(goalId: goalId),
+              ),
+            ).then((result) {
+              // Refresh if goal was modified or deleted
+              if (result == true) {
+                _loadGoalData();
+              }
+            });
+          } else if (goalInfo['type'] == 'WeightTarget') {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => WeightGoalDetailScreen(goalId: goalId),
+              ),
+            ).then((result) {
+              // Refresh if goal was modified or deleted
+              if (result == true) {
+                _loadGoalData();
+              }
+            });
+          } else {
+            // For other goal types (frequency, etc.)
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => GoalDetailScreen(goalId: goalId),
+              ),
+            ).then((result) {
+              if (result == true) {
+                _loadGoalData();
+              }
+            });
+          }
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  CircleAvatar(
+                    radius: 20,
+                    backgroundColor: goalColor.withOpacity(0.1),
+                    child: goalIcon,
+                  ),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      goal['title'] ?? 'Goal',
+                      goalInfo['title'],
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    goal['isExpired'] == true
-                        ? 'Expired'
-                        : '${goal['daysLeft']} days left',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: goal['isExpired'] == true
-                          ? Colors.red.shade700
-                          : Colors.blue.shade700,
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 16),
-              ClipRRect(
+              LinearProgressIndicator(
+                value: progress,
+                backgroundColor: Colors.grey.shade200,
+                valueColor: AlwaysStoppedAnimation<Color>(goalColor),
+                minHeight: 8,
                 borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  value: goal['progress'] ?? 0.0,
-                  backgroundColor: Colors.grey.shade200,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    goal['isExpired'] == true ? Colors.grey : Colors.blue,
-                  ),
-                  minHeight: 8,
-                ),
               ),
-              const SizedBox(height: 16),
-              if (goal['type'] == 'ExerciseTarget') ...[
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      goal['exerciseName'] ?? '',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade700,
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Display specific goal information based on type
+                  _buildGoalDetails(goalInfo),
+                  // Remaining days
+                  if (goalInfo['daysLeft'] > 0)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Current: ${goal['current']?.toStringAsFixed(1) ?? 0}kg',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey.shade700,
-                          ),
-                        ),
-                        Text(
-                          'Target: ${goal['target']?.toStringAsFixed(1) ?? 0}kg',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey.shade700,
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (goal.containsKey('startingWeight') &&
-                        goal.containsKey('formattedImprovement')) ...[
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Starting: ${goal['startingWeight']?.toStringAsFixed(1) ?? 0}kg',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey.shade700,
-                            ),
-                          ),
-                          Text(
-                            goal['formattedImprovement'],
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.green.shade600,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ] else if (goal.containsKey('formattedImprovement')) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        goal['formattedImprovement'],
+                      child: Text(
+                        '${goalInfo['daysLeft']} days left',
                         style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.green.shade600,
-                          fontWeight: FontWeight.w500,
+                          fontSize: 12,
+                          color: Colors.grey.shade700,
                         ),
                       ),
-                    ],
-                  ],
-                ),
-              ] else if (goal['type'] == 'WorkoutFrequency') ...[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Workouts completed: ${goal['current']?.toInt() ?? 0}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade700,
-                      ),
                     ),
-                    Text(
-                      'Target: ${goal['target']?.toInt() ?? 0}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade700,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                ],
+              ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Widget _buildGoalDetails(Map<String, dynamic> goalInfo) {
+    if (goalInfo['type'] == 'ExerciseTarget') {
+      // For strength goals
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${goalInfo['current']?.toStringAsFixed(1) ?? '0'} / ${goalInfo['target']?.toStringAsFixed(1) ?? '0'} kg',
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          if (goalInfo.containsKey('formattedImprovement'))
+            Text(
+              goalInfo['formattedImprovement'],
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.green.shade700,
+              ),
+            ),
+        ],
+      );
+    } else if (goalInfo['type'] == 'WorkoutFrequency') {
+      // For frequency goals
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${goalInfo['current']?.toInt() ?? 0} / ${goalInfo['target']?.toInt() ?? 0} workouts',
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            'Target: ${goalInfo['weeklyTarget']?.toStringAsFixed(1) ?? '0'}/week',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey.shade700,
+            ),
+          ),
+        ],
+      );
+    } else if (goalInfo['type'] == 'WeightTarget') {
+      // For weight goals
+      final isWeightLoss = goalInfo['isWeightLoss'] ?? false;
+      final isWeightGain = goalInfo['isWeightGain'] ?? false;
+      final currentWeight = goalInfo['current']?.toStringAsFixed(1) ?? '0';
+      final targetWeight = goalInfo['target']?.toStringAsFixed(1) ?? '0';
+      final goalType = isWeightLoss
+          ? 'Loss'
+          : isWeightGain
+              ? 'Gain'
+              : 'Maintenance';
+      final progressChange = goalInfo['formattedChange'] ?? '';
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$currentWeight / $targetWeight kg',
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            progressChange,
+            style: TextStyle(
+              fontSize: 12,
+              color:
+                  isWeightLoss ? Colors.green.shade700 : Colors.blue.shade700,
+            ),
+          ),
+        ],
+      );
+    } else {
+      return const Text('Unknown goal type');
+    }
+  }
+
+  Color _getGoalColor(String type) {
+    switch (type) {
+      case 'ExerciseTarget':
+        return Colors.orange;
+      case 'WorkoutFrequency':
+        return Colors.blue;
+      case 'WeightTarget':
+        return Colors.green;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  Widget _getGoalIcon(String type) {
+    switch (type) {
+      case 'ExerciseTarget':
+        return Icon(
+          Icons.fitness_center,
+          color: Colors.orange,
+          size: 24,
+        );
+      case 'WorkoutFrequency':
+        return Icon(
+          Icons.calendar_today,
+          color: Colors.blue,
+          size: 24,
+        );
+      case 'WeightTarget':
+        return Icon(
+          Icons.monitor_weight_outlined,
+          color: Colors.green,
+          size: 24,
+        );
+      default:
+        return Icon(
+          Icons.help_outline,
+          color: Colors.grey,
+          size: 24,
+        );
+    }
   }
 
   Widget _buildCompletedGoalItem(Map<String, dynamic> goal) {

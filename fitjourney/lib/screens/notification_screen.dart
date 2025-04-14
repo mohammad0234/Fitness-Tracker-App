@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 import 'package:fitjourney/screens/goal_detail_screen.dart';
 import 'package:fitjourney/screens/calendar_streak_screen.dart';
 import 'package:fitjourney/screens/progress_page.dart';
+import 'package:fitjourney/services/goal_service.dart';
+import 'package:fitjourney/screens/weight_goal_detail_screen.dart';
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
@@ -45,9 +47,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
         whereArgs: [userId],
         orderBy: 'timestamp DESC',
       );
-      
-      final notifications = result.map((map) => NotificationModel.fromMap(map)).toList();
-      
+
+      final notifications =
+          result.map((map) => NotificationModel.fromMap(map)).toList();
+
       setState(() {
         _notifications.clear();
         _notifications.addAll(notifications);
@@ -73,7 +76,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
         where: 'user_id = ? AND is_read = 0',
         whereArgs: [userId],
       );
-      
+
       await _loadNotifications();
     } catch (e) {
       print('Error marking notifications as read: $e');
@@ -133,7 +136,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 itemBuilder: (context, index) {
                   final filter = _filterOptions[index];
                   final isSelected = filter == _filterType;
-                  
+
                   return Padding(
                     padding: const EdgeInsets.only(right: 8.0),
                     child: ChoiceChip(
@@ -158,41 +161,43 @@ class _NotificationScreenState extends State<NotificationScreen> {
           // Notifications list
           Expanded(
             child: _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : filteredNotifications.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.notifications_off_outlined,
-                          size: 64,
-                          color: Colors.grey.shade400,
+                ? const Center(child: CircularProgressIndicator())
+                : filteredNotifications.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.notifications_off_outlined,
+                              size: 64,
+                              color: Colors.grey.shade400,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No notifications',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.grey.shade700,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No notifications',
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.grey.shade700,
-                          ),
+                      )
+                    : RefreshIndicator(
+                        onRefresh: _loadNotifications,
+                        child: ListView.builder(
+                          itemCount: filteredNotifications.length,
+                          itemBuilder: (context, index) {
+                            return NotificationCard(
+                              notification: filteredNotifications[index],
+                              onTap: () => _handleNotificationTap(
+                                  filteredNotifications[index]),
+                              onDismiss: () => _dismissNotification(
+                                  filteredNotifications[index]),
+                            );
+                          },
                         ),
-                      ],
-                    ),
-                  )
-                : RefreshIndicator(
-                    onRefresh: _loadNotifications,
-                    child: ListView.builder(
-                      itemCount: filteredNotifications.length,
-                      itemBuilder: (context, index) {
-                        return NotificationCard(
-                          notification: filteredNotifications[index],
-                          onTap: () => _handleNotificationTap(filteredNotifications[index]),
-                          onDismiss: () => _dismissNotification(filteredNotifications[index]),
-                        );
-                      },
-                    ),
-                  ),
+                      ),
           ),
         ],
       ),
@@ -232,9 +237,40 @@ class _NotificationScreenState extends State<NotificationScreen> {
     // Extract goal ID from message if possible
     final goalIdRegExp = RegExp(r'goal_(\d+)');
     final match = goalIdRegExp.firstMatch(message);
-    
+
     if (match != null) {
       final goalId = int.parse(match.group(1)!);
+
+      // First get the goal type to determine which screen to navigate to
+      _getGoalTypeAndNavigate(goalId);
+    }
+  }
+
+  // Helper method to get goal type and navigate to appropriate screen
+  Future<void> _getGoalTypeAndNavigate(int goalId) async {
+    try {
+      final goal = await GoalService.instance.getGoalById(goalId);
+      if (goal == null || !mounted) return;
+
+      if (goal.type == 'WeightTarget') {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => WeightGoalDetailScreen(goalId: goalId),
+          ),
+        );
+      } else {
+        // Default to regular goal detail screen for other goal types
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => GoalDetailScreen(goalId: goalId),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error navigating to goal: $e');
+      // Fall back to regular goal screen on error
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -265,14 +301,14 @@ class _NotificationScreenState extends State<NotificationScreen> {
   Future<void> _dismissNotification(NotificationModel notification) async {
     try {
       if (notification.notificationId == null) return;
-      
+
       final db = await DatabaseHelper.instance.database;
       await db.delete(
         'notification',
         where: 'notification_id = ?',
         whereArgs: [notification.notificationId],
       );
-      
+
       // Refresh notifications
       await _loadNotifications();
     } catch (e) {
@@ -313,7 +349,8 @@ class NotificationCard extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12.0),
           side: BorderSide(
-            color: notification.isRead ? Colors.transparent : Colors.blue.shade200,
+            color:
+                notification.isRead ? Colors.transparent : Colors.blue.shade200,
             width: 2.0,
           ),
         ),
@@ -330,7 +367,8 @@ class NotificationCard extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: _getNotificationColor(notification.type).withOpacity(0.1),
+                    color: _getNotificationColor(notification.type)
+                        .withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -340,7 +378,7 @@ class NotificationCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                
+
                 // Notification content
                 Expanded(
                   child: Column(
@@ -373,7 +411,8 @@ class NotificationCard extends StatelessWidget {
                       if (!notification.isRead)
                         Container(
                           margin: const EdgeInsets.only(top: 8),
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: Colors.blue.shade50,
                             borderRadius: BorderRadius.circular(12),

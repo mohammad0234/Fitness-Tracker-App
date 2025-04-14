@@ -87,21 +87,24 @@ class GoalTypeSelectionScreen extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const WeightGoalDetailsScreen(),
+                              builder: (context) =>
+                                  const WeightGoalDetailsScreen(),
                             ),
                           );
                         } else if (goalType['title'] == 'Strength Goal') {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const StrengthGoalDetailsScreen(),
+                              builder: (context) =>
+                                  const StrengthGoalDetailsScreen(),
                             ),
                           );
                         } else {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const FrequencyGoalDetailsScreen(),
+                              builder: (context) =>
+                                  const FrequencyGoalDetailsScreen(),
                             ),
                           );
                         }
@@ -113,7 +116,8 @@ class GoalTypeSelectionScreen extends StatelessWidget {
                           children: [
                             CircleAvatar(
                               radius: 24,
-                              backgroundColor: goalType['color'].withOpacity(0.1),
+                              backgroundColor:
+                                  goalType['color'].withOpacity(0.1),
                               child: Icon(
                                 goalType['icon'],
                                 color: goalType['color'],
@@ -167,11 +171,13 @@ class WeightGoalDetailsScreen extends StatefulWidget {
   const WeightGoalDetailsScreen({super.key});
 
   @override
-  State<WeightGoalDetailsScreen> createState() => _WeightGoalDetailsScreenState();
+  State<WeightGoalDetailsScreen> createState() =>
+      _WeightGoalDetailsScreenState();
 }
 
 class _WeightGoalDetailsScreenState extends State<WeightGoalDetailsScreen> {
-  final TextEditingController _currentWeightController = TextEditingController();
+  final TextEditingController _currentWeightController =
+      TextEditingController();
   final TextEditingController _targetWeightController = TextEditingController();
   DateTime _targetDate = DateTime.now().add(const Duration(days: 30));
   bool _isMetric = true; // kg vs lbs
@@ -233,7 +239,7 @@ class _WeightGoalDetailsScreenState extends State<WeightGoalDetailsScreen> {
               ],
             ),
             const SizedBox(height: 32),
-            
+
             // Unit selector
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
@@ -264,7 +270,7 @@ class _WeightGoalDetailsScreenState extends State<WeightGoalDetailsScreen> {
               ],
             ),
             const SizedBox(height: 24),
-            
+
             // Current weight
             Text(
               'Current Weight',
@@ -282,12 +288,13 @@ class _WeightGoalDetailsScreenState extends State<WeightGoalDetailsScreen> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
-                hintText: _isMetric ? 'Enter weight in kg' : 'Enter weight in lbs',
+                hintText:
+                    _isMetric ? 'Enter weight in kg' : 'Enter weight in lbs',
                 suffixText: _isMetric ? 'kg' : 'lbs',
               ),
             ),
             const SizedBox(height: 24),
-            
+
             // Target weight
             Text(
               'Target Weight',
@@ -305,12 +312,13 @@ class _WeightGoalDetailsScreenState extends State<WeightGoalDetailsScreen> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
-                hintText: _isMetric ? 'Enter target in kg' : 'Enter target in lbs',
+                hintText:
+                    _isMetric ? 'Enter target in kg' : 'Enter target in lbs',
                 suffixText: _isMetric ? 'kg' : 'lbs',
               ),
             ),
             const SizedBox(height: 24),
-            
+
             // Target date
             Text(
               'Target Date',
@@ -336,7 +344,8 @@ class _WeightGoalDetailsScreenState extends State<WeightGoalDetailsScreen> {
                 }
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.grey.shade400),
                   borderRadius: BorderRadius.circular(8),
@@ -360,20 +369,23 @@ class _WeightGoalDetailsScreenState extends State<WeightGoalDetailsScreen> {
               ),
             ),
             const SizedBox(height: 40),
-            
+
             // Create goal button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
                   // Validate inputs
-                  if (_currentWeightController.text.isEmpty || _targetWeightController.text.isEmpty) {
+                  if (_currentWeightController.text.isEmpty ||
+                      _targetWeightController.text.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Please enter both current and target weights')),
+                      const SnackBar(
+                          content: Text(
+                              'Please enter both current and target weights')),
                     );
                     return;
                   }
-                  
+
                   // Navigate to review screen
                   Navigator.push(
                     context,
@@ -419,30 +431,32 @@ class StrengthGoalDetailsScreen extends StatefulWidget {
   const StrengthGoalDetailsScreen({super.key});
 
   @override
-  State<StrengthGoalDetailsScreen> createState() => _StrengthGoalDetailsScreenState();
+  State<StrengthGoalDetailsScreen> createState() =>
+      _StrengthGoalDetailsScreenState();
 }
 
 class _StrengthGoalDetailsScreenState extends State<StrengthGoalDetailsScreen> {
   String? _selectedExerciseId;
   String _selectedExerciseName = 'Select an exercise';
-  final TextEditingController _currentWeightController = TextEditingController();
+  final TextEditingController _currentWeightController =
+      TextEditingController();
   final TextEditingController _targetWeightController = TextEditingController();
   DateTime _targetDate = DateTime.now().add(const Duration(days: 30));
   bool _isMetric = true; // kg vs lbs
   bool _isLoading = false;
   List<Exercise> _exercises = [];
-  
+
   @override
   void initState() {
     super.initState();
     _loadExercises();
   }
-  
+
   Future<void> _loadExercises() async {
     setState(() {
       _isLoading = true;
     });
-    
+
     try {
       final exercises = await WorkoutService.instance.getAllExercises();
       setState(() {
@@ -500,25 +514,26 @@ class _StrengthGoalDetailsScreenState extends State<StrengthGoalDetailsScreen> {
                 ),
                 Expanded(
                   child: _isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : ListView.builder(
-                        controller: scrollController,
-                        itemCount: _exercises.length,
-                        itemBuilder: (context, index) {
-                          final exercise = _exercises[index];
-                          return ListTile(
-                            title: Text(exercise.name),
-                            subtitle: Text(exercise.muscleGroup ?? ''),
-                            onTap: () {
-                              setState(() {
-                                _selectedExerciseId = exercise.exerciseId.toString();
-                                _selectedExerciseName = exercise.name;
-                              });
-                              Navigator.pop(context);
-                            },
-                          );
-                        },
-                      ),
+                      ? const Center(child: CircularProgressIndicator())
+                      : ListView.builder(
+                          controller: scrollController,
+                          itemCount: _exercises.length,
+                          itemBuilder: (context, index) {
+                            final exercise = _exercises[index];
+                            return ListTile(
+                              title: Text(exercise.name),
+                              subtitle: Text(exercise.muscleGroup ?? ''),
+                              onTap: () {
+                                setState(() {
+                                  _selectedExerciseId =
+                                      exercise.exerciseId.toString();
+                                  _selectedExerciseName = exercise.name;
+                                });
+                                Navigator.pop(context);
+                              },
+                            );
+                          },
+                        ),
                 ),
               ],
             );
@@ -578,7 +593,7 @@ class _StrengthGoalDetailsScreenState extends State<StrengthGoalDetailsScreen> {
               ],
             ),
             const SizedBox(height: 32),
-            
+
             // Exercise selection
             Text(
               'Select Exercise',
@@ -592,7 +607,8 @@ class _StrengthGoalDetailsScreenState extends State<StrengthGoalDetailsScreen> {
             GestureDetector(
               onTap: _selectExercise,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.grey.shade400),
                   borderRadius: BorderRadius.circular(8),
@@ -616,7 +632,7 @@ class _StrengthGoalDetailsScreenState extends State<StrengthGoalDetailsScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            
+
             // Unit selector
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
@@ -647,7 +663,7 @@ class _StrengthGoalDetailsScreenState extends State<StrengthGoalDetailsScreen> {
               ],
             ),
             const SizedBox(height: 24),
-            
+
             // Current weight
             Text(
               'Current Weight',
@@ -665,12 +681,13 @@ class _StrengthGoalDetailsScreenState extends State<StrengthGoalDetailsScreen> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
-                hintText: _isMetric ? 'Enter weight in kg' : 'Enter weight in lbs',
+                hintText:
+                    _isMetric ? 'Enter weight in kg' : 'Enter weight in lbs',
                 suffixText: _isMetric ? 'kg' : 'lbs',
               ),
             ),
             const SizedBox(height: 24),
-            
+
             // Target weight
             Text(
               'Target Weight',
@@ -688,12 +705,13 @@ class _StrengthGoalDetailsScreenState extends State<StrengthGoalDetailsScreen> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
-                hintText: _isMetric ? 'Enter target in kg' : 'Enter target in lbs',
+                hintText:
+                    _isMetric ? 'Enter target in kg' : 'Enter target in lbs',
                 suffixText: _isMetric ? 'kg' : 'lbs',
               ),
             ),
             const SizedBox(height: 24),
-            
+
             // Target date
             Text(
               'Target Date',
@@ -719,7 +737,8 @@ class _StrengthGoalDetailsScreenState extends State<StrengthGoalDetailsScreen> {
                 }
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.grey.shade400),
                   borderRadius: BorderRadius.circular(8),
@@ -743,40 +762,43 @@ class _StrengthGoalDetailsScreenState extends State<StrengthGoalDetailsScreen> {
               ),
             ),
             const SizedBox(height: 40),
-            
+
             // Create goal button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _selectedExerciseId == null 
-                  ? null 
-                  : () {
-                      // Validate inputs
-                      if (_currentWeightController.text.isEmpty || _targetWeightController.text.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Please enter both current and target weights')),
-                        );
-                        return;
-                      }
-                      
-                      // Navigate to review screen
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => GoalReviewScreen(
-                            goalType: 'Strength Goal',
-                            details: {
-                              'exerciseId': _selectedExerciseId,
-                              'exerciseName': _selectedExerciseName,
-                              'currentWeight': _currentWeightController.text,
-                              'targetWeight': _targetWeightController.text,
-                              'targetDate': _targetDate,
-                              'unit': _isMetric ? 'kg' : 'lbs',
-                            },
+                onPressed: _selectedExerciseId == null
+                    ? null
+                    : () {
+                        // Validate inputs
+                        if (_currentWeightController.text.isEmpty ||
+                            _targetWeightController.text.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text(
+                                    'Please enter both current and target weights')),
+                          );
+                          return;
+                        }
+
+                        // Navigate to review screen
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => GoalReviewScreen(
+                              goalType: 'Strength Goal',
+                              details: {
+                                'exerciseId': _selectedExerciseId,
+                                'exerciseName': _selectedExerciseName,
+                                'currentWeight': _currentWeightController.text,
+                                'targetWeight': _targetWeightController.text,
+                                'targetDate': _targetDate,
+                                'unit': _isMetric ? 'kg' : 'lbs',
+                              },
+                            ),
                           ),
-                        ),
-                      );
-                    },
+                        );
+                      },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,
                   foregroundColor: Colors.white,
@@ -806,13 +828,15 @@ class FrequencyGoalDetailsScreen extends StatefulWidget {
   const FrequencyGoalDetailsScreen({super.key});
 
   @override
-  State<FrequencyGoalDetailsScreen> createState() => _FrequencyGoalDetailsScreenState();
+  State<FrequencyGoalDetailsScreen> createState() =>
+      _FrequencyGoalDetailsScreenState();
 }
 
-class _FrequencyGoalDetailsScreenState extends State<FrequencyGoalDetailsScreen> {
+class _FrequencyGoalDetailsScreenState
+    extends State<FrequencyGoalDetailsScreen> {
   int _workoutsPerWeek = 3;
   int _goalDuration = 4; // weeks
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -863,7 +887,7 @@ class _FrequencyGoalDetailsScreenState extends State<FrequencyGoalDetailsScreen>
               ],
             ),
             const SizedBox(height: 32),
-            
+
             // Workouts per week
             Text(
               'Workouts Per Week',
@@ -896,7 +920,9 @@ class _FrequencyGoalDetailsScreenState extends State<FrequencyGoalDetailsScreen>
                           : null,
                       icon: Icon(
                         Icons.remove_circle_outline,
-                        color: _workoutsPerWeek > 1 ? Colors.blue : Colors.grey.shade400,
+                        color: _workoutsPerWeek > 1
+                            ? Colors.blue
+                            : Colors.grey.shade400,
                       ),
                     ),
                     IconButton(
@@ -909,7 +935,9 @@ class _FrequencyGoalDetailsScreenState extends State<FrequencyGoalDetailsScreen>
                           : null,
                       icon: Icon(
                         Icons.add_circle_outline,
-                        color: _workoutsPerWeek < 7 ? Colors.blue : Colors.grey.shade400,
+                        color: _workoutsPerWeek < 7
+                            ? Colors.blue
+                            : Colors.grey.shade400,
                       ),
                     ),
                   ],
@@ -930,7 +958,7 @@ class _FrequencyGoalDetailsScreenState extends State<FrequencyGoalDetailsScreen>
               },
             ),
             const SizedBox(height: 32),
-            
+
             // Goal duration
             Text(
               'Goal Duration',
@@ -963,7 +991,9 @@ class _FrequencyGoalDetailsScreenState extends State<FrequencyGoalDetailsScreen>
                           : null,
                       icon: Icon(
                         Icons.remove_circle_outline,
-                        color: _goalDuration > 1 ? Colors.blue : Colors.grey.shade400,
+                        color: _goalDuration > 1
+                            ? Colors.blue
+                            : Colors.grey.shade400,
                       ),
                     ),
                     IconButton(
@@ -976,7 +1006,9 @@ class _FrequencyGoalDetailsScreenState extends State<FrequencyGoalDetailsScreen>
                           : null,
                       icon: Icon(
                         Icons.add_circle_outline,
-                        color: _goalDuration < 12 ? Colors.blue : Colors.grey.shade400,
+                        color: _goalDuration < 12
+                            ? Colors.blue
+                            : Colors.grey.shade400,
                       ),
                     ),
                   ],
@@ -997,15 +1029,16 @@ class _FrequencyGoalDetailsScreenState extends State<FrequencyGoalDetailsScreen>
               },
             ),
             const SizedBox(height: 40),
-            
+
             // Create goal button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
                   // Calculate end date
-                  final endDate = DateTime.now().add(Duration(days: _goalDuration * 7));
-                  
+                  final endDate =
+                      DateTime.now().add(Duration(days: _goalDuration * 7));
+
                   // Navigate to review screen
                   Navigator.push(
                     context,
@@ -1050,7 +1083,7 @@ class _FrequencyGoalDetailsScreenState extends State<FrequencyGoalDetailsScreen>
 class GoalReviewScreen extends StatefulWidget {
   final String goalType;
   final Map<String, dynamic> details;
-  
+
   const GoalReviewScreen({
     super.key,
     required this.goalType,
@@ -1071,12 +1104,23 @@ class _GoalReviewScreenState extends State<GoalReviewScreen> {
 
     try {
       if (widget.goalType == 'Weight Goal') {
-        // Weight goals not implemented yet
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Weight tracking not implemented yet')),
+        // Implement weight goal creation
+        final currentWeight = double.parse(widget.details['currentWeight']);
+        final targetWeight = double.parse(widget.details['targetWeight']);
+        final targetDate = widget.details['targetDate'] as DateTime;
+
+        // Create the weight goal
+        await GoalService.instance.createWeightGoal(
+          currentWeight: currentWeight,
+          targetWeight: targetWeight,
+          targetDate: targetDate,
         );
-      } 
-      else if (widget.goalType == 'Strength Goal') {
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Weight goal created successfully!')),
+        );
+      } else if (widget.goalType == 'Strength Goal') {
         final exerciseId = int.parse(widget.details['exerciseId'] as String);
         final currentWeight = double.parse(widget.details['currentWeight']);
         final targetWeight = double.parse(widget.details['targetWeight']);
@@ -1094,8 +1138,7 @@ class _GoalReviewScreenState extends State<GoalReviewScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Strength goal created successfully!')),
         );
-      } 
-      else if (widget.goalType == 'Frequency Goal') {
+      } else if (widget.goalType == 'Frequency Goal') {
         final totalWorkouts = widget.details['totalWorkouts'] as int;
         final endDate = widget.details['endDate'] as DateTime;
 
@@ -1113,7 +1156,8 @@ class _GoalReviewScreenState extends State<GoalReviewScreen> {
 
       // Navigate back to goals page
       if (!mounted) return;
-      Navigator.of(context).pop(); // Pop back to the exercise/frequency selection
+      Navigator.of(context)
+          .pop(); // Pop back to the exercise/frequency selection
       Navigator.of(context).pop(); // Pop back to the goal type selection
       Navigator.of(context).pop(); // Pop back to the Goals page
     } catch (e) {
@@ -1161,7 +1205,7 @@ class _GoalReviewScreenState extends State<GoalReviewScreen> {
               ),
             ),
             const SizedBox(height: 32),
-            
+
             // Goal details card
             Card(
               elevation: 0,
@@ -1178,7 +1222,8 @@ class _GoalReviewScreenState extends State<GoalReviewScreen> {
                       children: [
                         CircleAvatar(
                           radius: 20,
-                          backgroundColor: _getGoalColor(widget.goalType).withOpacity(0.1),
+                          backgroundColor:
+                              _getGoalColor(widget.goalType).withOpacity(0.1),
                           child: Icon(
                             _getGoalIcon(widget.goalType),
                             color: _getGoalColor(widget.goalType),
@@ -1196,44 +1241,61 @@ class _GoalReviewScreenState extends State<GoalReviewScreen> {
                       ],
                     ),
                     const Divider(height: 32, thickness: 1),
-                    
+
                     // Display different details based on goal type
                     if (widget.goalType == 'Weight Goal') ...[
-                      _buildDetailRow('Current Weight', '${widget.details['currentWeight']} ${widget.details['unit']}'),
+                      _buildDetailRow('Current Weight',
+                          '${widget.details['currentWeight']} ${widget.details['unit']}'),
                       const SizedBox(height: 12),
-                      _buildDetailRow('Target Weight', '${widget.details['targetWeight']} ${widget.details['unit']}'),
+                      _buildDetailRow('Target Weight',
+                          '${widget.details['targetWeight']} ${widget.details['unit']}'),
                       const SizedBox(height: 12),
-                      _buildDetailRow('Target Date', DateFormat('MMMM d, yyyy').format(widget.details['targetDate'])),
+                      _buildDetailRow(
+                          'Target Date',
+                          DateFormat('MMMM d, yyyy')
+                              .format(widget.details['targetDate'])),
                       const SizedBox(height: 12),
-                      _buildDetailRow('Duration', '${_calculateDays(widget.details['targetDate'])} days'),
-                    ] 
-                    else if (widget.goalType == 'Strength Goal') ...[
-                      _buildDetailRow('Exercise', widget.details['exerciseName']),
+                      _buildDetailRow('Duration',
+                          '${_calculateDays(widget.details['targetDate'])} days'),
+                    ] else if (widget.goalType == 'Strength Goal') ...[
+                      _buildDetailRow(
+                          'Exercise', widget.details['exerciseName']),
                       const SizedBox(height: 12),
-                      _buildDetailRow('Current Weight', '${widget.details['currentWeight']} ${widget.details['unit']}'),
+                      _buildDetailRow('Current Weight',
+                          '${widget.details['currentWeight']} ${widget.details['unit']}'),
                       const SizedBox(height: 12),
-                      _buildDetailRow('Target Weight', '${widget.details['targetWeight']} ${widget.details['unit']}'),
+                      _buildDetailRow('Target Weight',
+                          '${widget.details['targetWeight']} ${widget.details['unit']}'),
                       const SizedBox(height: 12),
-                      _buildDetailRow('Target Date', DateFormat('MMMM d, yyyy').format(widget.details['targetDate'])),
+                      _buildDetailRow(
+                          'Target Date',
+                          DateFormat('MMMM d, yyyy')
+                              .format(widget.details['targetDate'])),
                       const SizedBox(height: 12),
-                      _buildDetailRow('Duration', '${_calculateDays(widget.details['targetDate'])} days'),
-                    ]
-                    else if (widget.goalType == 'Frequency Goal') ...[
-                      _buildDetailRow('Workouts Per Week', '${widget.details['workoutsPerWeek']} workouts'),
+                      _buildDetailRow('Duration',
+                          '${_calculateDays(widget.details['targetDate'])} days'),
+                    ] else if (widget.goalType == 'Frequency Goal') ...[
+                      _buildDetailRow('Workouts Per Week',
+                          '${widget.details['workoutsPerWeek']} workouts'),
                       const SizedBox(height: 12),
-                      _buildDetailRow('Duration', '${widget.details['duration']} weeks'),
+                      _buildDetailRow(
+                          'Duration', '${widget.details['duration']} weeks'),
                       const SizedBox(height: 12),
-                      _buildDetailRow('End Date', DateFormat('MMMM d, yyyy').format(widget.details['endDate'])),
+                      _buildDetailRow(
+                          'End Date',
+                          DateFormat('MMMM d, yyyy')
+                              .format(widget.details['endDate'])),
                       const SizedBox(height: 12),
-                      _buildDetailRow('Total Workouts', '${widget.details['totalWorkouts']} workouts'),
+                      _buildDetailRow('Total Workouts',
+                          '${widget.details['totalWorkouts']} workouts'),
                     ],
                   ],
                 ),
               ),
             ),
-            
+
             const Spacer(),
-            
+
             // Save goal button
             SizedBox(
               width: double.infinity,
@@ -1266,7 +1328,7 @@ class _GoalReviewScreenState extends State<GoalReviewScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            
+
             // Edit button
             SizedBox(
               width: double.infinity,
@@ -1293,7 +1355,7 @@ class _GoalReviewScreenState extends State<GoalReviewScreen> {
       ),
     );
   }
-  
+
   Widget _buildDetailRow(String label, String value) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1315,11 +1377,11 @@ class _GoalReviewScreenState extends State<GoalReviewScreen> {
       ],
     );
   }
-  
+
   int _calculateDays(DateTime targetDate) {
     return targetDate.difference(DateTime.now()).inDays;
   }
-  
+
   Color _getGoalColor(String goalType) {
     switch (goalType) {
       case 'Weight Goal':
@@ -1332,7 +1394,7 @@ class _GoalReviewScreenState extends State<GoalReviewScreen> {
         return Colors.grey;
     }
   }
-  
+
   IconData _getGoalIcon(String goalType) {
     switch (goalType) {
       case 'Weight Goal':

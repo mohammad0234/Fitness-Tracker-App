@@ -1,13 +1,14 @@
 class Goal {
   final int? goalId;
   final String userId;
-  final String type; // 'ExerciseTarget' or 'WorkoutFrequency'
+  final String type; // 'ExerciseTarget' or 'WorkoutFrequency' or 'WeightTarget'
   final int? exerciseId;
   final double? targetValue;
   final DateTime startDate;
   final DateTime endDate;
   final bool achieved;
   final double currentProgress;
+  final double? startingWeight; // Added for weight goals
 
   Goal({
     this.goalId,
@@ -19,6 +20,7 @@ class Goal {
     required this.endDate,
     this.achieved = false,
     this.currentProgress = 0,
+    this.startingWeight,
   });
 
   factory Goal.fromMap(Map<String, dynamic> map) {
@@ -27,11 +29,18 @@ class Goal {
       userId: map['user_id'],
       type: map['type'],
       exerciseId: map['exercise_id'],
-      targetValue: map['target_value'] != null ? (map['target_value'] as num).toDouble() : null,
+      targetValue: map['target_value'] != null
+          ? (map['target_value'] as num).toDouble()
+          : null,
       startDate: DateTime.parse(map['start_date']),
       endDate: DateTime.parse(map['end_date']),
       achieved: map['achieved'] == 1 || map['achieved'] == true,
-      currentProgress: map['current_progress'] != null ? (map['current_progress'] as num).toDouble() : 0,
+      currentProgress: map['current_progress'] != null
+          ? (map['current_progress'] as num).toDouble()
+          : 0,
+      startingWeight: map['starting_weight'] != null
+          ? (map['starting_weight'] as num).toDouble()
+          : null,
     );
   }
 
@@ -46,6 +55,7 @@ class Goal {
       'end_date': endDate.toIso8601String(),
       'achieved': achieved ? 1 : 0,
       'current_progress': currentProgress,
+      'starting_weight': startingWeight,
     };
   }
 }

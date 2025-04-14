@@ -179,7 +179,7 @@ class DatabaseHelper {
       CREATE TABLE IF NOT EXISTS goal (
         goal_id          INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id          TEXT NOT NULL,
-        type             TEXT NOT NULL CHECK (type IN ('ExerciseTarget','WorkoutFrequency')),
+        type             TEXT NOT NULL CHECK (type IN ('ExerciseTarget','WorkoutFrequency','WeightTarget')),
         exercise_id      INTEGER,
         target_value     REAL,
         start_date       DATE NOT NULL,
@@ -190,7 +190,8 @@ class DatabaseHelper {
         FOREIGN KEY (exercise_id) REFERENCES exercise(exercise_id),
         CHECK (
           (type = 'ExerciseTarget' AND exercise_id IS NOT NULL) OR
-          (type = 'WorkoutFrequency' AND exercise_id IS NULL)
+          (type = 'WorkoutFrequency' AND exercise_id IS NULL) OR
+          (type = 'WeightTarget' AND exercise_id IS NULL)
         )
       );
     ''');
@@ -1215,9 +1216,97 @@ class DatabaseHelper {
         await db.execute('ALTER TABLE daily_log ADD COLUMN notes TEXT');
       }
 
+      // Support for WeightTarget goals
+      try {
+        // We can't easily modify the check constraint, so recreate the goal table with new constraints
+        // First, check if we need to do this by attempting to insert a test weight goal
+        final testGoalResult = await db.rawQuery('''
+          SELECT name FROM sqlite_master 
+          WHERE type='table' AND name='goal' AND 
+          sql LIKE '%WeightTarget%'
+        ''');
+
+        if (testGoalResult.isEmpty) {
+          print('Running migration: Adding support for WeightTarget goals');
+
+          // Backup existing goals
+          final goals = await db.query('goal');
+
+          // Rename current goal table
+          await db.execute('ALTER TABLE goal RENAME TO goal_old');
+
+          // Create new goal table with updated constraints
+          await db.execute('''
+            CREATE TABLE IF NOT EXISTS goal (
+              goal_id          INTEGER PRIMARY KEY AUTOINCREMENT,
+              user_id          TEXT NOT NULL,
+              type             TEXT NOT NULL CHECK (type IN ('ExerciseTarget','WorkoutFrequency','WeightTarget')),
+              exercise_id      INTEGER,
+              target_value     REAL,
+              start_date       DATE NOT NULL,
+              end_date         DATE NOT NULL,
+              achieved         BOOLEAN DEFAULT FALSE,
+              current_progress REAL DEFAULT 0,
+              FOREIGN KEY (user_id) REFERENCES users(user_id),
+              FOREIGN KEY (exercise_id) REFERENCES exercise(exercise_id),
+              CHECK (
+                (type = 'ExerciseTarget' AND exercise_id IS NOT NULL) OR
+                (type = 'WorkoutFrequency' AND exercise_id IS NULL) OR
+                (type = 'WeightTarget' AND exercise_id IS NULL)
+              )
+            );
+          ''');
+
+          // Copy data from old table to new table
+          for (var goal in goals) {
+            await db.insert('goal', goal);
+          }
+
+          // Drop old table
+          await db.execute('DROP TABLE goal_old');
+
+          print('Migration completed: WeightTarget goals now supported');
+        }
+      } catch (e) {
+        print('Error updating goal table constraints: $e');
+        // Continue without throwing - this shouldn't break app functionality
+      }
+
+      // Add starting_weight column to goal table for weight goals if it doesn't exist
+      final List<Map<String, dynamic>> goalColumns =
+          await db.rawQuery('PRAGMA table_info(goal)');
+      final goalColumnNames =
+          goalColumns.map((col) => col['name'] as String).toList();
+
+      if (!goalColumnNames.contains('starting_weight')) {
+        print('Adding starting_weight column to goal table');
+        await db.execute('ALTER TABLE goal ADD COLUMN starting_weight REAL');
+
+        // Update existing weight goals to set starting_weight equal to current_progress
+        // as that was the initial starting weight when the goal was created
+        await db.execute('''
+          UPDATE goal 
+          SET starting_weight = current_progress 
+          WHERE type = 'WeightTarget'
+        ''');
+
+        print('Added starting_weight column to goal table');
+      }
+
       // Add future migrations here
     } catch (e) {
       print('Error running migrations: $e');
     }
+  }
+
+  // Insert a user weight measurement
+  Future<int> insertUserWeight(
+      String userId, double weight, DateTime date) async {
+    final db = await database;
+    return await db.insert('user_metrics', {
+      'user_id': userId,
+      'weight_kg': weight,
+      'measured_at': date.toIso8601String(),
+    });
   }
 }
