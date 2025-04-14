@@ -598,7 +598,28 @@ class _GoalsPageState extends State<GoalsPage> {
               fontWeight: FontWeight.bold,
             ),
           ),
-          if (goalInfo.containsKey('formattedImprovement'))
+          if (goalInfo.containsKey('startingWeight'))
+            Row(
+              children: [
+                Text(
+                  'From ${goalInfo['startingWeight']?.toStringAsFixed(1) ?? '0'} kg · ',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+                if (goalInfo.containsKey('formattedImprovement'))
+                  Text(
+                    goalInfo['formattedImprovement']
+                        .replaceAll('since starting', ''),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.green.shade700,
+                    ),
+                  ),
+              ],
+            )
+          else if (goalInfo.containsKey('formattedImprovement'))
             Text(
               goalInfo['formattedImprovement'],
               style: TextStyle(
@@ -635,12 +656,11 @@ class _GoalsPageState extends State<GoalsPage> {
       final isWeightGain = goalInfo['isWeightGain'] ?? false;
       final currentWeight = goalInfo['current']?.toStringAsFixed(1) ?? '0';
       final targetWeight = goalInfo['target']?.toStringAsFixed(1) ?? '0';
-      final goalType = isWeightLoss
-          ? 'Loss'
-          : isWeightGain
-              ? 'Gain'
-              : 'Maintenance';
+      final startingWeight =
+          goalInfo['startingWeight']?.toStringAsFixed(1) ?? '0';
       final progressChange = goalInfo['formattedChange'] ?? '';
+      final textColor =
+          isWeightLoss ? Colors.green.shade700 : Colors.blue.shade700;
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -652,13 +672,23 @@ class _GoalsPageState extends State<GoalsPage> {
               fontWeight: FontWeight.bold,
             ),
           ),
-          Text(
-            progressChange,
-            style: TextStyle(
-              fontSize: 12,
-              color:
-                  isWeightLoss ? Colors.green.shade700 : Colors.blue.shade700,
-            ),
+          Row(
+            children: [
+              Text(
+                'From $startingWeight kg · ',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade700,
+                ),
+              ),
+              Text(
+                progressChange.replaceAll('since starting', ''),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: textColor,
+                ),
+              ),
+            ],
           ),
         ],
       );
