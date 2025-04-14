@@ -286,4 +286,41 @@ class GoalService {
   Future<Goal?> getGoalById(int goalId) async {
     return await _dbHelper.getGoalById(goalId);
   }
+
+  // Get historical progress data for an exercise
+  Future<List<Map<String, dynamic>>> getExerciseProgressHistory(
+      int exerciseId, String userId) async {
+    final db = await _dbHelper.database;
+
+    // Get the maximum weight for each date for this exercise
+    final List<Map<String, dynamic>> maxWeightsByDate = await db.rawQuery('''
+      SELECT MAX(ws.weight) as max_weight, w.date
+      FROM workout_set ws
+      JOIN workout_exercise we ON ws.workout_exercise_id = we.workout_exercise_id
+      JOIN workout w ON we.workout_id = w.workout_id
+      WHERE we.exercise_id = ? AND w.user_id = ? AND ws.weight IS NOT NULL
+      GROUP BY w.date
+      ORDER BY w.date ASC
+    ''', [exerciseId, userId]);
+
+    // Convert to usable data points
+    List<Map<String, dynamic>> progressPoints = [];
+
+    for (var record in maxWeightsByDate) {
+      final double maxWeight = (record['max_weight'] as num).toDouble();
+      final DateTime date = DateTime.parse(record['date'] as String);
+
+      progressPoints.add({
+        'date': date,
+        'weight': maxWeight,
+        'formattedDate': '${date.day}/${date.month}',
+      });
+    }
+
+    // Make sure points are sorted by date
+    progressPoints.sort(
+        (a, b) => (a['date'] as DateTime).compareTo(b['date'] as DateTime));
+
+    return progressPoints;
+  }
 }
