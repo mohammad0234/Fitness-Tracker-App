@@ -11,21 +11,39 @@ import 'package:fitjourney/utils/date_utils.dart';
 import 'package:fitjourney/services/notification_trigger_service.dart';
 
 class WorkoutService {
-  // Singleton instance
-  static final WorkoutService instance = WorkoutService._internal();
+  // Singleton instance - now uses the constructor with dependencies
+  static final WorkoutService instance = WorkoutService._internal(
+    DatabaseHelper.instance,
+    NotificationTriggerService.instance,
+    firebase_auth.FirebaseAuth.instance,
+    StreakService.instance,
+  );
 
-  // Database helper instance
-  final DatabaseHelper _dbHelper = DatabaseHelper.instance;
+  // Dependencies as properties
+  final DatabaseHelper _dbHelper;
+  final NotificationTriggerService _notificationTriggerService;
+  final firebase_auth.FirebaseAuth _auth;
+  final StreakService _streakService;
 
-  final NotificationTriggerService _notificationTriggerService =
-      NotificationTriggerService.instance;
+  // Public constructor for dependency injection (for testing)
+  WorkoutService(
+    this._dbHelper,
+    this._notificationTriggerService,
+    this._auth,
+    this._streakService,
+  );
 
-  // Private constructor
-  WorkoutService._internal();
+  // Private constructor used by the singleton
+  WorkoutService._internal(
+    this._dbHelper,
+    this._notificationTriggerService,
+    this._auth,
+    this._streakService,
+  );
 
   // Get the current user ID or throw an error if not logged in
   String _getCurrentUserId() {
-    final user = firebase_auth.FirebaseAuth.instance.currentUser;
+    final user = _auth.currentUser;
     if (user == null) {
       throw Exception('User not logged in');
     }
@@ -96,8 +114,7 @@ class WorkoutService {
 
     // Add this code to update the streak
     try {
-      // Import the StreakService at the top of the file
-      await StreakService.instance.logWorkout(date);
+      await _streakService.logWorkout(date);
       print('Streak updated after workout creation');
     } catch (e) {
       print('Error updating streak: $e');
