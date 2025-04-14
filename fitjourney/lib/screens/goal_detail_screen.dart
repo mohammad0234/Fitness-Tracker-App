@@ -438,7 +438,7 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                                 if (_goalDetails!.containsKey('weeklyTarget'))
                                   _buildDetailRow(
                                     'Weekly Target',
-                                    '${_goalDetails!['weeklyTarget']?.toStringAsFixed(1) ?? "0"} workouts/week',
+                                    '${(_goalDetails!['weeklyTarget'] ?? 0).round()} workouts per week',
                                   ),
                               ],
                             ],

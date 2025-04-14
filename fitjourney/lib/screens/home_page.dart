@@ -954,7 +954,7 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           Text(
-            'Target: ${goalInfo['weeklyTarget']?.toStringAsFixed(1) ?? '0'}/week',
+            'Target: ${(goalInfo['weeklyTarget'] ?? 0).round()} workouts per week',
             style: TextStyle(
               fontSize: 12,
               color: Colors.grey.shade700,

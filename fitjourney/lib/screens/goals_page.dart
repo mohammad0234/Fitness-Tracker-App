@@ -504,7 +504,7 @@ class _GoalsPageState extends State<GoalsPage> {
             ),
           ),
           Text(
-            'Target: ${goalInfo['weeklyTarget']?.toStringAsFixed(1) ?? '0'} workouts per week',
+            'Target: ${(goalInfo['weeklyTarget'] ?? 0).round()} workouts per week',
             style: TextStyle(
               fontSize: 12,
               color: Colors.grey.shade700,
