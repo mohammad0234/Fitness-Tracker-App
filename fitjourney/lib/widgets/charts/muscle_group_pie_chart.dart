@@ -26,10 +26,6 @@ class _MuscleGroupPieChartState extends State<MuscleGroupPieChart> {
     'Shoulders': Colors.purple.shade400,
     'Biceps': Colors.orange.shade400,
     'Triceps': Colors.cyan.shade400,
-    'Calves': Colors.pink.shade400,
-    'Forearms': Colors.teal.shade400,
-    'Traps': Colors.indigo.shade400,
-    'Cardio': Colors.brown.shade400,
   };
 
   // Get a color for a muscle group, with a fallback
