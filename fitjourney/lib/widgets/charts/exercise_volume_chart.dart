@@ -111,6 +111,10 @@ class _ExerciseVolumeChartState extends State<ExerciseVolumeChart> {
             touchTooltipData: BarTouchTooltipData(
               tooltipPadding: const EdgeInsets.all(8),
               tooltipMargin: 8,
+              fitInsideHorizontally: true,
+              fitInsideVertically: true,
+              maxContentWidth: 120,
+              direction: TooltipDirection.auto,
               getTooltipColor: (value) => Colors.grey.shade800,
               getTooltipItem: (group, groupIndex, rod, rodIndex) {
                 final exercise = widget.exerciseVolumeData[group.x.toInt()];
@@ -182,6 +186,10 @@ class _ExerciseVolumeChartState extends State<ExerciseVolumeChart> {
                         touchTooltipData: BarTouchTooltipData(
                           tooltipPadding: const EdgeInsets.all(8),
                           tooltipMargin: 8,
+                          fitInsideHorizontally: true,
+                          fitInsideVertically: true,
+                          maxContentWidth: 120,
+                          direction: TooltipDirection.auto,
                           getTooltipColor: (value) => Colors.grey.shade800,
                           getTooltipItem: (group, groupIndex, rod, rodIndex) {
                             final exercise =
