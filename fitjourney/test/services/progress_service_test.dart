@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:fitjourney/database_models/progress_data.dart';
-import 'package:fitjourney/services/progress_service.dart';
 import 'package:fitjourney/database/database_helper.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:sqflite/sqflite.dart' as sqflite;

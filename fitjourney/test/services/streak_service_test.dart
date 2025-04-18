@@ -1,8 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:fitjourney/database_models/streak.dart';
-import 'package:fitjourney/database_models/daily_log.dart';
-import 'package:fitjourney/services/streak_service.dart';
 import 'package:fitjourney/database/database_helper.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:fitjourney/services/notification_trigger_service.dart';

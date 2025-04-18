@@ -16,7 +16,6 @@ import 'package:fitjourney/services/goal_tracking_service.dart';
 //import 'package:fitjourney/services/workout_service.dart';
 import 'package:fitjourney/services/streak_service.dart';
 import 'package:fitjourney/utils/date_utils.dart';
-import 'package:fitjourney/services/sync_service.dart' as sync_service;
 
 class DatabaseHelper {
   // Singleton instance

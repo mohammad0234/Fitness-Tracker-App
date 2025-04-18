@@ -14,7 +14,6 @@ import 'package:intl/intl.dart';
 
 // New goal-related imports
 import 'package:fitjourney/services/goal_service.dart';
-import 'package:fitjourney/database_models/goal.dart';
 import 'package:fitjourney/screens/goal_detail_screen.dart';
 import 'package:fitjourney/screens/weight_goal_detail_screen.dart';
 

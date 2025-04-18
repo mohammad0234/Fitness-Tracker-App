@@ -3,7 +3,6 @@ import 'package:fitjourney/services/progress_service.dart';
 import 'package:fitjourney/widgets/charts/workout_volume_chart.dart';
 import 'package:fitjourney/widgets/charts/muscle_group_pie_chart.dart';
 import 'package:fitjourney/widgets/charts/exercise_progress_chart.dart';
-import 'package:fitjourney/widgets/charts/workout_frequency_chart.dart';
 
 class ProgressCharts {
   static final ProgressService _progressService = ProgressService.instance;

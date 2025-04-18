@@ -5,16 +5,11 @@ import 'package:fitjourney/services/progress_service.dart';
 import 'package:fitjourney/database_models/progress_data.dart';
 import 'package:fitjourney/widgets/charts/workout_volume_chart.dart';
 import 'package:fitjourney/widgets/charts/muscle_group_pie_chart.dart';
-import 'package:fitjourney/screens/exercise_selection_screen.dart';
 import 'package:fitjourney/screens/calendar_streak_screen.dart';
 import 'package:fitjourney/services/workout_service.dart';
 import 'package:fitjourney/database_models/exercise.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
-import 'package:fitjourney/services/streak_service.dart';
-import 'package:fitjourney/database_models/daily_log.dart';
-import 'package:fitjourney/services/sync_service.dart';
-import 'package:fitjourney/screens/workout_detail_screen.dart';
 import 'package:fitjourney/widgets/charts/exercise_volume_chart.dart';
 
 class ProgressPage extends StatefulWidget {

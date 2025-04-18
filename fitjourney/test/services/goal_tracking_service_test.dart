@@ -2,7 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:fitjourney/database_models/goal.dart';
 import 'package:fitjourney/database_models/workout.dart';
-import 'package:fitjourney/services/goal_tracking_service.dart';
 import 'package:fitjourney/services/goal_service.dart';
 import 'package:fitjourney/database/database_helper.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;

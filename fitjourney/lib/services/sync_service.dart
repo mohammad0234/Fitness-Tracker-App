@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -8,11 +7,8 @@ import 'package:fitjourney/database_models/user.dart';
 import 'package:fitjourney/database_models/workout.dart';
 import 'package:fitjourney/database_models/goal.dart';
 import 'package:fitjourney/database_models/streak.dart';
-import 'package:fitjourney/database_models/user_metrics.dart';
 import 'package:fitjourney/utils/date_utils.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class SyncService {
   static final SyncService instance = SyncService._internal();
