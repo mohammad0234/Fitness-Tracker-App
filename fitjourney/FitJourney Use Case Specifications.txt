@@ -1,209 +1,0 @@
-Use case: Log WorkoutsID: 1Brief description:
-The user records a new workout session including exercises and sets.Primary actors:
-UserSecondary actors:
-NonePreconditions:
-1. The user is logged in.
-2. The user has an active internet connection or sufficient local storage.Main flow:
-1. The user navigates to the Log Workout screen.
-2. The user selects exercises from the predefined list.
-3. The user inputs sets, reps, and weights.
-4. The user saves the workout.
-5. The workout is stored locally (SQLite) 
-6. Extension point: Compare WorkoutsPostconditions:
-1. The workout is recorded in the database.
-2. Workout card displays on Workout pagesAlternative flows:
-None
-Use case: View ProgressID: 2Brief description:
-The user views graphical representations of workout data.Primary actors:
-UserSecondary actors:
-NonePreconditions:
-1. The user has logged at least one workout.Main flow:
-1. The user opens the Progress tab.
-2. The system fetches aggregated data from.
-3. The system displays graphs and charts (volume, trends).
-4. The user can interact with the data by selecting specific timeframes.
-5. Extension point: View Exercise ProgressPostconditions:
-1. Progress graphs are shown based on user data.Alternative flows:
-None
-Use case: View NotificationsID: 3Brief description:
-The user views reminders, milestones, and system alerts.Primary actors:
-UserSecondary actors:
-NonePreconditions:
-1. Notifications have been triggered or received.
-2. The user is logged in.
-3. User agrees to receive notificationsMain flow:
-1. The user opens the Notifications tab.
-2. The system retrieves stored notifications.
-3. The user reads or dismisses individual notifications.
-4. The system updates the read/unread status.Postconditions:
-1. Notifications are viewed or dismissed.Alternative flows:
-None
-Use case: Delete AccountID: 4Brief description:
-The user deletes their FitJourney account and associated data.Primary actors:
-UserSecondary actors:
-Firebase Authentication, CloudPreconditions:
-1. The user is authenticated.
-2. The user confirms their password.Main flow:
-1. The user navigates to the profile/settings section.
-2. The user selects 'Delete Account'.
-3. The system prompts for password confirmation.
-4. Upon success, the system deletes the Firebase Auth record.
-5. Associated user data is purged from the cloud and local database.Postconditions:
-1. The account and related data are permanently deleted.Alternative flows:
-1. User cancels action.
-2. Password re-authentication fails.
-Use case: Compare WorkoutsID: 5Brief description:
-The user compares two workout sessions side by side.Primary actors:
-UserSecondary actors:
-NonePreconditions:
-1. The user has logged at least two workouts.Main flow:
-1. The user selects 'Compare Workouts' from the workout screen.
-2. The user selects two workouts from the list.
-3. The system displays side-by-side statistics.Postconditions:
-1. Workouts are visually compared.Alternative flows:
-None
-Use case: Set GoalsID: 6Brief description:
-The user sets fitness goals like frequency or target weights.Primary actors:
-UserSecondary actors:
-NonePreconditions:
-1. The user is logged in.Main flow:
-1. The user opens the Goal tab.
-2. The user selects a goal type.
-3. The user inputs goal values and timeframe.
-4. The system stores the goal locallyPostconditions:
-1. The goal is stored and shown in goal progress.Alternative flows:
-None
-
-Use case: Edit WorkoutID: 7Brief description:
-The user updates an existing workout session.Primary actors:
-UserSecondary actors:
-NonePreconditions:
-1. The user is logged in.
-2. At least one workout is logged.Main flow:
-1. The user selects a workout to view.
-2. The user chooses to edit the session.
-3. The system presents editable fields.
-4. The user updates sets, reps, or notes.
-5. The updated data is saved.Postconditions:
-1. Workout data is updated.Alternative flows:
-None
-Use case: Edit GoalsID: 8Brief description:
-The user modifies an existing fitness goal.Primary actors:
-UserSecondary actors:
-NonePreconditions:
-1. At least one goal exists.Main flow:
-1. The user selects a goal to view.
-2. The user taps edit.
-3. The system allows input modification.
-4. The system updates the goal and syncs changes.Postconditions:
-1. Goal values are updated in the system.Alternative flows:
-None
-Use case: View Exercise ProgressID: 9Brief description:
-The user views charts focused on a specific exercise.Primary actors:
-UserSecondary actors:
-NonePreconditions:
-1. The user has logged sets for the specific exercise.Main flow:
-1. The user taps into Progress.
-2. The user selects an exercise from the list.
-3. The system filters and renders charts only for that exercise and provided details on personal best with dates.Postconditions:
-1. Specific progress trends are shown.Alternative flows:
-None
-
-Use case: View GoalsID: 10Brief description:
-The user sees a summary of current and completed goals.Primary actors:
-UserSecondary actors:
-NonePreconditions:
-1. At least one goal exists.Main flow:
-1. The user navigates to the Goals tab.
-2. The system displays a list of current and completed goals.
-3. User can drill down into goal details.Postconditions:
-1. Goals are visible with current progress.Alternative flows:
-None
-Use case: View WorkoutID: 11Brief description:
-The user views the details of a previously logged workout.Primary actors:
-UserSecondary actors:
-NonePreconditions:
-1. The user has logged workouts.Main flow:
-1. The user opens the workout history screen.
-2. The system displays each workout’s timestamp, exercises, and notes.Postconditions:
-1. The workout details are shown.Alternative flows:
-None
-Use case: Sync DataID: 12Brief description:
-The user manually triggers syncing of data with the cloud.Primary actors:
-UserSecondary actors:
-CloudPreconditions:
-1. The user is logged in.Main flow:
-1. The user navigates to sync settings.
-2. The user taps 'Sync Now'.
-3. The system uploads all local changes to the cloud.Postconditions:
-1. Data is up to date across devices.Alternative flows:
-None
-Use case: Perform Periodic SyncID: 13Brief description:
-The system automatically syncs user data at regular intervals.Primary actors:
-FitJourney SystemSecondary actors:
-CloudPreconditions:
-1. There is a valid network connection.Main flow:
-1. System schedules periodic tasks.
-2. Modified data is pushed to the cloud.
-3. Sync queue is cleared if successful.Postconditions:
-1. User data is backed up regularly.Alternative flows:
-None
-Use case: View Calendar ActivityID: 14Brief description:
-The user views a monthly calendar of workout and rest days.Primary actors:
-UserSecondary actors:
-NonePreconditions:
-1. The user is logged in.Main flow:
-1. The user opens the calendar view.
-2. The system displays a visual calendar with colored dots (workout/rest/no activity).Postconditions:
-1. Activity calendar is visible.Alternative flows:
-None
-Use case: View Daily LogsID: 15Brief description:
-The user sees details for a specific day from the calendar.Primary actors:
-UserSecondary actors:
-NonePreconditions:
-1. Calendar day has been tapped.Main flow:
-1. System shows activity type (Workout/Rest).
-2. System lists workouts on that day.Postconditions:
-1. Daily summary is visible.Alternative flows:
-None
-Use case: Verify EmailID: 16Brief description:
-The user verifies their email address after signing up.Primary actors:
-UserSecondary actors:
-Firebase AuthenticationPreconditions:
-1. User has completed the SignUp process.Main flow:
-1. System sends a verification email.
-2. User clicks the link in the email.
-3. System verifies and updates the user’s status and able to log in.Postconditions:
-1. User email is marked as verified.Alternative flows:
-1. User fails to verify email.
-
-Use case: Create AccountID: 17Brief description:
-The user creates a new FitJourney account.Primary actors:
-UserSecondary actors:
-Firebase AuthenticationPreconditions:
-1. User does not already have an account.Main flow:
-1. User opens the app and selects sign up.
-2. User enters registration details.
-3. System registers account using Firebase Auth.
-4. System prompts user to verify email.Postconditions:
-1. Account is created and user is prompted to verify email.Alternative flows:
-1. Email already in use.
-Use case: Track StreaksID: 18Brief description:
-The app tracks and displays the user's activity streaks.Primary actors:
-UserSecondary actors:
-FitJourney SystemPreconditions:
-1. User has logged activities over multiple days.Main flow:
-1. System checks consecutive activity days.
-2. System updates streak count.
-3. System notifies user of streak milestones if applicable.Postconditions:
-1. Streak data is updated and reflected in progress screens.Alternative flows:
-None
-Use case: View ProfileID: 19Brief description:
-The user views their profile and basic details.Primary actors:
-UserSecondary actors:
-NonePreconditions:
-1. User is logged in.Main flow:
-1. User navigates to the profile tab.
-2. System displays name, policies, sign out, delete account option.Postconditions:
-1. User profile is shown.Alternative flows:
-None
