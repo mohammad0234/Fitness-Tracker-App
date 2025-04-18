@@ -1018,9 +1018,7 @@ class _WorkoutComparisonScreenState extends State<WorkoutComparisonScreen> {
                         width: 30,
                         child: Center(
                           child: Icon(
-                            isWeightImproved
-                                ? Icons.arrow_forward
-                                : Icons.arrow_forward,
+                            Icons.arrow_forward,
                             color: isWeightImproved
                                 ? Colors.green.shade700
                                 : Colors.red.shade700,
@@ -1100,9 +1098,7 @@ class _WorkoutComparisonScreenState extends State<WorkoutComparisonScreen> {
                         width: 30,
                         child: Center(
                           child: Icon(
-                            secondTotalReps > firstTotalReps
-                                ? Icons.arrow_forward
-                                : Icons.arrow_forward,
+                            Icons.arrow_forward,
                             color: secondTotalReps >= firstTotalReps
                                 ? Colors.green.shade700
                                 : Colors.red.shade700,
@@ -1196,9 +1192,7 @@ class _WorkoutComparisonScreenState extends State<WorkoutComparisonScreen> {
                         width: 30,
                         child: Center(
                           child: Icon(
-                            isVolumeImproved
-                                ? Icons.arrow_forward
-                                : Icons.arrow_forward,
+                            Icons.arrow_forward,
                             color: isVolumeImproved
                                 ? Colors.green.shade700
                                 : Colors.red.shade700,
@@ -1278,9 +1272,7 @@ class _WorkoutComparisonScreenState extends State<WorkoutComparisonScreen> {
                         width: 30,
                         child: Center(
                           child: Icon(
-                            secondSets > firstSets
-                                ? Icons.arrow_forward
-                                : Icons.arrow_forward,
+                            Icons.arrow_forward,
                             color: secondSets >= firstSets
                                 ? Colors.green.shade700
                                 : Colors.red.shade700,

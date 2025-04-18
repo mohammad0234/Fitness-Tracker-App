@@ -45,9 +45,11 @@ class _HomePageState extends State<HomePage> {
     _fetchUserData();
     _fetchStreakData();
     _fetchRecentWorkout();
-    _fetchMostImportantGoal(); // Fetch the active goal
-    _insertNewExercises(); // Add the new exercises
-    _removeUnwantedExercises(); // Remove unwanted exercises
+    _fetchMostImportantGoal();
+
+    // Add new exercises that might be useful
+    _addNewExercises();
+    // _removeUnwantedExercises(); // Remove unwanted exercises
   }
 
   Future<void> _fetchUserData() async {
@@ -301,7 +303,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   // Function to insert new exercises into the database
-  Future<void> _insertNewExercises() async {
+  Future<void> _addNewExercises() async {
     final db = await DatabaseHelper.instance.database;
 
     // List of new exercises to add
@@ -374,27 +376,6 @@ class _HomePageState extends State<HomePage> {
         await db.insert('exercise', exercise);
         print('Added new exercise: ${exercise['name']}');
       }
-    }
-  }
-
-  // Function to remove specific exercises from the database
-  Future<void> _removeUnwantedExercises() async {
-    final db = await DatabaseHelper.instance.database;
-
-    // List of exercises to remove
-    final exercisesToRemove = [
-      {'name': 'Pull-Up', 'muscle_group': 'Back'},
-      {'name': 'Tricep Dip', 'muscle_group': 'Triceps'},
-    ];
-
-    // Remove each exercise
-    for (final exercise in exercisesToRemove) {
-      await db.delete(
-        'exercise',
-        where: "name = ? AND muscle_group = ?",
-        whereArgs: [exercise['name'], exercise['muscle_group']],
-      );
-      print('Removed exercise: ${exercise['name']}');
     }
   }
 
@@ -625,21 +606,6 @@ class _HomePageState extends State<HomePage> {
     final timeAgo = _recentWorkoutData!['timeAgo'] as String;
     final workoutId = _recentWorkoutData!['workoutId'] as int;
     final exercises = _recentWorkoutData!['exercises'] as List;
-
-    // Determine the primary muscle group for display
-    if (muscleGroups.isNotEmpty) {
-      // Check for common groupings
-      if (muscleGroups.any((group) => [
-            'Chest',
-            'Back',
-            'Shoulders',
-            'Biceps',
-            'Triceps'
-          ].contains(group))) {
-      } else if (muscleGroups
-          .any((group) => ['Legs', 'Calves', 'Glutes'].contains(group))) {
-      } else {}
-    }
 
     // Determine a color based on muscle groups
     Color cardColor = _getWorkoutColor(muscleGroups);

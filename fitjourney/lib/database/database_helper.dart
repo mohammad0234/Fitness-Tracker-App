@@ -40,12 +40,6 @@ class DatabaseHelper {
     Directory documentsDirectory = await getApplicationDocumentsDirectory();
     final path = join(documentsDirectory.path, 'myfitness.db');
 
-    //   final dbFile = File(path);
-    //   if (await dbFile.exists()) {
-    //     await dbFile.delete();
-    //     print("Deleted existing database");
-    // }
-
     print("Database Path: $path"); // Debug print
     return await openDatabase(
       path,
@@ -1130,12 +1124,7 @@ class DatabaseHelper {
     return result.map((log) => DailyLog.fromMap(log)).toList();
   }
 
-// Future<void> insertNotification(Map<String, dynamic> data) async {
-//   final db = await database;
-//   await db.insert('notification', data);
-// }
-
-  // Additional CRUD methods for other tables as needed.
+// Additional CRUD methods for other tables as needed.
 
   // Add method to insert user metrics and mark for sync
   Future<int> insertUserMetric(String userId, double weightKg) async {
@@ -1152,36 +1141,6 @@ class DatabaseHelper {
 
     await markForSync('user_metrics', metricId.toString(), 'INSERT');
     return metricId;
-  }
-
-  // Add method to update user metrics and mark for sync
-  Future<void> updateUserMetric(int metricId, double weightKg) async {
-    final db = await database;
-
-    await db.update(
-      'user_metrics',
-      {
-        'weight_kg': weightKg,
-        'measured_at': DateTime.now().toIso8601String(),
-      },
-      where: 'metric_id = ?',
-      whereArgs: [metricId],
-    );
-
-    await markForSync('user_metrics', metricId.toString(), 'UPDATE');
-  }
-
-  // Add method to delete user metrics and mark for sync
-  Future<void> deleteUserMetric(int metricId) async {
-    final db = await database;
-
-    await db.delete(
-      'user_metrics',
-      where: 'metric_id = ?',
-      whereArgs: [metricId],
-    );
-
-    await markForSync('user_metrics', metricId.toString(), 'DELETE');
   }
 
   // Method to run migrations on existing database

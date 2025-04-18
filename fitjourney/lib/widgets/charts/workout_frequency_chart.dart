@@ -18,17 +18,18 @@ class WorkoutFrequencyChart extends StatelessWidget {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (frequencyData.isEmpty || 
+    if (frequencyData.isEmpty ||
         (frequencyData['calendarData'] as List).isEmpty ||
         frequencyData['totalWorkouts'] == 0) {
       return _buildEmptyState();
     }
 
     // Extract data
-    final Map<String, int> workoutsByWeekday = 
+    final Map<String, int> workoutsByWeekday =
         Map<String, int>.from(frequencyData['workoutsByWeekday'] as Map);
     final int totalWorkouts = frequencyData['totalWorkouts'] as int;
-    final String formattedFrequency = frequencyData['formattedFrequency'] as String;
+    final String formattedFrequency =
+        frequencyData['formattedFrequency'] as String;
     final int currentStreak = frequencyData['currentStreak'] as int;
     final int longestStreak = frequencyData['longestStreak'] as int;
 
@@ -60,7 +61,7 @@ class WorkoutFrequencyChart extends StatelessWidget {
             ],
           ),
         ),
-        
+
         // Streak information
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -82,7 +83,7 @@ class WorkoutFrequencyChart extends StatelessWidget {
             ],
           ),
         ),
-        
+
         // Weekly distribution bar chart
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -175,7 +176,8 @@ class WorkoutFrequencyChart extends StatelessWidget {
     );
   }
 
-  Widget _buildStreakCard(String title, String value, IconData icon, Color color) {
+  Widget _buildStreakCard(
+      String title, String value, IconData icon, Color color) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
@@ -218,15 +220,23 @@ class WorkoutFrequencyChart extends StatelessWidget {
   }
 
   List<BarChartGroupData> _getBarGroups() {
-    final Map<String, int> workoutsByWeekday = 
+    final Map<String, int> workoutsByWeekday =
         Map<String, int>.from(frequencyData['workoutsByWeekday'] as Map);
-    
-    final weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    
+
+    final weekdays = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday'
+    ];
+
     return List.generate(7, (index) {
       final weekday = weekdays[index];
       final count = workoutsByWeekday[weekday] ?? 0;
-      
+
       return BarChartGroupData(
         x: index,
         barRods: [
@@ -258,7 +268,7 @@ class WorkoutFrequencyChart extends StatelessWidget {
       fontWeight: FontWeight.bold,
       fontSize: 12,
     );
-    
+
     return SideTitleWidget(
       axisSide: meta.axisSide,
       space: 4,
@@ -270,7 +280,7 @@ class WorkoutFrequencyChart extends StatelessWidget {
     if (value == 0) {
       return const SizedBox.shrink();
     }
-    
+
     return SideTitleWidget(
       axisSide: meta.axisSide,
       space: 0,
@@ -285,21 +295,29 @@ class WorkoutFrequencyChart extends StatelessWidget {
   }
 
   int _getMaxWorkoutsPerDay() {
-    final Map<String, int> workoutsByWeekday = 
+    final Map<String, int> workoutsByWeekday =
         Map<String, int>.from(frequencyData['workoutsByWeekday'] as Map);
-    
+
     int maxWorkouts = 0;
     workoutsByWeekday.forEach((_, count) {
       if (count > maxWorkouts) {
         maxWorkouts = count;
       }
     });
-    
+
     return maxWorkouts == 0 ? 5 : maxWorkouts;
   }
 
   String _getWeekdayForIndex(int index) {
-    final weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    final weekdays = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday'
+    ];
     return weekdays[index];
   }
 
