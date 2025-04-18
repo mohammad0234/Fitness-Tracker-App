@@ -7,9 +7,9 @@ import 'package:intl/intl.dart';
 
 class ExerciseProgressScreen extends StatefulWidget {
   final int exerciseId;
-  
+
   const ExerciseProgressScreen({
-    Key? key, 
+    Key? key,
     required this.exerciseId,
   }) : super(key: key);
 
@@ -20,32 +20,38 @@ class ExerciseProgressScreen extends StatefulWidget {
 class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
   final ProgressService _progressService = ProgressService.instance;
   final WorkoutService _workoutService = WorkoutService.instance;
-  
+
   bool _isLoading = true;
   bool _hasError = false;
   String _errorMessage = '';
   Map<String, dynamic> _exerciseData = {};
-  
+
   // Sorting and filtering
   String _sortBy = 'Date (newest)';
-  final List<String> _sortOptions = ['Date (newest)', 'Date (oldest)', 'Weight (highest)', 'Weight (lowest)'];
-  
+  final List<String> _sortOptions = [
+    'Date (newest)',
+    'Date (oldest)',
+    'Weight (highest)',
+    'Weight (lowest)'
+  ];
+
   @override
   void initState() {
     super.initState();
     _loadExerciseData();
   }
-  
+
   Future<void> _loadExerciseData() async {
     setState(() {
       _isLoading = true;
       _hasError = false;
     });
-    
+
     try {
       // Get exercise progress data
-      final exerciseData = await _progressService.getExerciseProgressData(widget.exerciseId);
-      
+      final exerciseData =
+          await _progressService.getExerciseProgressData(widget.exerciseId);
+
       setState(() {
         _exerciseData = exerciseData;
         _isLoading = false;
@@ -59,29 +65,34 @@ class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
       });
     }
   }
-  
+
   List<Map<String, dynamic>> _getSortedProgressPoints() {
     if (_exerciseData.isEmpty || !_exerciseData.containsKey('progressPoints')) {
       return [];
     }
-    
-    final progressPoints = List<Map<String, dynamic>>.from(_exerciseData['progressPoints']);
-    
+
+    final progressPoints =
+        List<Map<String, dynamic>>.from(_exerciseData['progressPoints']);
+
     switch (_sortBy) {
       case 'Date (newest)':
-        progressPoints.sort((a, b) => (b['date'] as DateTime).compareTo(a['date'] as DateTime));
+        progressPoints.sort(
+            (a, b) => (b['date'] as DateTime).compareTo(a['date'] as DateTime));
         break;
       case 'Date (oldest)':
-        progressPoints.sort((a, b) => (a['date'] as DateTime).compareTo(b['date'] as DateTime));
+        progressPoints.sort(
+            (a, b) => (a['date'] as DateTime).compareTo(b['date'] as DateTime));
         break;
       case 'Weight (highest)':
-        progressPoints.sort((a, b) => (b['weight'] as double).compareTo(a['weight'] as double));
+        progressPoints.sort(
+            (a, b) => (b['weight'] as double).compareTo(a['weight'] as double));
         break;
       case 'Weight (lowest)':
-        progressPoints.sort((a, b) => (a['weight'] as double).compareTo(b['weight'] as double));
+        progressPoints.sort(
+            (a, b) => (a['weight'] as double).compareTo(b['weight'] as double));
         break;
     }
-    
+
     return progressPoints;
   }
 
@@ -89,10 +100,9 @@ class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isLoading 
-          ? 'Exercise Progress' 
-          : _exerciseData['exerciseName'] ?? 'Exercise Progress'
-        ),
+        title: Text(_isLoading
+            ? 'Exercise Progress'
+            : _exerciseData['exerciseName'] ?? 'Exercise Progress'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -102,87 +112,88 @@ class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
         ],
       ),
       body: _isLoading
-        ? const Center(child: CircularProgressIndicator())
-        : _hasError
-          ? _buildErrorState()
-          : _exerciseData.isEmpty
-            ? _buildEmptyState()
-            : SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Summary Card
-                      _buildSummaryCard(),
-                      const SizedBox(height: 24),
-                      
-                      // Progress Chart
-                      const Text(
-                        'Progress Over Time',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+          ? const Center(child: CircularProgressIndicator())
+          : _hasError
+              ? _buildErrorState()
+              : _exerciseData.isEmpty
+                  ? _buildEmptyState()
+                  : SingleChildScrollView(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Summary Card
+                            _buildSummaryCard(),
+                            const SizedBox(height: 24),
+
+                            // Progress Chart
+                            const Text(
+                              'Progress Over Time',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            _buildProgressChart(),
+                            const SizedBox(height: 24),
+
+                            // History Section with Sorting
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'Exercise History',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                DropdownButton<String>(
+                                  value: _sortBy,
+                                  items: _sortOptions.map((String option) {
+                                    return DropdownMenuItem<String>(
+                                      value: option,
+                                      child: Text(
+                                        option,
+                                        style: const TextStyle(fontSize: 14),
+                                      ),
+                                    );
+                                  }).toList(),
+                                  onChanged: (String? newValue) {
+                                    if (newValue != null) {
+                                      setState(() {
+                                        _sortBy = newValue;
+                                      });
+                                    }
+                                  },
+                                  hint: const Text('Sort by'),
+                                  underline: Container(
+                                    height: 1,
+                                    color: Colors.grey.shade400,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+
+                            // History Table
+                            _buildHistoryTable(),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      _buildProgressChart(),
-                      const SizedBox(height: 24),
-                      
-                      // History Section with Sorting
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Exercise History',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          DropdownButton<String>(
-                            value: _sortBy,
-                            items: _sortOptions.map((String option) {
-                              return DropdownMenuItem<String>(
-                                value: option,
-                                child: Text(
-                                  option,
-                                  style: const TextStyle(fontSize: 14),
-                                ),
-                              );
-                            }).toList(),
-                            onChanged: (String? newValue) {
-                              if (newValue != null) {
-                                setState(() {
-                                  _sortBy = newValue;
-                                });
-                              }
-                            },
-                            hint: const Text('Sort by'),
-                            underline: Container(
-                              height: 1,
-                              color: Colors.grey.shade400,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      
-                      // History Table
-                      _buildHistoryTable(),
-                    ],
-                  ),
-                ),
-              ),
+                    ),
     );
   }
-  
+
   Widget _buildSummaryCard() {
     final personalBest = _exerciseData['personalBest'] as double?;
     final startingWeight = _exerciseData['startingWeight'] as double?;
-    final improvementPercentage = _exerciseData['improvementPercentage'] as double?;
+    final improvementPercentage =
+        _exerciseData['improvementPercentage'] as double?;
     final exerciseName = _exerciseData['exerciseName'] as String;
-    
+
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
@@ -235,19 +246,25 @@ class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
               children: [
                 _buildSummaryStat(
                   'Personal Best',
-                  personalBest != null ? '${personalBest.toStringAsFixed(1)} kg' : 'N/A',
+                  personalBest != null
+                      ? '${personalBest.toStringAsFixed(1)} kg'
+                      : 'N/A',
                   Icons.emoji_events,
                   Colors.amber,
                 ),
                 _buildSummaryStat(
                   'Starting Weight',
-                  startingWeight != null ? '${startingWeight.toStringAsFixed(1)} kg' : 'N/A',
+                  startingWeight != null
+                      ? '${startingWeight.toStringAsFixed(1)} kg'
+                      : 'N/A',
                   Icons.history,
                   Colors.teal,
                 ),
                 _buildSummaryStat(
                   'Improvement',
-                  improvementPercentage != null ? '${improvementPercentage.toStringAsFixed(1)}%' : 'N/A',
+                  improvementPercentage != null
+                      ? '${improvementPercentage.toStringAsFixed(1)}%'
+                      : 'N/A',
                   Icons.trending_up,
                   Colors.green,
                 ),
@@ -258,8 +275,9 @@ class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
       ),
     );
   }
-  
-  Widget _buildSummaryStat(String label, String value, IconData icon, Color color) {
+
+  Widget _buildSummaryStat(
+      String label, String value, IconData icon, Color color) {
     return Column(
       children: [
         Icon(
@@ -287,18 +305,20 @@ class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
       ],
     );
   }
-  
+
   Widget _buildProgressChart() {
-    if (!_exerciseData.containsKey('progressPoints') || 
+    if (!_exerciseData.containsKey('progressPoints') ||
         (_exerciseData['progressPoints'] as List).isEmpty) {
       return _buildEmptyChartState();
     }
-    
-    final progressPoints = List<Map<String, dynamic>>.from(_exerciseData['progressPoints']);
-    
+
+    final progressPoints =
+        List<Map<String, dynamic>>.from(_exerciseData['progressPoints']);
+
     // Sort by date for the chart
-    progressPoints.sort((a, b) => (a['date'] as DateTime).compareTo(b['date'] as DateTime));
-    
+    progressPoints.sort(
+        (a, b) => (a['date'] as DateTime).compareTo(b['date'] as DateTime));
+
     return SizedBox(
       height: 250,
       child: LineChart(
@@ -321,73 +341,74 @@ class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
             },
           ),
           titlesData: FlTitlesData(
-  show: true,
-  rightTitles: AxisTitles(
-    sideTitles: SideTitles(showTitles: false),
-  ),
-  topTitles: AxisTitles(
-    sideTitles: SideTitles(showTitles: false),
-  ),
-  bottomTitles: AxisTitles(
-    axisNameWidget: const Text(
-      'Date',
-      style: TextStyle(
-        color: Colors.black87,
-        fontSize: 12,
-        fontWeight: FontWeight.bold,
-      ),
-    ),
-    axisNameSize: 25,
-    sideTitles: SideTitles(
-      showTitles: true,
-      reservedSize: 30,
-      interval: _calculateDateInterval(progressPoints),
-      getTitlesWidget: (double value, TitleMeta meta) {
-        if (value.toInt() < 0 || value.toInt() >= progressPoints.length) {
-          return const SizedBox();
-        }
-        return Padding(
-          padding: const EdgeInsets.only(top: 8.0),
-          child: Text(
-            progressPoints[value.toInt()]['formattedDate'],
-            style: const TextStyle(
-              color: Colors.black54,
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
+            show: true,
+            rightTitles: AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            topTitles: AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            bottomTitles: AxisTitles(
+              axisNameWidget: const Text(
+                'Date',
+                style: TextStyle(
+                  color: Colors.black87,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              axisNameSize: 25,
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 30,
+                interval: _calculateDateInterval(progressPoints),
+                getTitlesWidget: (double value, TitleMeta meta) {
+                  if (value.toInt() < 0 ||
+                      value.toInt() >= progressPoints.length) {
+                    return const SizedBox();
+                  }
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Text(
+                      progressPoints[value.toInt()]['formattedDate'],
+                      style: const TextStyle(
+                        color: Colors.black54,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            leftTitles: AxisTitles(
+              axisNameWidget: const Text(
+                'Weight (kg)',
+                style: TextStyle(
+                  color: Colors.black87,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              axisNameSize: 25,
+              sideTitles: SideTitles(
+                showTitles: true,
+                interval: _calculateInterval(),
+                reservedSize: 40,
+                getTitlesWidget: (double value, TitleMeta meta) {
+                  return Text(
+                    value.toInt().toString(),
+                    style: const TextStyle(
+                      color: Colors.black54,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.right,
+                  );
+                },
+              ),
             ),
           ),
-        );
-      },
-    ),
-  ),
-  leftTitles: AxisTitles(
-    axisNameWidget: const Text(
-      'Weight (kg)',
-      style: TextStyle(
-        color: Colors.black87,
-        fontSize: 12,
-        fontWeight: FontWeight.bold,
-      ),
-    ),
-    axisNameSize: 25,
-    sideTitles: SideTitles(
-      showTitles: true,
-      interval: _calculateInterval(),
-      reservedSize: 40,
-      getTitlesWidget: (double value, TitleMeta meta) {
-        return Text(
-          value.toInt().toString(),
-          style: const TextStyle(
-            color: Colors.black54,
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-          ),
-          textAlign: TextAlign.right,
-        );
-      },
-    ),
-  ),
-),
 
           borderData: FlBorderData(
             show: true,
@@ -470,7 +491,7 @@ class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
       ),
     );
   }
-  
+
   double _calculateInterval() {
     final maxWeight = _getMaxWeight();
     if (maxWeight <= 50) return 10;
@@ -479,7 +500,7 @@ class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
     if (maxWeight <= 500) return 100;
     return 200;
   }
-  
+
   double _calculateDateInterval(List<Map<String, dynamic>> progressPoints) {
     // Show fewer date labels when there are many data points
     if (progressPoints.length > 20) {
@@ -489,29 +510,30 @@ class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
     }
     return 1; // Show all date labels for few data points
   }
-  
+
   double _getMaxWeight() {
-    if (!_exerciseData.containsKey('progressPoints') || 
+    if (!_exerciseData.containsKey('progressPoints') ||
         (_exerciseData['progressPoints'] as List).isEmpty) {
       return 100;
     }
-    
-    final progressPoints = List<Map<String, dynamic>>.from(_exerciseData['progressPoints']);
+
+    final progressPoints =
+        List<Map<String, dynamic>>.from(_exerciseData['progressPoints']);
     double maxWeight = 0;
-    
+
     for (var point in progressPoints) {
       final weight = point['weight'] as double;
       if (weight > maxWeight) {
         maxWeight = weight;
       }
     }
-    
+
     return maxWeight == 0 ? 100 : maxWeight;
   }
-  
+
   Widget _buildHistoryTable() {
     final progressPoints = _getSortedProgressPoints();
-    
+
     if (progressPoints.isEmpty) {
       return const Center(
         child: Padding(
@@ -520,7 +542,7 @@ class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
         ),
       );
     }
-    
+
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -543,11 +565,13 @@ class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
               children: const [
                 Expanded(
                   flex: 3,
-                  child: Text('DATE', style: TextStyle(fontWeight: FontWeight.bold)),
+                  child: Text('DATE',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
                 Expanded(
                   flex: 2,
-                  child: Text('WEIGHT', style: TextStyle(fontWeight: FontWeight.bold)),
+                  child: Text('WEIGHT',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
                 Expanded(
                   flex: 1,
@@ -557,7 +581,7 @@ class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
             ),
           ),
           const Divider(height: 1, thickness: 1),
-          
+
           // Table rows
           ListView.separated(
             shrinkWrap: true,
@@ -567,7 +591,8 @@ class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
             itemBuilder: (context, index) {
               final point = progressPoints[index];
               return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Row(
                   children: [
                     Expanded(
@@ -596,7 +621,9 @@ class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
                                   color: Colors.amber.shade700,
                                 ),
                                 const SizedBox(width: 4),
-                                const Text('PB', style: TextStyle(fontWeight: FontWeight.bold)),
+                                const Text('PB',
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.bold)),
                               ],
                             )
                           : const SizedBox(),
@@ -610,7 +637,7 @@ class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
       ),
     );
   }
-  
+
   Widget _buildEmptyChartState() {
     return SizedBox(
       height: 250,
@@ -646,7 +673,7 @@ class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
       ),
     );
   }
-  
+
   Widget _buildEmptyState() {
     return Center(
       child: Padding(
@@ -687,7 +714,8 @@ class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
             ),
           ],
@@ -695,7 +723,7 @@ class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
       ),
     );
   }
-  
+
   Widget _buildErrorState() {
     return Center(
       child: Padding(
@@ -734,7 +762,8 @@ class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
             ),
           ],

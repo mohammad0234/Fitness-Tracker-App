@@ -110,6 +110,8 @@ class _MuscleGroupPieChartState extends State<MuscleGroupPieChart> {
             ),
           ],
         ),
+        // Recommendation widget
+        _buildMuscleGroupRecommendation(),
       ],
     );
   }
@@ -209,6 +211,60 @@ class _MuscleGroupPieChartState extends State<MuscleGroupPieChart> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // New method to build muscle group recommendation
+  Widget _buildMuscleGroupRecommendation() {
+    // If we have less than 2 muscle groups, don't show a recommendation
+    if (widget.muscleGroupData.length < 2) {
+      return const SizedBox.shrink();
+    }
+
+    // Sort muscle groups by percentage (ascending)
+    final sortedData = List<Map<String, dynamic>>.from(widget.muscleGroupData)
+      ..sort((a, b) =>
+          (a['percentage'] as double).compareTo(b['percentage'] as double));
+
+    // Get the two muscle groups with the lowest percentages
+    final muscleGroup1 = sortedData[0]['muscleGroup'] as String;
+    final muscleGroup2 = sortedData[1]['muscleGroup'] as String;
+
+    // Create a recommendation message
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.blue.shade100),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.lightbulb_outline, color: Colors.amber.shade700, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Recommendation:',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Consider focusing on $muscleGroup1 and $muscleGroup2 in your upcoming workouts to balance your training.',
+                  style: const TextStyle(fontSize: 14),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

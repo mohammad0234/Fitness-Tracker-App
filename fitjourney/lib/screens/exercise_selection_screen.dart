@@ -9,19 +9,20 @@ class ExerciseSelectionScreen extends StatefulWidget {
   const ExerciseSelectionScreen({Key? key}) : super(key: key);
 
   @override
-  State<ExerciseSelectionScreen> createState() => _ExerciseSelectionScreenState();
+  State<ExerciseSelectionScreen> createState() =>
+      _ExerciseSelectionScreenState();
 }
 
 class _ExerciseSelectionScreenState extends State<ExerciseSelectionScreen> {
   final WorkoutService _workoutService = WorkoutService.instance;
   final ProgressService _progressService = ProgressService.instance;
-  
+
   bool _isLoading = true;
   List<Map<String, dynamic>> _exercises = [];
   String _searchQuery = '';
   String _selectedMuscleGroup = 'All';
   List<String> _muscleGroups = ['All'];
-  
+
   // For favoriting functionality (to be implemented)
   Set<int> _favoriteExerciseIds = {};
 
@@ -39,10 +40,10 @@ class _ExerciseSelectionScreenState extends State<ExerciseSelectionScreen> {
     try {
       // Load all muscle groups
       final muscleGroups = await _workoutService.getAllMuscleGroups();
-      
+
       // Get all exercises the user has performed
       final exercises = await _loadUserExercises();
-      
+
       setState(() {
         _exercises = exercises;
         _muscleGroups = ['All', ...muscleGroups];
@@ -53,7 +54,7 @@ class _ExerciseSelectionScreenState extends State<ExerciseSelectionScreen> {
       setState(() {
         _isLoading = false;
       });
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error loading exercises: $e')),
@@ -65,13 +66,13 @@ class _ExerciseSelectionScreenState extends State<ExerciseSelectionScreen> {
   Future<List<Map<String, dynamic>>> _loadUserExercises() async {
     // Get all personal bests to find which exercises the user has performed
     final personalBests = await _progressService.getAllPersonalBests();
-    
+
     // For exercises without personal bests, get all exercises the user has logged
     //final allExercises = await _workoutService.getAllExercises();
-    
+
     // Convert to a unified format with usage info
     List<Map<String, dynamic>> exercisesList = [];
-    
+
     // First add exercises with personal bests
     for (var pb in personalBests) {
       exercisesList.add({
@@ -85,26 +86,26 @@ class _ExerciseSelectionScreenState extends State<ExerciseSelectionScreen> {
         'hasPersonalBest': true,
       });
     }
-    
+
     // Add other exercises the user might have performed but without PBs
     // This would require additional DB query to check usage
     // For now, we'll just use the personal bests list
-    
+
     return exercisesList;
   }
 
   List<Map<String, dynamic>> _getFilteredExercises() {
     return _exercises.where((exerciseData) {
       final exercise = exerciseData['exercise'] as Exercise;
-      
+
       // Apply search filter
-      final matchesSearch = _searchQuery.isEmpty || 
+      final matchesSearch = _searchQuery.isEmpty ||
           exercise.name.toLowerCase().contains(_searchQuery.toLowerCase());
-      
+
       // Apply muscle group filter
-      final matchesMuscleGroup = _selectedMuscleGroup == 'All' || 
+      final matchesMuscleGroup = _selectedMuscleGroup == 'All' ||
           exercise.muscleGroup == _selectedMuscleGroup;
-      
+
       return matchesSearch && matchesMuscleGroup;
     }).toList();
   }
@@ -113,89 +114,83 @@ class _ExerciseSelectionScreenState extends State<ExerciseSelectionScreen> {
   Widget build(BuildContext context) {
     final filteredExercises = _getFilteredExercises();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Track Exercise Progress'),
-        elevation: 0,
-      ),
-      body: Column(
-        children: [
-          // Search bar
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Search exercises...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 8),
+    return Column(
+      children: [
+        // Search bar
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: TextField(
+            decoration: InputDecoration(
+              hintText: 'Search exercises...',
+              prefixIcon: const Icon(Icons.search),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
               ),
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value;
-                });
-              },
+              contentPadding: const EdgeInsets.symmetric(vertical: 8),
             ),
+            onChanged: (value) {
+              setState(() {
+                _searchQuery = value;
+              });
+            },
           ),
-          
-          // Muscle group filter
-          SizedBox(
-            height: 48,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: _muscleGroups.length,
-              itemBuilder: (context, index) {
-                final muscleGroup = _muscleGroups[index];
-                final isSelected = muscleGroup == _selectedMuscleGroup;
-                
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: ChoiceChip(
-                    label: Text(muscleGroup),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      if (selected) {
-                        setState(() {
-                          _selectedMuscleGroup = muscleGroup;
-                        });
-                      }
-                    },
-                    backgroundColor: Colors.grey.shade100,
-                    selectedColor: Colors.blue,
-                    labelStyle: TextStyle(
-                      color: isSelected ? Colors.white : Colors.black,
-                      fontWeight: FontWeight.w500,
-                    ),
+        ),
+
+        // Muscle group filter
+        SizedBox(
+          height: 48,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: _muscleGroups.length,
+            itemBuilder: (context, index) {
+              final muscleGroup = _muscleGroups[index];
+              final isSelected = muscleGroup == _selectedMuscleGroup;
+
+              return Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: ChoiceChip(
+                  label: Text(muscleGroup),
+                  selected: isSelected,
+                  onSelected: (selected) {
+                    if (selected) {
+                      setState(() {
+                        _selectedMuscleGroup = muscleGroup;
+                      });
+                    }
+                  },
+                  backgroundColor: Colors.grey.shade100,
+                  selectedColor: Colors.blue,
+                  labelStyle: TextStyle(
+                    color: isSelected ? Colors.white : Colors.black,
+                    fontWeight: FontWeight.w500,
                   ),
-                );
-              },
-            ),
+                ),
+              );
+            },
           ),
-          
-          const SizedBox(height: 8),
-          
-          // Exercises list
-          Expanded(
-            child: _isLoading
+        ),
+
+        const SizedBox(height: 8),
+
+        // Exercises list
+        Expanded(
+          child: _isLoading
               ? const Center(child: CircularProgressIndicator())
               : filteredExercises.isEmpty
-                ? _buildEmptyState()
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: filteredExercises.length,
-                    itemBuilder: (context, index) {
-                      return _buildExerciseCard(filteredExercises[index]);
-                    },
-                  ),
-          ),
-        ],
-      ),
+                  ? _buildEmptyState()
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: filteredExercises.length,
+                      itemBuilder: (context, index) {
+                        return _buildExerciseCard(filteredExercises[index]);
+                      },
+                    ),
+        ),
+      ],
     );
   }
-  
+
   Widget _buildEmptyState() {
     return Center(
       child: Column(
@@ -209,8 +204,8 @@ class _ExerciseSelectionScreenState extends State<ExerciseSelectionScreen> {
           const SizedBox(height: 16),
           Text(
             _searchQuery.isNotEmpty || _selectedMuscleGroup != 'All'
-              ? 'No exercises match your filters'
-              : 'No exercises found',
+                ? 'No exercises match your filters'
+                : 'No exercises found',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -220,8 +215,8 @@ class _ExerciseSelectionScreenState extends State<ExerciseSelectionScreen> {
           const SizedBox(height: 8),
           Text(
             _searchQuery.isNotEmpty || _selectedMuscleGroup != 'All'
-              ? 'Try adjusting your search or filters'
-              : 'Log workouts to track exercise progress',
+                ? 'Try adjusting your search or filters'
+                : 'Log workouts to track exercise progress',
             style: TextStyle(
               fontSize: 16,
               color: Colors.grey.shade600,
@@ -232,11 +227,11 @@ class _ExerciseSelectionScreenState extends State<ExerciseSelectionScreen> {
       ),
     );
   }
-  
+
   Widget _buildExerciseCard(Map<String, dynamic> exerciseData) {
     final exercise = exerciseData['exercise'] as Exercise;
     final personalBest = exerciseData['personalBest'] as double?;
-    
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 0,
@@ -249,7 +244,8 @@ class _ExerciseSelectionScreenState extends State<ExerciseSelectionScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ExerciseProgressScreen(exerciseId: exercise.exerciseId!),
+              builder: (context) =>
+                  ExerciseProgressScreen(exerciseId: exercise.exerciseId!),
             ),
           );
         },
@@ -272,7 +268,7 @@ class _ExerciseSelectionScreenState extends State<ExerciseSelectionScreen> {
                 ),
               ),
               const SizedBox(width: 16),
-              
+
               // Exercise details
               Expanded(
                 child: Column(
@@ -316,7 +312,7 @@ class _ExerciseSelectionScreenState extends State<ExerciseSelectionScreen> {
                   ],
                 ),
               ),
-              
+
               // Arrow icon
               const Icon(Icons.chevron_right, color: Colors.grey),
             ],
@@ -325,7 +321,7 @@ class _ExerciseSelectionScreenState extends State<ExerciseSelectionScreen> {
       ),
     );
   }
-  
+
   Color _getColorForMuscleGroup(String muscleGroup) {
     // Map muscle groups to colors
     final Map<String, Color> muscleGroupColors = {
@@ -336,7 +332,7 @@ class _ExerciseSelectionScreenState extends State<ExerciseSelectionScreen> {
       'Biceps': Colors.orange.shade400,
       'Triceps': Colors.cyan.shade400,
     };
-    
+
     return muscleGroupColors[muscleGroup] ?? Colors.grey.shade400;
   }
 }

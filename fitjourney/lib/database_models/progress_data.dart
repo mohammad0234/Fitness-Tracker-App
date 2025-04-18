@@ -5,6 +5,7 @@ class ProgressData {
   final Map<String, dynamic>? frequencyData;
   final Map<String, dynamic> progressSummary;
   final List<Map<String, dynamic>> personalBests;
+  final List<Map<String, dynamic>> exerciseVolumeData;
 
   ProgressData({
     required this.volumeData,
@@ -12,6 +13,7 @@ class ProgressData {
     this.frequencyData,
     required this.progressSummary,
     required this.personalBests,
+    this.exerciseVolumeData = const [],
   });
 
   // Create an empty data instance for initial states
@@ -21,6 +23,7 @@ class ProgressData {
       muscleGroupData: [],
       progressSummary: {},
       personalBests: [],
+      exerciseVolumeData: [],
     );
   }
 }

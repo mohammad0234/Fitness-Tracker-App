@@ -13,7 +13,12 @@ import 'package:fitjourney/services/sync_service.dart';
 //import 'package:fitjourney/utils/date_utils.dart';
 
 class CalendarStreakScreen extends StatefulWidget {
-  const CalendarStreakScreen({Key? key}) : super(key: key);
+  final bool showAppBar;
+
+  const CalendarStreakScreen({
+    Key? key,
+    this.showAppBar = true,
+  }) : super(key: key);
 
   @override
   State<CalendarStreakScreen> createState() => _CalendarStreakScreenState();
@@ -277,276 +282,325 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Activity Calendar'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadData,
-            tooltip: 'Refresh data',
-          ),
-        ],
-      ),
+      appBar: widget.showAppBar
+          ? AppBar(
+              title: const Text('Activity Calendar'),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.refresh),
+                  onPressed: _loadData,
+                  tooltip: 'Refresh data',
+                ),
+              ],
+            )
+          : null,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : SafeArea(
-              // Add SafeArea to respect system UI boundaries
-              child: SingleChildScrollView(
-                // Make the whole screen scrollable
-                child: Padding(
-                  padding: const EdgeInsets.only(
-                      bottom: 20), // Add extra bottom padding
-                  child: Column(
-                    children: [
-                      // Calendar header with streak info
-                      _buildStreakHeader(),
+          : GestureDetector(
+              // Add a GestureDetector to handle vertical swipes
+              onVerticalDragUpdate: (details) {
+                // If user swipes down, scroll the page
+                if (details.delta.dy > 0) {
+                  // Scrolling down
+                  // We're handling this through the parent SingleChildScrollView
+                }
+              },
+              child: NotificationListener<ScrollNotification>(
+                // This captures scroll events from the TableCalendar
+                onNotification: (ScrollNotification notification) {
+                  // Only handle notifications from horizontal scrolling in the calendar
+                  if (notification.metrics.axis == Axis.horizontal) {
+                    return true; // Handled
+                  }
+                  return false; // Not handled, propagate to parent
+                },
+                child: SafeArea(
+                  // Add SafeArea to respect system UI boundaries
+                  child: SingleChildScrollView(
+                    // Make the whole screen scrollable
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: Padding(
+                      padding: const EdgeInsets.only(
+                          bottom: 20), // Add extra bottom padding
+                      child: Column(
+                        children: [
+                          // Calendar header with streak info
+                          _buildStreakHeader(),
 
-                      // Month navigation
-                      Padding(
-                        padding: const EdgeInsets.only(
-                            left: 16, right: 16, top: 8, bottom: 0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.chevron_left),
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                              onPressed: () {
+                          // Month navigation
+                          Padding(
+                            padding: const EdgeInsets.only(
+                                left: 16, right: 16, top: 8, bottom: 0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.chevron_left),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  onPressed: () {
+                                    setState(() {
+                                      _focusedDay = DateTime(_focusedDay.year,
+                                          _focusedDay.month - 1, 1);
+                                    });
+                                  },
+                                ),
+                                Text(
+                                  DateFormat('MMMM yyyy').format(_focusedDay),
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.chevron_right),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  onPressed: () {
+                                    final now = DateTime.now();
+                                    // Don't allow navigating to future months
+                                    if (_focusedDay.year < now.year ||
+                                        (_focusedDay.year == now.year &&
+                                            _focusedDay.month < now.month)) {
+                                      setState(() {
+                                        _focusedDay = DateTime(_focusedDay.year,
+                                            _focusedDay.month + 1, 1);
+                                      });
+                                    }
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // Format selector - with reduced vertical padding
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4, bottom: 4),
+                            child: SegmentedButton<CalendarFormat>(
+                              segments: const [
+                                ButtonSegment<CalendarFormat>(
+                                  value: CalendarFormat.week,
+                                  label: Text('Week'),
+                                ),
+                                ButtonSegment<CalendarFormat>(
+                                  value: CalendarFormat.twoWeeks,
+                                  label: Text('2 weeks'),
+                                ),
+                                ButtonSegment<CalendarFormat>(
+                                  value: CalendarFormat.month,
+                                  label: Text('Month'),
+                                ),
+                              ],
+                              selected: <CalendarFormat>{_calendarFormat},
+                              onSelectionChanged:
+                                  (Set<CalendarFormat> selection) {
                                 setState(() {
-                                  _focusedDay = DateTime(_focusedDay.year,
-                                      _focusedDay.month - 1, 1);
+                                  _calendarFormat = selection.first;
                                 });
                               },
                             ),
-                            Text(
-                              DateFormat('MMMM yyyy').format(_focusedDay),
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
+                          ),
+
+                          // Calendar view with scroll interception
+                          IgnorePointer(
+                            // Ignore vertical gestures on the calendar but allow selecting days
+                            ignoring: false,
+                            child: AbsorbPointer(
+                              // Absorb the scroll events from the calendar
+                              absorbing: false,
+                              child: Listener(
+                                // Custom gesture handling
+                                onPointerDown: (_) {
+                                  // We'll handle downs, but don't do anything
+                                },
+                                onPointerMove: (PointerMoveEvent event) {
+                                  // If vertical movement, we'll let parent handle it
+                                },
+                                child: TableCalendar(
+                                  firstDay: DateTime.utc(2023, 1, 1),
+                                  lastDay: DateTime.now()
+                                      .add(const Duration(days: 1)),
+                                  focusedDay: _focusedDay,
+                                  calendarFormat: _calendarFormat,
+                                  selectedDayPredicate: (day) {
+                                    return isSameDay(_selectedDay, day);
+                                  },
+                                  onDaySelected: (selectedDay, focusedDay) {
+                                    setState(() {
+                                      _selectedDay = selectedDay;
+                                      _focusedDay = focusedDay;
+                                    });
+
+                                    // Load workouts for the selected day
+                                    _loadWorkoutsForSelectedDay(selectedDay);
+                                  },
+                                  onPageChanged: (focusedDay) {
+                                    setState(() {
+                                      _focusedDay = focusedDay;
+                                    });
+                                  },
+                                  eventLoader: (day) {
+                                    // Normalize the date to remove time
+                                    final normalized =
+                                        DateTime(day.year, day.month, day.day);
+                                    return _events[normalized] ?? [];
+                                  },
+                                  headerVisible: false, // Hide default header
+                                  daysOfWeekHeight:
+                                      20, // Reduce height of day headers
+                                  rowHeight:
+                                      45, // Adjust row height to save space
+                                  calendarStyle: CalendarStyle(
+                                    outsideDaysVisible: true,
+                                    markersMaxCount: 1,
+                                    markersAnchor: 0.9,
+                                    markerDecoration: const BoxDecoration(
+                                      color: Colors.transparent,
+                                    ),
+                                    todayDecoration: BoxDecoration(
+                                      color: Colors.blue.withOpacity(0.3),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    selectedDecoration: const BoxDecoration(
+                                      color: Colors.blue,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    // Reduce padding to save space
+                                    cellPadding: const EdgeInsets.symmetric(
+                                        horizontal: 4, vertical: 4),
+                                    cellMargin: EdgeInsets.zero,
+                                  ),
+                                  // Make calendar non-scrollable - we'll handle scrolling ourselves
+                                  availableGestures: AvailableGestures.none,
+                                  calendarBuilders: CalendarBuilders(
+                                    markerBuilder: (context, date, events) {
+                                      if (events.isEmpty) return null;
+
+                                      final isMilestone =
+                                          _isStreakMilestone(date);
+
+                                      // Return a stack with the date number on top of the activity circle
+                                      return Stack(
+                                        alignment: Alignment.center,
+                                        children: [
+                                          // Activity circle
+                                          Container(
+                                            width: 36,
+                                            height: 36,
+                                            decoration: BoxDecoration(
+                                              color: _getEventColor(
+                                                  events as List<DailyLog>?),
+                                              shape: BoxShape.circle,
+                                              border: isMilestone
+                                                  ? Border.all(
+                                                      color: Colors.orange,
+                                                      width: 2)
+                                                  : null,
+                                            ),
+                                          ),
+                                          // Date number (in white for visibility)
+                                          Text(
+                                            date.day.toString(),
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                          // Milestone star (if applicable)
+                                          if (isMilestone)
+                                            const Positioned(
+                                              bottom: 2,
+                                              right: 2,
+                                              child: Icon(
+                                                Icons.star,
+                                                color: Colors.orange,
+                                                size: 12,
+                                              ),
+                                            ),
+                                        ],
+                                      );
+                                    },
+                                    // Override the default day cell builder to hide the default day number
+                                    defaultBuilder: (context, day, focusedDay) {
+                                      // Only show the default text for days without activity
+                                      final events = _events[DateTime(
+                                              day.year, day.month, day.day)] ??
+                                          [];
+                                      if (events.isEmpty) {
+                                        return Container(
+                                          alignment: Alignment.center,
+                                          child: Text(
+                                            '${day.day}',
+                                            style: TextStyle(
+                                              color: Colors.grey[500],
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                      return Container(); // Return empty container, we'll show the date in our marker
+                                    },
+                                  ),
+                                ),
                               ),
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.chevron_right),
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                              onPressed: () {
-                                final now = DateTime.now();
-                                // Don't allow navigating to future months
-                                if (_focusedDay.year < now.year ||
-                                    (_focusedDay.year == now.year &&
-                                        _focusedDay.month < now.month)) {
-                                  setState(() {
-                                    _focusedDay = DateTime(_focusedDay.year,
-                                        _focusedDay.month + 1, 1);
-                                  });
-                                }
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // Format selector - with reduced vertical padding
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4, bottom: 4),
-                        child: SegmentedButton<CalendarFormat>(
-                          segments: const [
-                            ButtonSegment<CalendarFormat>(
-                              value: CalendarFormat.week,
-                              label: Text('Week'),
-                            ),
-                            ButtonSegment<CalendarFormat>(
-                              value: CalendarFormat.twoWeeks,
-                              label: Text('2 weeks'),
-                            ),
-                            ButtonSegment<CalendarFormat>(
-                              value: CalendarFormat.month,
-                              label: Text('Month'),
-                            ),
-                          ],
-                          selected: <CalendarFormat>{_calendarFormat},
-                          onSelectionChanged: (Set<CalendarFormat> selection) {
-                            setState(() {
-                              _calendarFormat = selection.first;
-                            });
-                          },
-                        ),
-                      ),
-
-                      // Calendar view - reduce vertical padding to save space
-                      TableCalendar(
-                        firstDay: DateTime.utc(2023, 1, 1),
-                        lastDay: DateTime.now().add(const Duration(days: 1)),
-                        focusedDay: _focusedDay,
-                        calendarFormat: _calendarFormat,
-                        selectedDayPredicate: (day) {
-                          return isSameDay(_selectedDay, day);
-                        },
-                        onDaySelected: (selectedDay, focusedDay) {
-                          setState(() {
-                            _selectedDay = selectedDay;
-                            _focusedDay = focusedDay;
-                          });
-
-                          // Load workouts for the selected day
-                          _loadWorkoutsForSelectedDay(selectedDay);
-                        },
-                        onPageChanged: (focusedDay) {
-                          setState(() {
-                            _focusedDay = focusedDay;
-                          });
-                        },
-                        eventLoader: (day) {
-                          // Normalize the date to remove time
-                          final normalized =
-                              DateTime(day.year, day.month, day.day);
-                          return _events[normalized] ?? [];
-                        },
-                        headerVisible: false, // Hide default header
-                        daysOfWeekHeight: 20, // Reduce height of day headers
-                        rowHeight: 45, // Adjust row height to save space
-                        calendarStyle: CalendarStyle(
-                          outsideDaysVisible: true,
-                          markersMaxCount: 1,
-                          markersAnchor: 0.9,
-                          markerDecoration: const BoxDecoration(
-                            color: Colors.transparent,
                           ),
-                          todayDecoration: BoxDecoration(
-                            color: Colors.blue.withOpacity(0.3),
-                            shape: BoxShape.circle,
-                          ),
-                          selectedDecoration: const BoxDecoration(
-                            color: Colors.blue,
-                            shape: BoxShape.circle,
-                          ),
-                          // Reduce padding to save space
-                          cellPadding: const EdgeInsets.symmetric(
-                              horizontal: 4, vertical: 4),
-                          cellMargin: EdgeInsets.zero,
-                        ),
-                        calendarBuilders: CalendarBuilders(
-                          markerBuilder: (context, date, events) {
-                            if (events.isEmpty) return null;
 
-                            final isMilestone = _isStreakMilestone(date);
-
-                            // Return a stack with the date number on top of the activity circle
-                            return Stack(
-                              alignment: Alignment.center,
+                          // Legend with reduced vertical padding
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                // Activity circle
-                                Container(
-                                  width: 36,
-                                  height: 36,
-                                  decoration: BoxDecoration(
-                                    color: _getEventColor(
-                                        events as List<DailyLog>?),
-                                    shape: BoxShape.circle,
-                                    border: isMilestone
-                                        ? Border.all(
-                                            color: Colors.orange, width: 2)
-                                        : null,
-                                  ),
-                                ),
-                                // Date number (in white for visibility)
-                                Text(
-                                  date.day.toString(),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                // Milestone star (if applicable)
-                                if (isMilestone)
-                                  const Positioned(
-                                    bottom: 2,
-                                    right: 2,
-                                    child: Icon(
-                                      Icons.star,
-                                      color: Colors.orange,
-                                      size: 12,
+                                _buildLegendItem('Workout Day', Colors.blue),
+                                const SizedBox(width: 16),
+                                _buildLegendItem(
+                                    'Rest Day', Colors.green.shade300),
+                                const SizedBox(width: 16),
+                                _buildLegendItem(
+                                    'No Activity', Colors.grey.shade200),
+                              ],
+                            ),
+                          ),
+
+                          // Selected day details
+                          if (_selectedDay != null)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16.0, vertical: 8.0),
+                              child: _buildSelectedDayInfo(),
+                            ),
+
+                          // Workout list for selected day (NEW)
+                          if (_selectedDayWorkouts.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16.0, vertical: 8.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Workouts on ${DateFormat('MMM d').format(_selectedDay!)}',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                              ],
-                            );
-                          },
-                          // Override the default day cell builder to hide the default day number
-                          defaultBuilder: (context, day, focusedDay) {
-                            // Only show the default text for days without activity
-                            final events = _events[
-                                    DateTime(day.year, day.month, day.day)] ??
-                                [];
-                            if (events.isEmpty) {
-                              return Container(
-                                alignment: Alignment.center,
-                                child: Text(
-                                  '${day.day}',
-                                  style: TextStyle(
-                                    color: Colors.grey[500],
-                                  ),
-                                ),
-                              );
-                            }
-                            return Container(); // Return empty container, we'll show the date in our marker
-                          },
-                        ),
-                      ),
-
-                      // Legend with reduced vertical padding
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            _buildLegendItem('Workout Day', Colors.blue),
-                            const SizedBox(width: 16),
-                            _buildLegendItem('Rest Day', Colors.green.shade300),
-                            const SizedBox(width: 16),
-                            _buildLegendItem(
-                                'No Activity', Colors.grey.shade200),
-                          ],
-                        ),
-                      ),
-
-                      // Selected day details
-                      if (_selectedDay != null)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16.0, vertical: 8.0),
-                          child: _buildSelectedDayInfo(),
-                        ),
-
-                      // Workout list for selected day (NEW)
-                      if (_selectedDayWorkouts.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16.0, vertical: 8.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Workouts on ${DateFormat('MMM d').format(_selectedDay!)}',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                  const SizedBox(height: 8),
+                                  ..._buildWorkoutsList(),
+                                ],
                               ),
-                              const SizedBox(height: 8),
-                              ..._buildWorkoutsList(),
-                            ],
-                          ),
-                        ),
+                            ),
 
-                      // Loading indicator for workouts
-                      if (_isLoadingWorkouts)
-                        const Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: Center(child: CircularProgressIndicator()),
-                        ),
-                    ],
+                          // Loading indicator for workouts
+                          if (_isLoadingWorkouts)
+                            const Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: Center(child: CircularProgressIndicator()),
+                            ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
