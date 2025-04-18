@@ -124,12 +124,19 @@ class _GoalsPageState extends State<GoalsPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Actions bar
+        // Actions bar with "Active Goals" title aligned with the "New Goal" button
         Padding(
-          padding: const EdgeInsets.fromLTRB(0, 16, 0, 0),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              const Text(
+                'Active Goals',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               ElevatedButton.icon(
                 onPressed: () {
                   Navigator.push(
@@ -163,17 +170,7 @@ class _GoalsPageState extends State<GoalsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Active Goals Section
-                    const Text(
-                      'Active Goals',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Active goals list
+                    // Active goals list (without the title that's now in the header)
                     if (_activeGoals.isEmpty)
                       _buildEmptyGoalsMessage()
                     else

@@ -260,9 +260,7 @@ class _WorkoutComparisonSelectionScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_selectionStep == 1
-            ? 'Select First Workout'
-            : 'Select Second Workout'),
+        title: const Text('Compare Workouts'),
         actions: [
           IconButton(
             icon: const Icon(Icons.filter_list),
@@ -327,42 +325,6 @@ class _WorkoutComparisonSelectionScreenState
             ),
           ),
 
-          // Filter chips
-          SizedBox(
-            height: 40,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: _filterOptions.length,
-              itemBuilder: (context, index) {
-                final filter = _filterOptions[index];
-                final isSelected = filter == _selectedFilter;
-
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: FilterChip(
-                    label: Text(filter),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      setState(() {
-                        _selectedFilter = filter;
-                      });
-                    },
-                    backgroundColor: Colors.grey.shade100,
-                    selectedColor: Colors.blue.shade100,
-                    checkmarkColor: Colors.blue,
-                    labelStyle: TextStyle(
-                      color: isSelected ? Colors.blue : Colors.black,
-                      fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.normal,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 16),
-
           // Workout list
           Expanded(
             child: _isLoading
@@ -385,36 +347,32 @@ class _WorkoutComparisonSelectionScreenState
 
   Widget _buildSelectionStatusBar() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
       color: Colors.blue.shade50,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Compare Workouts',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
+          // First step button using full width
+          _buildSelectionStep(1, 'Select first workout', _firstWorkout != null),
+
+          // Arrow in the center
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12.0),
+            child: Center(
+              child: Icon(
+                Icons.arrow_downward,
+                color: Colors.grey,
+                size: 28,
+              ),
             ),
           ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: _buildSelectionStep(
-                    1, 'Select first workout', _firstWorkout != null),
-              ),
-              const SizedBox(width: 8),
-              const Icon(Icons.arrow_forward, color: Colors.grey),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildSelectionStep(
-                    2, 'Select second workout', _secondWorkout != null),
-              ),
-            ],
-          ),
+
+          // Second step button using full width
+          _buildSelectionStep(
+              2, 'Select second workout', _secondWorkout != null),
+
           if (_firstWorkout != null) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
@@ -428,12 +386,12 @@ class _WorkoutComparisonSelectionScreenState
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
             if (_firstWorkout != null && _secondWorkout == null)
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.0),
+                padding: const EdgeInsets.only(bottom: 8.0),
                 child: Container(
-                  padding: const EdgeInsets.all(8.0),
+                  padding: const EdgeInsets.all(12.0),
                   decoration: BoxDecoration(
                     color: Colors.blue.shade50,
                     borderRadius: BorderRadius.circular(8),
@@ -441,15 +399,15 @@ class _WorkoutComparisonSelectionScreenState
                   ),
                   child: const Row(
                     children: [
-                      Icon(Icons.info_outline, size: 16, color: Colors.blue),
-                      SizedBox(width: 8),
+                      Icon(Icons.info_outline, size: 18, color: Colors.blue),
+                      SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           'Now select a second workout to compare with (preferably a more recent workout)',
                           style: TextStyle(
                             fontStyle: FontStyle.italic,
                             color: Colors.blue,
-                            fontSize: 12,
+                            fontSize: 13,
                           ),
                         ),
                       ),
@@ -460,25 +418,28 @@ class _WorkoutComparisonSelectionScreenState
           ],
           if (_firstWorkout == null)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4.0),
+              padding: const EdgeInsets.only(top: 12.0, bottom: 6.0),
               child: Container(
-                padding: const EdgeInsets.all(8.0),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 10.0, vertical: 10.0),
                 decoration: BoxDecoration(
                   color: Colors.blue.shade50,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: Colors.blue.shade200),
                 ),
                 child: const Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Icon(Icons.info_outline, size: 16, color: Colors.blue),
-                    SizedBox(width: 8),
+                    SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'Tip: For meaningful comparisons, select an earlier workout first, followed by a more recent one.',
+                        'Tip: For meaningful comparisons, first select an earlier workout, then a more recent one, and make sure to choose the same exercise in both. Filter workouts if you want to compare specific workout types or time periods.',
                         style: TextStyle(
                           fontStyle: FontStyle.italic,
                           color: Colors.blue,
                           fontSize: 12,
+                          height: 1.3,
                         ),
                       ),
                     ),
@@ -487,15 +448,18 @@ class _WorkoutComparisonSelectionScreenState
               ),
             ),
           if (_firstWorkout != null)
-            TextButton.icon(
-              onPressed: _resetSelection,
-              icon: const Icon(Icons.refresh, size: 16),
-              label: const Text('Reset Selection'),
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.blue,
-                padding: EdgeInsets.zero,
-                minimumSize: const Size(50, 30),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: TextButton.icon(
+                onPressed: _resetSelection,
+                icon: const Icon(Icons.refresh, size: 16),
+                label: const Text('Reset Selection'),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.blue,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  minimumSize: const Size(50, 36),
+                ),
               ),
             ),
         ],
@@ -505,32 +469,47 @@ class _WorkoutComparisonSelectionScreenState
 
   Widget _buildSelectionStep(int step, String label, bool isCompleted) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
       decoration: BoxDecoration(
         color: _selectionStep == step
             ? Colors.blue
             : isCompleted
                 ? Colors.green
                 : Colors.grey.shade300,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 2,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.start,
         children: [
           Container(
-            width: 20,
-            height: 20,
+            width: 26,
+            height: 26,
             decoration: BoxDecoration(
               color: Colors.white,
               shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 2,
+                  offset: const Offset(0, 1),
+                ),
+              ],
             ),
             child: Center(
               child: isCompleted
-                  ? const Icon(Icons.check, size: 14, color: Colors.green)
+                  ? const Icon(Icons.check, size: 16, color: Colors.green)
                   : Text(
                       step.toString(),
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 14,
                         fontWeight: FontWeight.bold,
                         color: _selectionStep == step
                             ? Colors.blue
@@ -539,12 +518,12 @@ class _WorkoutComparisonSelectionScreenState
                     ),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
               label,
-              style: TextStyle(
-                fontSize: 12,
+              style: const TextStyle(
+                fontSize: 15,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
@@ -598,9 +577,24 @@ class _WorkoutComparisonSelectionScreenState
     final bool isSelectable =
         !isSelected || (_selectionStep == 2 && isFirstWorkout);
 
+    // Determine a color based on muscle groups
+    Color cardColor = _getColorForWorkout(muscleGroups);
+
+    // Determine darker shade for text
+    Color darkCardColor = cardColor;
+    if (cardColor == Colors.blue) {
+      darkCardColor = Colors.blue.shade600;
+    } else if (cardColor == Colors.green) {
+      darkCardColor = Colors.green.shade600;
+    } else if (cardColor == Colors.orange) {
+      darkCardColor = Colors.orange.shade600;
+    } else if (cardColor == Colors.purple) {
+      darkCardColor = Colors.purple.shade600;
+    }
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12.0),
-      elevation: 0,
+      elevation: 1,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
@@ -613,74 +607,131 @@ class _WorkoutComparisonSelectionScreenState
         borderRadius: BorderRadius.circular(12),
         child: Stack(
           children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Workout ${DateFormat('MM/dd').format(workout.date)}',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: isSelected ? Colors.blue : null,
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white,
+                    cardColor.withOpacity(0.08),
+                  ],
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(14.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: cardColor.withOpacity(0.15),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                _getIconForWorkout(muscleGroups),
+                                color: darkCardColor,
+                                size: 18,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Workout ${DateFormat('MM/dd').format(workout.date)}',
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      Text(
-                        DateFormat('h:mm a').format(workout.date),
+                        Text(
+                          DateFormat('h:mm a').format(workout.date),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 46.0),
+                      child: Text(
+                        exerciseCount == 1
+                            ? '$exerciseCount exercise'
+                            : '$exerciseCount exercises',
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.grey.shade700,
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Icon(Icons.timer_outlined,
-                          size: 16, color: Colors.grey),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${workout.duration ?? 0} minutes',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade700,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      const Icon(Icons.fitness_center,
-                          size: 16, color: Colors.grey),
-                      const SizedBox(width: 4),
-                      Text(
-                        '$exerciseCount exercises',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade700,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    children: muscleGroups.map((muscle) {
-                      return Chip(
-                        label: Text(
-                          muscle,
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                        backgroundColor: Colors.grey.shade100,
-                        padding: EdgeInsets.zero,
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        visualDensity: VisualDensity.compact,
-                      );
-                    }).toList(),
-                  ),
-                ],
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      children: muscleGroups.map((muscle) {
+                        final color = _getColorForMuscleGroup(muscle);
+
+                        // Determine darker shade for text in the chip
+                        Color darkColor = color;
+                        if (color == Colors.blue) {
+                          darkColor = Colors.blue.shade700;
+                        } else if (color == Colors.green) {
+                          darkColor = Colors.green.shade700;
+                        } else if (color == Colors.cyan) {
+                          darkColor = Colors.cyan.shade700;
+                        } else if (color == Colors.teal) {
+                          darkColor = Colors.teal.shade700;
+                        } else if (color == Colors.orange) {
+                          darkColor = Colors.orange.shade700;
+                        } else if (color == Colors.purple) {
+                          darkColor = Colors.purple.shade700;
+                        } else {
+                          darkColor = Colors.blueGrey.shade700;
+                        }
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 2),
+                          child: Chip(
+                            avatar: CircleAvatar(
+                              radius: 9,
+                              backgroundColor: color.withOpacity(0.15),
+                              child: Icon(
+                                _getIconForMuscleGroup(muscle),
+                                size: 11,
+                                color: darkColor,
+                              ),
+                            ),
+                            label: Text(
+                              muscle,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey.shade700,
+                              ),
+                            ),
+                            backgroundColor: color.withOpacity(0.08),
+                            side: BorderSide(color: Colors.grey.shade300),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 4, vertical: 0),
+                            visualDensity: VisualDensity.compact,
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
               ),
             ),
             if (isSelected)
@@ -719,6 +770,102 @@ class _WorkoutComparisonSelectionScreenState
         ),
       ),
     );
+  }
+
+  // Helper method to determine card color based on muscle groups
+  Color _getColorForWorkout(List<String> muscleGroups) {
+    if (muscleGroups.isEmpty) return Colors.blue;
+
+    // Check for muscle group categories
+    if (muscleGroups
+        .any((group) => ['Chest', 'Shoulders', 'Triceps'].contains(group))) {
+      return Colors.blue;
+    } else if (muscleGroups
+        .any((group) => ['Back', 'Biceps'].contains(group))) {
+      return Colors.green;
+    } else if (muscleGroups
+        .any((group) => ['Legs', 'Glutes', 'Calves'].contains(group))) {
+      return Colors.orange;
+    } else if (muscleGroups.any((group) => ['Core', 'Abs'].contains(group))) {
+      return Colors.purple;
+    }
+
+    // Default color
+    return Colors.blue;
+  }
+
+  // Helper method to get icon for workout
+  IconData _getIconForWorkout(List<String> muscleGroups) {
+    if (muscleGroups.isEmpty) return Icons.fitness_center;
+
+    if (muscleGroups
+        .any((group) => ['Chest', 'Shoulders', 'Triceps'].contains(group))) {
+      return Icons.fitness_center; // Dumbbell for upper body push
+    } else if (muscleGroups
+        .any((group) => ['Back', 'Biceps'].contains(group))) {
+      return Icons.fitness_center; // Dumbbell for upper body pull
+    } else if (muscleGroups
+        .any((group) => ['Legs', 'Glutes', 'Calves'].contains(group))) {
+      return Icons.directions_run; // Running for lower body
+    } else if (muscleGroups.any((group) => ['Core', 'Abs'].contains(group))) {
+      return Icons.fitness_center; // Dumbbell for core
+    }
+
+    return Icons.fitness_center; // Default to dumbbell
+  }
+
+  // Helper method to get color for specific muscle group
+  Color _getColorForMuscleGroup(String muscleGroup) {
+    switch (muscleGroup) {
+      case 'Chest':
+        return Colors.blue;
+      case 'Back':
+        return Colors.green;
+      case 'Shoulders':
+        return Colors.cyan;
+      case 'Biceps':
+        return Colors.teal;
+      case 'Triceps':
+        return Colors.indigo;
+      case 'Legs':
+        return Colors.orange;
+      case 'Calves':
+        return Colors.amber;
+      case 'Glutes':
+        return Colors.deepOrange;
+      case 'Core':
+      case 'Abs':
+        return Colors.purple;
+      default:
+        return Colors.blueGrey;
+    }
+  }
+
+  // Helper method to get icon for specific muscle group
+  IconData _getIconForMuscleGroup(String muscleGroup) {
+    switch (muscleGroup) {
+      case 'Chest':
+        return Icons.fitness_center; // Dumbbell for chest
+      case 'Back':
+        return Icons.fitness_center; // Dumbbell for back
+      case 'Shoulders':
+        return Icons.fitness_center; // Dumbbell for shoulders
+      case 'Biceps':
+        return Icons.fitness_center; // Dumbbell for biceps
+      case 'Triceps':
+        return Icons.fitness_center; // Dumbbell for triceps
+      case 'Legs':
+        return Icons.directions_run; // Running for legs
+      case 'Calves':
+        return Icons.directions_run; // Running for calves
+      case 'Glutes':
+        return Icons.directions_run; // Running for glutes
+      case 'Core':
+      case 'Abs':
+        return Icons.fitness_center; // Dumbbell for core/abs
+      default:
+        return Icons.fitness_center; // Default to dumbbell
+    }
   }
 
   List<Map<String, dynamic>> _filterWorkouts() {
