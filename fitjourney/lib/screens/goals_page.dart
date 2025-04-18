@@ -80,180 +80,152 @@ class _GoalsPageState extends State<GoalsPage> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: SafeArea(
-          child: Center(
-            child: CircularProgressIndicator(),
-          ),
-        ),
+      return const Center(
+        child: CircularProgressIndicator(),
       );
     }
 
     if (_hasError) {
-      return Scaffold(
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: Colors.red,
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Error Loading Goals',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _errorMessage,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: _loadGoalData,
-                    child: const Text('Try Again'),
-                  ),
-                ],
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.error_outline,
+              size: 64,
+              color: Colors.red,
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Error Loading Goals',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
               ),
             ),
-          ),
+            const SizedBox(height: 8),
+            Text(
+              _errorMessage,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.grey.shade600,
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: _loadGoalData,
+              child: const Text('Try Again'),
+            ),
+          ],
         ),
       );
     }
 
-    return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Actions bar
+        Padding(
+          padding: const EdgeInsets.fromLTRB(0, 16, 0, 0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              // Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Goals',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-
-              // Main content - scrollable
-              Expanded(
-                child: RefreshIndicator(
-                  onRefresh: _loadGoalData,
-                  child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 16),
-
-                        // Active Goals Section
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'Active Goals',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            ElevatedButton.icon(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) =>
-                                          const LogGoalFlow()),
-                                ).then((_) => _loadGoalData());
-                              },
-                              icon: const Icon(Icons.add, size: 18),
-                              label: const Text('New Goal'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue,
-                                foregroundColor: Colors.white,
-                                textStyle: const TextStyle(
-                                    fontWeight: FontWeight.bold),
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 8),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Active goals list
-                        if (_activeGoals.isEmpty)
-                          _buildEmptyGoalsMessage()
-                        else
-                          ..._activeGoals.map((goal) => _buildGoalItem(goal)),
-
-                        const SizedBox(height: 32),
-
-                        // Completed Goals Section
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'Completed Goals',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            if (_completedGoals.length > 2)
-                              TextButton(
-                                onPressed: () {
-                                  setState(() {
-                                    _showAllCompletedGoals =
-                                        !_showAllCompletedGoals;
-                                  });
-                                },
-                                child: Text(_showAllCompletedGoals
-                                    ? 'Show Less'
-                                    : 'See All'),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Completed goals list
-                        if (_completedGoals.isEmpty)
-                          _buildEmptyCompletedGoalsMessage()
-                        else
-                          ..._completedGoals
-                              .take(_showAllCompletedGoals
-                                  ? _completedGoals.length
-                                  : 2)
-                              .map((goal) => _buildCompletedGoalItem(goal)),
-
-                        const SizedBox(height: 16),
-                      ],
-                    ),
-                  ),
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const LogGoalFlow()),
+                  ).then((_) => _loadGoalData());
+                },
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('New Goal'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
               ),
             ],
           ),
         ),
-      ),
+
+        // Main content - scrollable
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: _loadGoalData,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Active Goals Section
+                    const Text(
+                      'Active Goals',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Active goals list
+                    if (_activeGoals.isEmpty)
+                      _buildEmptyGoalsMessage()
+                    else
+                      ..._activeGoals.map((goal) => _buildGoalItem(goal)),
+
+                    const SizedBox(height: 32),
+
+                    // Completed Goals Section
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Completed Goals',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        if (_completedGoals.length > 2)
+                          TextButton(
+                            onPressed: () {
+                              setState(() {
+                                _showAllCompletedGoals =
+                                    !_showAllCompletedGoals;
+                              });
+                            },
+                            child: Text(_showAllCompletedGoals
+                                ? 'Show Less'
+                                : 'See All'),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Completed goals list
+                    if (_completedGoals.isEmpty)
+                      _buildEmptyCompletedGoalsMessage()
+                    else
+                      ..._completedGoals
+                          .take(_showAllCompletedGoals
+                              ? _completedGoals.length
+                              : 2)
+                          .map((goal) => _buildCompletedGoalItem(goal)),
+
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

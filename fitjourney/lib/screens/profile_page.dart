@@ -279,183 +279,168 @@ class _ProfilePageState extends State<ProfilePage> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Sync status indicator at the top
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              // Header section
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              const SyncStatusWidget(),
+            ],
+          ),
+          const SizedBox(height: 24),
+
+          if (_currentUser != null) ...[
+            // Profile header with avatar and name
+            Center(
+              child: Column(
                 children: [
-                  const Text(
-                    'Profile',
-                    style: TextStyle(
+                  CircleAvatar(
+                    radius: 50,
+                    backgroundColor: Colors.blue.shade100,
+                    child: Text(
+                      '${_currentUser!.firstName[0]}${_currentUser!.lastName[0]}',
+                      style: const TextStyle(
+                        fontSize: 30,
+                        color: Colors.blue,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    '${_currentUser!.firstName} ${_currentUser!.lastName}',
+                    style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  // Add sync status indicator
-                  const SyncStatusWidget(),
+                  Text(
+                    firebase_auth.FirebaseAuth.instance.currentUser?.email ??
+                        '',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
                 ],
               ),
-              const SizedBox(height: 24),
+            ),
 
-              if (_currentUser != null) ...[
-                // Profile header with avatar and name
-                Center(
-                  child: Column(
-                    children: [
-                      CircleAvatar(
-                        radius: 50,
-                        backgroundColor: Colors.blue.shade100,
-                        child: Text(
-                          '${_currentUser!.firstName[0]}${_currentUser!.lastName[0]}',
-                          style: const TextStyle(
-                            fontSize: 30,
-                            color: Colors.blue,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        '${_currentUser!.firstName} ${_currentUser!.lastName}',
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        firebase_auth
-                                .FirebaseAuth.instance.currentUser?.email ??
-                            '',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                    ],
+            const SizedBox(height: 32),
+
+            // Add sync status section before settings
+            const SizedBox(height: 16),
+            const Text(
+              'Data Synchronization',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const SyncStatusWidget(showDetailedStatus: true),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              icon: const Icon(Icons.settings),
+              label: const Text('Manage Data Sync'),
+              onPressed: () => Navigator.pushNamed(context, '/sync-management'),
+            ),
+
+            // Settings section
+            const Text(
+              'Settings',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            // Privacy & Legal section
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: Column(
+                children: [
+                  // Privacy Policy
+                  ListTile(
+                    title: const Text('Privacy Policy'),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                    onTap: _navigateToPrivacyPolicy,
                   ),
-                ),
+                  Divider(height: 1, color: Colors.grey.shade200),
 
-                const SizedBox(height: 32),
-
-                // Add sync status section before settings
-                const SizedBox(height: 16),
-                const Text(
-                  'Data Synchronization',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                  // Terms of Use
+                  ListTile(
+                    title: const Text('Terms of Use'),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                    onTap: _navigateToTermsOfUse,
                   ),
-                ),
-                const SizedBox(height: 8),
-                const SyncStatusWidget(showDetailedStatus: true),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  icon: const Icon(Icons.settings),
-                  label: const Text('Manage Data Sync'),
-                  onPressed: () =>
-                      Navigator.pushNamed(context, '/sync-management'),
-                ),
+                ],
+              ),
+            ),
 
-                // Settings section
-                const Text(
-                  'Settings',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
+            const SizedBox(height: 32),
 
-                // Privacy & Legal section
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade200),
+            // Account section
+            const Text(
+              'Account',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Sign Out button
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: Column(
+                children: [
+                  ListTile(
+                    title: const Text('Sign Out'),
+                    trailing: const Icon(Icons.logout, size: 20),
+                    onTap: _signOut,
                   ),
-                  child: Column(
-                    children: [
-                      // Privacy Policy
-                      ListTile(
-                        title: const Text('Privacy Policy'),
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                        onTap: _navigateToPrivacyPolicy,
-                      ),
-                      Divider(height: 1, color: Colors.grey.shade200),
+                  Divider(height: 1, color: Colors.grey.shade200),
 
-                      // Terms of Use
-                      ListTile(
-                        title: const Text('Terms of Use'),
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                        onTap: _navigateToTermsOfUse,
-                      ),
-                    ],
+                  // Delete Account
+                  ListTile(
+                    title: const Text(
+                      'Delete Account',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                    trailing: _isDeleting
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.delete_forever,
+                            color: Colors.red, size: 20),
+                    onTap: _isDeleting ? null : _deleteAccount,
                   ),
-                ),
-
-                const SizedBox(height: 32),
-
-                // Account section
-                const Text(
-                  'Account',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                // Sign Out button
-                Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade200),
-                  ),
-                  child: Column(
-                    children: [
-                      ListTile(
-                        title: const Text('Sign Out'),
-                        trailing: const Icon(Icons.logout, size: 20),
-                        onTap: _signOut,
-                      ),
-                      Divider(height: 1, color: Colors.grey.shade200),
-
-                      // Delete Account
-                      ListTile(
-                        title: const Text(
-                          'Delete Account',
-                          style: TextStyle(color: Colors.red),
-                        ),
-                        trailing: _isDeleting
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Icon(Icons.delete_forever,
-                                color: Colors.red, size: 20),
-                        onTap: _isDeleting ? null : _deleteAccount,
-                      ),
-                    ],
-                  ),
-                ),
-              ] else ...[
-                const Center(
-                  child: Text('User profile not available'),
-                ),
-              ],
-              const SizedBox(height: 20),
-            ],
-          ),
-        ),
+                ],
+              ),
+            ),
+          ] else ...[
+            const Center(
+              child: Text('User profile not available'),
+            ),
+          ],
+          const SizedBox(height: 20),
+        ],
       ),
     );
   }

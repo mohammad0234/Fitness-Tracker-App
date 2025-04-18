@@ -218,132 +218,115 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Apply date filter to workouts
+    final filteredWorkouts = _applyDateFilter(_workoutDetails);
+
+    // Apply muscle group filter to workouts
+    final finalFilteredWorkouts = _applyMuscleGroupFilter(filteredWorkouts);
+
     return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Title and actions row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Workouts',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Row(
+      body: Column(
+        children: [
+          // Header with filters and Compare button
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Filter chips
+                Expanded(
+                  child: Wrap(
+                    spacing: 8.0,
+                    runSpacing: 8.0,
                     children: [
-                      // Compare button
-                      OutlinedButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const WorkoutComparisonSelectionScreen(),
-                            ),
-                          );
+                      FilterChip(
+                        label: Text(_dateFilter),
+                        onSelected: (selected) {
+                          _showFilterDialog();
                         },
-                        icon: const Icon(Icons.compare_arrows, size: 18),
-                        label: const Text('Compare'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.blue,
-                          side: BorderSide(color: Colors.blue),
-                          visualDensity: VisualDensity.compact,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 0),
+                        avatar: const Icon(
+                          Icons.calendar_today,
+                          size: 16,
                         ),
+                        backgroundColor: Colors.grey.shade100,
+                        checkmarkColor: Colors.blue,
+                        visualDensity: VisualDensity.compact,
+                        selected: _dateFilter != 'All Time',
                       ),
-                      // Filter button
-                      IconButton(
-                        icon: const Icon(Icons.filter_list),
-                        onPressed: _showFilterDialog,
-                        tooltip: 'Filter workouts',
-                      ),
-                      // Refresh button
-                      IconButton(
-                        icon: const Icon(Icons.refresh),
-                        onPressed: _loadWorkouts,
-                        tooltip: 'Refresh workouts',
+                      FilterChip(
+                        label: Text(_selectedFilter),
+                        onSelected: (selected) {
+                          _showFilterDialog();
+                        },
+                        avatar: const Icon(
+                          Icons.fitness_center,
+                          size: 16,
+                        ),
+                        backgroundColor: Colors.grey.shade100,
+                        checkmarkColor: Colors.blue,
+                        visualDensity: VisualDensity.compact,
+                        selected: _selectedFilter != 'All Workouts',
                       ),
                     ],
                   ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              // Filter chips/tags display
-              Row(
-                children: [
-                  if (_selectedFilter != 'All Workouts' ||
-                      _dateFilter != 'All Time')
-                    const Text(
-                      'Active Filters:',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
+                ),
+                Row(
+                  children: [
+                    // Compare button
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                const WorkoutComparisonSelectionScreen(),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.compare_arrows, size: 18),
+                      label: const Text('Compare'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.blue,
+                        side: BorderSide(color: Colors.blue),
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 0),
                       ),
                     ),
-                  const SizedBox(width: 8),
-                  if (_selectedFilter != 'All Workouts')
-                    Chip(
-                      label: Text(_selectedFilter),
-                      backgroundColor: Colors.blue.shade100,
-                      deleteIcon: const Icon(Icons.close, size: 16),
-                      onDeleted: () {
-                        setState(() {
-                          _selectedFilter = 'All Workouts';
-                        });
-                      },
-                      visualDensity: VisualDensity.compact,
-                      labelStyle: const TextStyle(fontSize: 12),
+                    // Filter button
+                    IconButton(
+                      icon: const Icon(Icons.filter_list),
+                      onPressed: _showFilterDialog,
+                      tooltip: 'Filter',
                     ),
-                  const SizedBox(width: 4),
-                  if (_dateFilter != 'All Time')
-                    Chip(
-                      label: Text(_dateFilter),
-                      backgroundColor: Colors.blue.shade100,
-                      deleteIcon: const Icon(Icons.close, size: 16),
-                      onDeleted: () {
-                        setState(() {
-                          _dateFilter = 'All Time';
-                        });
-                      },
-                      visualDensity: VisualDensity.compact,
-                      labelStyle: const TextStyle(fontSize: 12),
-                    ),
-                ],
-              ),
-
-              // Remove the filter chips section (the SizedBox and ListView.builder with FilterChips)
-              const SizedBox(height: 16), // Keep a smaller space instead
-
-              // Workout history - grouped by date
-              Expanded(
-                child: _isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : _filterWorkouts().isEmpty
-                        ? _buildEmptyState()
-                        : ListView(
-                            children: _buildWorkoutGroups(),
-                          ),
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
+          const SizedBox(height: 8),
+
+          // Workout history - grouped by date
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _filterWorkouts().isEmpty
+                    ? _buildEmptyState()
+                    : Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: ListView(
+                          children: _buildWorkoutGroups(),
+                        ),
+                      ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const LogWorkoutFlow()),
-          ).then((_) =>
-              _loadWorkouts()); // Reload workouts when returning from logging
+          ).then((_) => _loadWorkouts()); // Reload workouts when returning
         },
         backgroundColor: Colors.blue,
         child: const Icon(Icons.add, color: Colors.white),
@@ -481,9 +464,14 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
       final workouts = groupedWorkouts[dateKey]!;
 
       if (workouts.isNotEmpty) {
+        // Add padding at top of each date group except the first one
+        if (groups.isNotEmpty) {
+          groups.add(const SizedBox(height: 8));
+        }
+
         groups.add(
           Padding(
-            padding: const EdgeInsets.only(bottom: 8.0),
+            padding: const EdgeInsets.only(bottom: 8.0, top: 4.0, left: 4.0),
             child: Text(
               dateKey,
               style: TextStyle(
@@ -498,9 +486,12 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
         workouts.forEach((workoutDetail) {
           groups.add(_buildWorkoutCard(workoutDetail));
         });
-
-        groups.add(const SizedBox(height: 16));
       }
+    }
+
+    // Add bottom padding
+    if (groups.isNotEmpty) {
+      groups.add(const SizedBox(height: 16));
     }
 
     return groups;
@@ -565,7 +556,7 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
             ),
           ),
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(14.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -590,7 +581,7 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
                         Text(
                           'Workout ${DateFormat('MM/dd').format(workout.date)}',
                           style: const TextStyle(
-                            fontSize: 16,
+                            fontSize: 15,
                             fontWeight: FontWeight.bold,
                             color: Colors.black87,
                           ),
@@ -600,7 +591,7 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
                     Text(
                       DateFormat('h:mm a').format(workout.date),
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 13,
                         color: Colors.grey.shade700,
                       ),
                     ),
@@ -618,12 +609,12 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
 
                 // Exercise list with chips
                 Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+                  spacing: 6,
+                  runSpacing: 6,
                   children: [
                     ...exercises.map((exercise) {
                       final exerciseName = exercise['name'] as String;
@@ -666,14 +657,14 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
                       }
 
                       return Container(
-                        margin: const EdgeInsets.only(bottom: 4),
+                        margin: const EdgeInsets.only(bottom: 2),
                         child: Chip(
                           avatar: CircleAvatar(
-                            radius: 10,
+                            radius: 9,
                             backgroundColor: color.withOpacity(0.15),
                             child: Icon(
                               _getIconForMuscleGroup(muscleGroup),
-                              size: 12,
+                              size: 11,
                               color: darkColor,
                             ),
                           ),
@@ -682,19 +673,19 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
                                 ? '$exerciseName (${maxWeight.toStringAsFixed(1)}kg)'
                                 : exerciseName,
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: 11,
                               color: Colors.grey.shade700,
                             ),
                           ),
                           backgroundColor: color.withOpacity(0.08),
                           side: BorderSide(color: Colors.grey.shade300),
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 0),
+                              horizontal: 4, vertical: 0),
                           visualDensity: VisualDensity.compact,
                           materialTapTargetSize:
                               MaterialTapTargetSize.shrinkWrap,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(14),
                           ),
                         ),
                       );
@@ -817,5 +808,68 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
     return date.year == yesterday.year &&
         date.month == yesterday.month &&
         date.day == yesterday.day;
+  }
+
+  // Apply date filter to workouts
+  List<Map<String, dynamic>> _applyDateFilter(
+      List<Map<String, dynamic>> workouts) {
+    if (_dateFilter == 'All Time') {
+      return workouts;
+    }
+
+    final now = DateTime.now();
+    DateTime startDate;
+
+    switch (_dateFilter) {
+      case 'This Week':
+        // Start of current week (Sunday)
+        startDate = now.subtract(Duration(days: now.weekday % 7));
+        startDate = DateTime(startDate.year, startDate.month, startDate.day);
+        break;
+      case 'This Month':
+        // Start of current month
+        startDate = DateTime(now.year, now.month, 1);
+        break;
+      case 'Last 3 Months':
+        // Start of 3 months ago
+        startDate = DateTime(now.year, now.month - 3, 1);
+        break;
+      default:
+        return workouts;
+    }
+
+    return workouts.where((workout) {
+      final workoutDate = (workout['workout'] as Workout).date;
+      return workoutDate.isAfter(startDate) ||
+          workoutDate.isAtSameMomentAs(startDate);
+    }).toList();
+  }
+
+  // Apply muscle group filter to workouts
+  List<Map<String, dynamic>> _applyMuscleGroupFilter(
+      List<Map<String, dynamic>> workouts) {
+    if (_selectedFilter == 'All Workouts') {
+      return workouts;
+    }
+
+    return workouts.where((workout) {
+      final muscleGroups = workout['muscleGroups'] as List<String>;
+
+      switch (_selectedFilter) {
+        case 'Upper Body':
+          return muscleGroups.any((group) => [
+                'Chest',
+                'Back',
+                'Shoulders',
+                'Biceps',
+                'Triceps'
+              ].contains(group));
+        case 'Lower Body':
+          return muscleGroups
+              .any((group) => ['Legs', 'Glutes', 'Calves'].contains(group));
+        default:
+          return true;
+      }
+    }).toList();
   }
 }

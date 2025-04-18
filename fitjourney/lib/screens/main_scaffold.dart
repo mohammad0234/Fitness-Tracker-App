@@ -92,6 +92,7 @@ class _MainScaffoldState extends State<MainScaffold> {
       child: Scaffold(
         appBar: AppBar(
           title: Text(appBarTitle),
+          automaticallyImplyLeading: false,
           actions: [
             NotificationBadge(
               onTap: () {

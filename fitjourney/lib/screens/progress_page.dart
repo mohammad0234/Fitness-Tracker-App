@@ -100,273 +100,261 @@ class _ProgressPageState extends State<ProgressPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header with options
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Progress',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.refresh),
-                    onPressed: _isLoading ? null : _loadData,
-                    tooltip: 'Refresh data',
-                  ),
-                ],
-              ),
-            ),
-
-            // Time filter chips
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: SizedBox(
-                height: 40,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _timeFilters.length,
-                  itemBuilder: (context, index) {
-                    final filter = _timeFilters[index];
-                    final isSelected = filter == _timeFilter;
-
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8.0),
-                      child: ChoiceChip(
-                        label: Text(filter),
-                        selected: isSelected,
-                        onSelected: _isLoading
-                            ? null
-                            : (selected) {
-                                if (selected && filter != _timeFilter) {
-                                  setState(() {
-                                    _timeFilter = filter;
-                                    _loadData(); // Reload data with new filter
-                                  });
-                                }
-                              },
-                        backgroundColor: Colors.grey.shade100,
-                        selectedColor: Colors.blue,
-                        labelStyle: TextStyle(
-                          color: isSelected ? Colors.white : Colors.black,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    );
-                  },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header with filters and refresh
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Time Period: $_timeFilter',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-            ),
+              IconButton(
+                icon: const Icon(Icons.refresh),
+                onPressed: _isLoading ? null : _loadData,
+                tooltip: 'Refresh data',
+              ),
+            ],
+          ),
+        ),
 
-            // Main content area - uses a single FutureBuilder for all charts
-            Expanded(
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _hasError
-                      ? _buildErrorState()
-                      : RefreshIndicator(
-                          onRefresh: () async {
-                            _loadData();
+        // Time filter chips
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: SizedBox(
+            height: 40,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: _timeFilters.length,
+              itemBuilder: (context, index) {
+                final filter = _timeFilters[index];
+                final isSelected = filter == _timeFilter;
+
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: ChoiceChip(
+                    label: Text(filter),
+                    selected: isSelected,
+                    onSelected: _isLoading
+                        ? null
+                        : (selected) {
+                            if (selected && filter != _timeFilter) {
+                              setState(() {
+                                _timeFilter = filter;
+                                _loadData(); // Reload data with new filter
+                              });
+                            }
                           },
-                          child: FutureBuilder<ProgressData>(
-                            future: _dataFuture,
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState ==
-                                  ConnectionState.waiting) {
-                                return const Center(
-                                    child: CircularProgressIndicator());
-                              }
+                    backgroundColor: Colors.grey.shade100,
+                    selectedColor: Colors.blue,
+                    labelStyle: TextStyle(
+                      color: isSelected ? Colors.white : Colors.black,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
 
-                              if (snapshot.hasError) {
-                                return Center(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(16.0),
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          Icons.error_outline,
-                                          size: 48,
-                                          color: Colors.red.shade400,
-                                        ),
-                                        const SizedBox(height: 16),
-                                        Text(
-                                          'Error loading progress data',
-                                          style: TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.red.shade800,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          snapshot.error.toString(),
-                                          textAlign: TextAlign.center,
-                                          style: const TextStyle(
-                                              color: Colors.red),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              }
+        // Main content area
+        Expanded(
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _hasError
+                  ? _buildErrorState()
+                  : RefreshIndicator(
+                      onRefresh: () async {
+                        _loadData();
+                      },
+                      child: FutureBuilder<ProgressData>(
+                        future: _dataFuture,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                                child: CircularProgressIndicator());
+                          }
 
-                              final data =
-                                  snapshot.data ?? ProgressData.empty();
-
-                              // Check if we have any data to display
-                              final bool hasNoData = data.volumeData.isEmpty &&
-                                  data.muscleGroupData.isEmpty;
-
-                              if (hasNoData) {
-                                return _buildEmptyState();
-                              }
-
-                              // Return the progress charts
-                              return SingleChildScrollView(
+                          if (snapshot.hasError) {
+                            return Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
                                 child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.error_outline,
+                                      size: 48,
+                                      color: Colors.red.shade400,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'Error loading progress data',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.red.shade800,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      snapshot.error.toString(),
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(color: Colors.red),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }
+
+                          final data = snapshot.data ?? ProgressData.empty();
+
+                          // Check if we have any data to display
+                          final bool hasNoData = data.volumeData.isEmpty &&
+                              data.muscleGroupData.isEmpty;
+
+                          if (hasNoData) {
+                            return _buildEmptyState();
+                          }
+
+                          // Return the progress charts
+                          return SingleChildScrollView(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Workout Volume Chart
+                                WorkoutVolumeChart(
+                                  volumeData: data.volumeData,
+                                  timeRange: _timeFilter,
+                                ),
+                                const SizedBox(height: 24),
+
+                                // Muscle Group Distribution Chart
+                                MuscleGroupPieChart(
+                                  muscleGroupData: data.muscleGroupData,
+                                ),
+                                const SizedBox(height: 24),
+
+                                // Personal Bests Section (if available)
+                                if (data.personalBests.isNotEmpty)
+                                  _buildPersonalBestsSection(
+                                      data.personalBests),
+
+                                const SizedBox(height: 24),
+
+                                // Track Exercise Progress section
+                                Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    // Workout Volume Chart
-                                    WorkoutVolumeChart(
-                                      volumeData: data.volumeData,
-                                      timeRange: _timeFilter,
-                                    ),
-                                    const SizedBox(height: 24),
-
-                                    // Muscle Group Distribution Chart
-                                    MuscleGroupPieChart(
-                                      muscleGroupData: data.muscleGroupData,
-                                    ),
-                                    const SizedBox(height: 24),
-
-                                    // Personal Bests Section (if available)
-                                    if (data.personalBests.isNotEmpty)
-                                      _buildPersonalBestsSection(
-                                          data.personalBests),
-
-                                    const SizedBox(height: 24),
-
-                                    // Track Exercise Progress section
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        const Padding(
-                                          padding: EdgeInsets.symmetric(
-                                              horizontal: 16.0),
-                                          child: Text(
-                                            'Track Exercise Progress',
-                                            style: TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
+                                    const Padding(
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 16.0),
+                                      child: Text(
+                                        'Track Exercise Progress',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
                                         ),
-                                        const SizedBox(height: 12),
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 16.0),
-                                          child: Card(
-                                            elevation: 1,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                            ),
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.all(16.0),
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 16.0),
+                                      child: Card(
+                                        elevation: 1,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(16.0),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
                                                 children: [
-                                                  Row(
-                                                    children: [
-                                                      Icon(
-                                                        Icons.timeline,
-                                                        color: Colors
-                                                            .blue.shade700,
-                                                        size: 24,
-                                                      ),
-                                                      const SizedBox(width: 8),
-                                                      const Expanded(
-                                                        child: Text(
-                                                          'View detailed progress for specific exercises',
-                                                          style: TextStyle(
-                                                            fontSize: 16,
-                                                            fontWeight:
-                                                                FontWeight.w500,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ],
+                                                  Icon(
+                                                    Icons.timeline,
+                                                    color: Colors.blue.shade700,
+                                                    size: 24,
                                                   ),
-                                                  const SizedBox(height: 12),
-                                                  const Text(
-                                                    'Track your strength progression over time for individual exercises. See personal bests, improvement trends, and historical performance.',
-                                                    style: TextStyle(
-                                                      fontSize: 14,
-                                                      color: Colors.black87,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(height: 16),
-                                                  SizedBox(
-                                                    width: double.infinity,
-                                                    child: ElevatedButton(
-                                                      onPressed: () {
-                                                        Navigator.push(
-                                                          context,
-                                                          MaterialPageRoute(
-                                                            builder: (context) =>
-                                                                const ExerciseSelectionScreen(),
-                                                          ),
-                                                        );
-                                                      },
-                                                      style: ElevatedButton
-                                                          .styleFrom(
-                                                        backgroundColor:
-                                                            Colors.blue,
-                                                        foregroundColor:
-                                                            Colors.white,
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .symmetric(
-                                                                vertical: 12),
+                                                  const SizedBox(width: 8),
+                                                  const Expanded(
+                                                    child: Text(
+                                                      'View detailed progress for specific exercises',
+                                                      style: TextStyle(
+                                                        fontSize: 16,
+                                                        fontWeight:
+                                                            FontWeight.w500,
                                                       ),
-                                                      child: const Text(
-                                                          'Select Exercise to Track'),
                                                     ),
                                                   ),
                                                 ],
                                               ),
-                                            ),
+                                              const SizedBox(height: 12),
+                                              const Text(
+                                                'Track your strength progression over time for individual exercises. See personal bests, improvement trends, and historical performance.',
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  color: Colors.black87,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 16),
+                                              SizedBox(
+                                                width: double.infinity,
+                                                child: ElevatedButton(
+                                                  onPressed: () {
+                                                    Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (context) =>
+                                                            const ExerciseSelectionScreen(),
+                                                      ),
+                                                    );
+                                                  },
+                                                  style:
+                                                      ElevatedButton.styleFrom(
+                                                    backgroundColor:
+                                                        Colors.blue,
+                                                    foregroundColor:
+                                                        Colors.white,
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                        vertical: 12),
+                                                  ),
+                                                  child: const Text(
+                                                      'Select Exercise to Track'),
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
-                                      ],
+                                      ),
                                     ),
-
-                                    const SizedBox(
-                                        height: 24), // Bottom padding
                                   ],
                                 ),
-                              );
-                            },
-                          ),
-                        ),
-            ),
-          ],
+
+                                const SizedBox(height: 24), // Bottom padding
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
         ),
-      ),
+      ],
     );
   }
 
