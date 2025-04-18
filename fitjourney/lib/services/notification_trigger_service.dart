@@ -6,7 +6,8 @@ import 'package:fitjourney/utils/notification_helper.dart';
 import 'package:fitjourney/database/database_helper.dart';
 import 'package:fitjourney/services/in_app_notification_service.dart';
 
-/// Service to handle scheduling notifications based on app events
+/// Service to handle scheduling notifications based on app events and user activity
+/// Acts as a bridge between app events and the notification delivery system
 class NotificationTriggerService {
   // Singleton instance
   static final NotificationTriggerService instance =
@@ -23,7 +24,8 @@ class NotificationTriggerService {
 
   // Goal-related notification triggers
 
-  /// Schedule a notification for goal achievement
+  /// Schedules a notification when a goal is achieved
+  /// Creates both system and in-app notifications to congratulate the user
   Future<void> onGoalAchieved(Goal goal, {String? exerciseName}) async {
     final goalName = exerciseName ??
         (goal.type == 'WorkoutFrequency' ? 'Workout Frequency' : 'Strength');
@@ -50,7 +52,8 @@ class NotificationTriggerService {
     debugPrint('Scheduled goal achievement notification for ${goal.goalId}');
   }
 
-  /// Schedule a notification for goal progress (at key milestones: 50%, 75%, 90%)
+  /// Sends notifications at key progress milestones (50%, 75%, 90%)
+  /// Only triggers at specific thresholds to avoid notification fatigue
   Future<void> onGoalProgressUpdated(Goal goal, double previousProgress,
       {String? exerciseName}) async {
     if (goal.achieved) return; // Don't show progress for achieved goals
@@ -108,7 +111,8 @@ class NotificationTriggerService {
     debugPrint('Scheduled goal progress notification for ${goal.goalId}');
   }
 
-  /// Schedule a notification for goal expiration warning
+  /// Alerts user when a goal is about to expire (within 3 days)
+  /// Helps users focus on goals that need attention soon
   Future<void> onGoalNearingExpiration(Goal goal,
       {String? exerciseName}) async {
     if (goal.achieved) return; // Don't notify for achieved goals
@@ -153,7 +157,8 @@ class NotificationTriggerService {
 
   // Streak-related notification triggers
 
-  /// Schedule a notification for streak milestone
+  /// Celebrates when user reaches streak milestones
+  /// Helps reinforce positive user habits through recognition
   Future<void> onStreakMilestone(int streakDays) async {
     final title = 'New Streak Milestone!';
     final body = NotificationMessages.streakMilestone(streakDays);
@@ -177,7 +182,8 @@ class NotificationTriggerService {
     debugPrint('Scheduled streak milestone notification for $streakDays days');
   }
 
-  /// Schedule a notification reminding to maintain streak
+  /// Reminds user to maintain their active streak
+  /// Scheduled for evening (6 PM) if no activity was logged that day
   Future<void> onStreakMaintenanceRequired(int currentStreak) async {
     final title = 'Maintain Your Streak!';
     final body = NotificationMessages.streakMaintenance(currentStreak);
@@ -209,7 +215,8 @@ class NotificationTriggerService {
     }
   }
 
-  /// Schedule a notification warning about streak at risk
+  /// Sends urgent notification when streak is at risk of being broken
+  /// Scheduled for later evening (8 PM) as a final reminder
   Future<void> onStreakAtRisk(int currentStreak) async {
     final title = 'Streak at Risk!';
     final body = NotificationMessages.streakAtRisk();
@@ -243,7 +250,8 @@ class NotificationTriggerService {
 
   // Performance notification triggers
 
-  /// Schedule a notification for personal best achievement
+  /// Celebrates when user achieves a new personal best for an exercise
+  /// Immediate notification to recognize user achievement
   Future<void> onPersonalBest(int exerciseId, double weight) async {
     // Get exercise name
     final exercise = await _dbHelper.getExerciseById(exerciseId);
@@ -271,7 +279,8 @@ class NotificationTriggerService {
     debugPrint('Scheduled personal best notification for ${exercise.name}');
   }
 
-  /// Schedule a notification for workout volume improvement
+  /// Notifies user of significant improvements in workout volume
+  /// Only triggers for improvements of 10% or more to avoid notification fatigue
   Future<void> onWorkoutVolumeImprovement(
       String muscleGroup, int percentageImprovement) async {
     if (percentageImprovement < 10)
@@ -308,7 +317,8 @@ class NotificationTriggerService {
 
   // Engagement notification triggers
 
-  /// Schedule a notification for inactivity reminder
+  /// Reminds inactive users to resume workouts
+  /// Only triggers after 3+ days of inactivity to avoid being excessive
   Future<void> scheduleInactivityReminder(int daysWithoutWorkout) async {
     if (daysWithoutWorkout < 3) return; // Only remind after 3+ days
 
@@ -339,7 +349,8 @@ class NotificationTriggerService {
         'Scheduled inactivity reminder notification after $daysWithoutWorkout days');
   }
 
-  /// Schedule a notification suggesting a workout
+  /// Suggests a workout for a specific muscle group
+  /// Scheduled for the next morning to encourage planning
   Future<void> scheduleWorkoutSuggestion(String muscleGroup) async {
     final title = 'Workout Suggestion';
     final body = NotificationMessages.workoutSuggestion(muscleGroup);
@@ -369,7 +380,8 @@ class NotificationTriggerService {
     debugPrint('Scheduled workout suggestion notification for $muscleGroup');
   }
 
-  /// Schedule daily streak check notification
+  /// Checks and schedules streak reminders if needed
+  /// Based on user's current streak status and activity for the day
   Future<void> scheduleDailyStreakCheck() async {
     // Determine if user has a streak
     try {
@@ -392,7 +404,8 @@ class NotificationTriggerService {
     }
   }
 
-  /// Trigger notification for weight milestone
+  /// Notifies user of significant weight milestones for their weight goals
+  /// Triggers notifications at meaningful increments (every 2.5kg)
   Future<void> onWeightMilestone(
       Goal goal, double weightChange, bool isLoss) async {
     // Only notify at significant milestones (e.g., every 2.5kg)
@@ -422,7 +435,8 @@ class NotificationTriggerService {
     debugPrint('Scheduled weight milestone notification');
   }
 
-  /// Trigger notification for weight goal pace
+  /// Updates user on progress toward their weight goal
+  /// Provides feedback on whether user is on track or needs to adjust
   Future<void> onWeightGoalPaceUpdate(
       Goal goal, bool onTrack, bool isLoss) async {
     final title = 'Goal Progress Update';
@@ -447,7 +461,8 @@ class NotificationTriggerService {
     debugPrint('Scheduled weight pace notification');
   }
 
-  /// Trigger weight log reminder for active weight goals
+  /// Reminds user to log their weight for active weight goals
+  /// Scheduled for the next morning to encourage consistent tracking
   Future<void> scheduleWeightLogReminder() async {
     // This would ideally be run by a periodic task,
     // here we'll just define the logic for when it's called
@@ -477,7 +492,7 @@ class NotificationTriggerService {
     debugPrint('Scheduled weight log reminder');
   }
 
-  // Helper method to get current user ID
+  /// Returns the current user ID or throws exception if not logged in
   String _getCurrentUserId() {
     final user = firebase_auth.FirebaseAuth.instance.currentUser;
     if (user == null) {

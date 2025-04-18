@@ -8,6 +8,7 @@ import 'package:android_intent_plus/android_intent.dart';
 import 'package:android_intent_plus/flag.dart';
 import 'dart:io' show Platform;
 
+/// Service for handling system notifications including scheduling, categorizing, and managing app notifications
 class NotificationService {
   // Singleton instance
   static final NotificationService instance = NotificationService._internal();
@@ -29,14 +30,15 @@ class NotificationService {
   static const String performanceCategory = 'performance_notifications';
   static const String engagementCategory = 'engagement_notifications';
 
-  // Initialize the notification service
+  /// Initializes the notification service and creates notification channels
   Future<void> init() async {
     tz.initializeTimeZones();
 
     final AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    final InitializationSettings initializationSettings = InitializationSettings(
+    final InitializationSettings initializationSettings =
+        InitializationSettings(
       android: initializationSettingsAndroid,
     );
 
@@ -53,7 +55,7 @@ class NotificationService {
     await _createNotificationChannels();
   }
 
-  // Create notification channels for Android
+  /// Creates Android notification channels for different notification types
   Future<void> _createNotificationChannels() async {
     AndroidNotificationChannel goalChannel = const AndroidNotificationChannel(
       goalCategory,
@@ -69,22 +71,25 @@ class NotificationService {
       importance: Importance.high,
     );
 
-    AndroidNotificationChannel performanceChannel = const AndroidNotificationChannel(
+    AndroidNotificationChannel performanceChannel =
+        const AndroidNotificationChannel(
       performanceCategory,
       'Performance Notifications',
       description: 'Notifications about your fitness performance',
       importance: Importance.defaultImportance,
     );
 
-    AndroidNotificationChannel engagementChannel = const AndroidNotificationChannel(
+    AndroidNotificationChannel engagementChannel =
+        const AndroidNotificationChannel(
       engagementCategory,
       'Engagement Notifications',
       description: 'Reminders and suggestions for your workouts',
       importance: Importance.defaultImportance,
     );
 
-    final androidPlatform = flutterLocalNotificationsPlugin
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    final androidPlatform =
+        flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
 
     await androidPlatform?.createNotificationChannel(goalChannel);
     await androidPlatform?.createNotificationChannel(streakChannel);
@@ -92,7 +97,8 @@ class NotificationService {
     await androidPlatform?.createNotificationChannel(engagementChannel);
   }
 
-  // Schedule a notification
+  /// Schedules a notification for delivery at the specified date and time
+  /// Respects user preferences for notification categories and quiet hours
   Future<void> scheduleNotification({
     required int id,
     required String title,
@@ -136,10 +142,11 @@ class NotificationService {
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
     );
 
-    debugPrint('Scheduled notification: ID=$id, Title=$title, Date=$scheduledDate');
+    debugPrint(
+        'Scheduled notification: ID=$id, Title=$title, Date=$scheduledDate');
   }
 
-  // Check if a time is within quiet hours
+  /// Checks if a given time falls within the user's configured quiet hours
   Future<bool> _isInQuietHours(DateTime time) async {
     final prefs = await SharedPreferences.getInstance();
     final quietHoursEnabled = prefs.getBool('quiet_hours_enabled') ?? false;
@@ -157,17 +164,17 @@ class NotificationService {
     }
   }
 
-  // Cancel a specific notification
+  /// Cancels a specific notification by ID
   Future<void> cancelNotification(int id) async {
     await flutterLocalNotificationsPlugin.cancel(id);
   }
 
-  // Cancel all pending notifications
+  /// Cancels all pending notifications
   Future<void> cancelAllNotifications() async {
     await flutterLocalNotificationsPlugin.cancelAll();
   }
 
-  // Get a readable name for notification categories
+  /// Returns a readable name for a notification category
   String getCategoryName(String category) {
     switch (category) {
       case goalCategory:
@@ -183,12 +190,12 @@ class NotificationService {
     }
   }
 
-  // Generate a unique notification ID
+  /// Generates a unique notification ID based on current timestamp
   int generateUniqueId() {
     return DateTime.now().millisecondsSinceEpoch.remainder(100000);
   }
 
-  // Open exact alarm permission settings (new method)
+  /// Opens system settings for exact alarm permissions
   Future<void> openExactAlarmSettings() async {
     if (Platform.isAndroid) {
       final intent = AndroidIntent(
@@ -199,7 +206,7 @@ class NotificationService {
     }
   }
 
-  // Dispose resources
+  /// Disposes resources used by the notification service
   void dispose() {
     selectNotificationSubject.close();
   }

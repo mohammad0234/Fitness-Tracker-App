@@ -6,6 +6,8 @@ import 'log_goal_flow.dart';
 import 'package:fitjourney/screens/goal_detail_screen.dart';
 import 'package:fitjourney/screens/weight_goal_detail_screen.dart';
 
+/// Screen for displaying and managing a user's fitness goals
+/// Shows active goals, completed goals, and provides options to create new goals
 class GoalsPage extends StatefulWidget {
   const GoalsPage({super.key});
 
@@ -30,6 +32,8 @@ class _GoalsPageState extends State<GoalsPage> {
     _loadGoalData();
   }
 
+  /// Loads and formats goal data from the database
+  /// Updates all goal progress, retrieves active and completed goals
   Future<void> _loadGoalData() async {
     setState(() {
       _isLoading = true;
@@ -226,6 +230,8 @@ class _GoalsPageState extends State<GoalsPage> {
     );
   }
 
+  /// Builds a placeholder message when no active goals exist
+  /// Includes a prompt and button to create a first goal
   Widget _buildEmptyGoalsMessage() {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -278,6 +284,7 @@ class _GoalsPageState extends State<GoalsPage> {
     );
   }
 
+  /// Builds a placeholder message when no completed goals exist
   Widget _buildEmptyCompletedGoalsMessage() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -298,6 +305,8 @@ class _GoalsPageState extends State<GoalsPage> {
     );
   }
 
+  /// Builds a card for displaying active goal information
+  /// Shows goal progress, details, and navigates to details screen on tap
   Widget _buildGoalItem(Map<String, dynamic> goalInfo) {
     final Color goalColor = _getGoalColor(goalInfo['type']);
     final Widget goalIcon = _getGoalIcon(goalInfo['type']);
@@ -416,6 +425,8 @@ class _GoalsPageState extends State<GoalsPage> {
     );
   }
 
+  /// Creates detail display for goals of different types
+  /// Formats progress information appropriate to the goal type (weight, frequency, etc.)
   Widget _buildGoalDetails(Map<String, dynamic> goalInfo) {
     if (goalInfo['type'] == 'ExerciseTarget') {
       // For strength goals
@@ -527,6 +538,7 @@ class _GoalsPageState extends State<GoalsPage> {
     }
   }
 
+  /// Returns the appropriate color for each goal type
   Color _getGoalColor(String type) {
     switch (type) {
       case 'ExerciseTarget':
@@ -540,6 +552,7 @@ class _GoalsPageState extends State<GoalsPage> {
     }
   }
 
+  /// Returns the appropriate icon for each goal type
   Widget _getGoalIcon(String type) {
     switch (type) {
       case 'ExerciseTarget':
@@ -569,6 +582,7 @@ class _GoalsPageState extends State<GoalsPage> {
     }
   }
 
+  /// Builds a list item for displaying completed goal information
   Widget _buildCompletedGoalItem(Map<String, dynamic> goal) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),

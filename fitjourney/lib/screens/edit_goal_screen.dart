@@ -6,6 +6,8 @@ import 'package:fitjourney/database_models/goal.dart';
 import 'package:fitjourney/services/workout_service.dart';
 import 'package:intl/intl.dart';
 
+/// Screen for editing existing fitness goals
+/// Allows users to modify target values and deadlines for their goals
 class EditGoalScreen extends StatefulWidget {
   final int goalId;
 
@@ -46,6 +48,8 @@ class _EditGoalScreenState extends State<EditGoalScreen> {
     super.dispose();
   }
 
+  /// Loads the goal details from the database
+  /// Populates UI fields with existing goal data
   Future<void> _loadGoalDetails() async {
     try {
       // Load the goal
@@ -86,6 +90,8 @@ class _EditGoalScreenState extends State<EditGoalScreen> {
     }
   }
 
+  /// Validates user input and saves the updated goal
+  /// Updates target values and end dates for the goal
   Future<void> _saveGoal() async {
     if (_goal == null) return;
 
@@ -162,6 +168,7 @@ class _EditGoalScreenState extends State<EditGoalScreen> {
     }
   }
 
+  /// Shows date picker and updates goal end date
   Future<void> _selectEndDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -178,6 +185,8 @@ class _EditGoalScreenState extends State<EditGoalScreen> {
     }
   }
 
+  /// Prompts user to confirm before discarding changes
+  /// Returns true if changes should be discarded, false otherwise
   Future<bool> _onWillPop() async {
     if (!_hasChanges) {
       return true;
@@ -529,7 +538,7 @@ class _EditGoalScreenState extends State<EditGoalScreen> {
     );
   }
 
-  // Helper methods
+  /// Determines color scheme based on goal type
   Color _getGoalColor(String goalType) {
     switch (goalType) {
       case 'ExerciseTarget':
@@ -541,6 +550,7 @@ class _EditGoalScreenState extends State<EditGoalScreen> {
     }
   }
 
+  /// Returns appropriate icon based on goal type
   IconData _getGoalIcon(String goalType) {
     switch (goalType) {
       case 'ExerciseTarget':

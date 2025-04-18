@@ -9,6 +9,8 @@ import 'package:fitjourney/services/streak_service.dart';
 import 'package:fitjourney/utils/date_utils.dart';
 import 'package:fitjourney/services/notification_trigger_service.dart';
 
+/// Service for managing workouts, exercises, and fitness activity tracking
+/// Provides methods for creating, retrieving, and analyzing workout data
 class WorkoutService {
   // Singleton instance - now uses the constructor with dependencies
   static final WorkoutService instance = WorkoutService._internal(
@@ -40,7 +42,7 @@ class WorkoutService {
     this._streakService,
   );
 
-  // Get the current user ID or throw an error if not logged in
+  /// Returns current user ID or throws exception if not logged in
   String _getCurrentUserId() {
     final user = _auth.currentUser;
     if (user == null) {
@@ -49,12 +51,12 @@ class WorkoutService {
     return user.uid;
   }
 
-  // Initialize predefined exercises
+  /// Loads predefined exercises into the database if they don't exist
   Future<void> initializeExercises() async {
     await _dbHelper.initializeExercisesIfNeeded();
   }
 
-  // Get all available muscle groups
+  /// Retrieves all unique muscle groups available in the exercise database
   Future<List<String>> getAllMuscleGroups() async {
     final db = await _dbHelper.database;
     final result = await db.rawQuery(
@@ -63,7 +65,8 @@ class WorkoutService {
     return result.map((map) => map['muscle_group'] as String).toList();
   }
 
-  // Get exercises by muscle group
+  /// Gets all exercises for a specific muscle group
+  /// Filters out certain bodyweight exercises that are handled differently
   Future<List<Exercise>> getExercisesByMuscleGroup(String muscleGroup) async {
     final db = await _dbHelper.database;
     final result = await db.query(
@@ -77,7 +80,8 @@ class WorkoutService {
     return result.map((map) => Exercise.fromMap(map)).toList();
   }
 
-  // Get all exercises
+  /// Retrieves all exercises in the database
+  /// Filters out abs and certain bodyweight exercises
   Future<List<Exercise>> getAllExercises() async {
     final db = await _dbHelper.database;
     final result = await db.query(
@@ -90,11 +94,13 @@ class WorkoutService {
     return result.map((map) => Exercise.fromMap(map)).toList();
   }
 
-  // Get an exercise by ID
+  /// Gets an exercise by its ID
   Future<Exercise?> getExerciseById(int exerciseId) async {
     return await _dbHelper.getExerciseById(exerciseId);
   }
 
+  /// Creates a new workout and updates the user's streak
+  /// Returns the ID of the newly created workout
   Future<int> createWorkout({
     required DateTime date,
     int? duration,
@@ -123,12 +129,12 @@ class WorkoutService {
     return workoutId;
   }
 
-  // Get a workout by ID
+  /// Retrieves a workout by its ID
   Future<Workout?> getWorkoutById(int workoutId) async {
     return await _dbHelper.getWorkoutById(workoutId);
   }
 
-  // Update an existing workout
+  /// Updates an existing workout's details
   Future<void> updateWorkout(Workout workout) async {
     if (workout.workoutId == null) {
       throw Exception('Cannot update a workout without an ID');
@@ -136,7 +142,8 @@ class WorkoutService {
     await _dbHelper.updateWorkout(workout);
   }
 
-  // Add an exercise to a workout
+  /// Adds an exercise to an existing workout
+  /// Returns the ID of the newly created workout exercise
   Future<int> addExerciseToWorkout({
     required int workoutId,
     required int exerciseId,
@@ -149,7 +156,8 @@ class WorkoutService {
     return await _dbHelper.insertWorkoutExercise(workoutExercise);
   }
 
-  // Add a set to a workout exercise
+  /// Adds a set to a workout exercise with weight and rep information
+  /// Returns the ID of the newly created set
   Future<int> addSetToWorkoutExercise({
     required int workoutExerciseId,
     required int setNumber,
@@ -166,7 +174,8 @@ class WorkoutService {
     return await _dbHelper.insertWorkoutSet(workoutSet);
   }
 
-  // Create a complete workout with exercises and sets
+  /// Creates a complete workout with all exercises and sets in one operation
+  /// More efficient than adding individual components separately
   Future<int> logCompleteWorkout({
     required DateTime date,
     int? duration,
@@ -184,13 +193,14 @@ class WorkoutService {
     );
   }
 
-  // Get all workouts for the current user
+  /// Retrieves all workouts for the current user
   Future<List<Workout>> getUserWorkouts() async {
     final userId = _getCurrentUserId();
     return await _dbHelper.getWorkoutsForUser(userId);
   }
 
-  // Get detailed workout information
+  /// Gets detailed workout information including all exercises and sets
+  /// Returns comprehensive data structure with full workout details
   Future<Map<String, dynamic>> getWorkoutDetails(int workoutId) async {
     // Get the workout
     final workout = await _dbHelper.getWorkoutById(workoutId);
@@ -219,7 +229,8 @@ class WorkoutService {
     };
   }
 
-  // Calculate total volume for a workout (weight * reps)
+  /// Calculates total volume for a workout (sum of weight × reps)
+  /// Provides a single metric to measure workout intensity
   Future<double> calculateWorkoutVolume(int workoutId) async {
     final details = await getWorkoutDetails(workoutId);
     double totalVolume = 0;
@@ -235,7 +246,8 @@ class WorkoutService {
     return totalVolume;
   }
 
-  // Get personal best for an exercise
+  /// Gets the highest weight ever lifted for a specific exercise
+  /// Used for personal best tracking and progress visualization
   Future<double?> getPersonalBestWeight(int exerciseId) async {
     final userId = _getCurrentUserId();
     final db = await _dbHelper.database;
@@ -255,13 +267,13 @@ class WorkoutService {
     return null;
   }
 
-  // Delete a workout and all associated data
+  /// Deletes a workout and all associated exercises and sets
   Future<void> deleteWorkout(int workoutId) async {
     await _dbHelper.deleteWorkout(workoutId);
   }
 
-// Check and update personal best for an exercise
-// Modified version that doesn't use personal_best table
+  /// Checks if a weight is a new personal best and updates records accordingly
+  /// Triggers notifications and goal updates when personal bests are achieved
   Future<bool> checkAndUpdatePersonalBest(int exerciseId, double weight) async {
     final userId = _getCurrentUserId();
 
@@ -307,6 +319,8 @@ class WorkoutService {
     return isNewPersonalBest;
   }
 
+  /// Gets all workouts for a specific date
+  /// Used for daily view and tracking daily activity
   Future<List<Workout>> getWorkoutsForDate(DateTime date) async {
     final userId = _getCurrentUserId();
     final db = await _dbHelper.database;

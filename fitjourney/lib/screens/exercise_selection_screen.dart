@@ -5,6 +5,8 @@ import 'package:fitjourney/services/progress_service.dart';
 import 'package:fitjourney/database_models/exercise.dart';
 import 'package:fitjourney/screens/exercise_progress_screen.dart';
 
+/// Screen for displaying and selecting exercises with progress data
+/// Shows exercises the user has performed with filtering and search capabilities
 class ExerciseSelectionScreen extends StatefulWidget {
   const ExerciseSelectionScreen({Key? key}) : super(key: key);
 
@@ -29,6 +31,8 @@ class _ExerciseSelectionScreenState extends State<ExerciseSelectionScreen> {
     _loadExercises();
   }
 
+  /// Loads all exercises and muscle groups from the database
+  /// Initializes the exercise list with personal best data
   Future<void> _loadExercises() async {
     setState(() {
       _isLoading = true;
@@ -60,6 +64,8 @@ class _ExerciseSelectionScreenState extends State<ExerciseSelectionScreen> {
     }
   }
 
+  /// Retrieves exercises the user has performed with personal best data
+  /// Creates a unified list with exercise details and performance metrics
   Future<List<Map<String, dynamic>>> _loadUserExercises() async {
     // Get all personal bests to find which exercises the user has performed
     final personalBests = await _progressService.getAllPersonalBests();
@@ -91,6 +97,8 @@ class _ExerciseSelectionScreenState extends State<ExerciseSelectionScreen> {
     return exercisesList;
   }
 
+  /// Filters the exercise list based on search query and muscle group selection
+  /// Returns only exercises matching both filters
   List<Map<String, dynamic>> _getFilteredExercises() {
     return _exercises.where((exerciseData) {
       final exercise = exerciseData['exercise'] as Exercise;
@@ -188,6 +196,8 @@ class _ExerciseSelectionScreenState extends State<ExerciseSelectionScreen> {
     );
   }
 
+  /// Builds a placeholder widget when no exercises match the filters
+  /// Displays different messages based on whether filters are active
   Widget _buildEmptyState() {
     return Center(
       child: Column(
@@ -225,6 +235,8 @@ class _ExerciseSelectionScreenState extends State<ExerciseSelectionScreen> {
     );
   }
 
+  /// Creates an exercise card with name, muscle group and personal best
+  /// Cards are clickable to navigate to detailed exercise progress
   Widget _buildExerciseCard(Map<String, dynamic> exerciseData) {
     final exercise = exerciseData['exercise'] as Exercise;
     final personalBest = exerciseData['personalBest'] as double?;
@@ -319,6 +331,8 @@ class _ExerciseSelectionScreenState extends State<ExerciseSelectionScreen> {
     );
   }
 
+  /// Returns a color associated with a specific muscle group
+  /// Used for exercise icons and visual categorization
   Color _getColorForMuscleGroup(String muscleGroup) {
     // Map muscle groups to colors
     final Map<String, Color> muscleGroupColors = {

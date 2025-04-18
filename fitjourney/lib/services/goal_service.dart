@@ -7,6 +7,7 @@ import 'package:fitjourney/database_models/goal.dart';
 import 'package:fitjourney/services/workout_service.dart';
 import 'package:fitjourney/services/notification_trigger_service.dart';
 
+/// Service for managing user fitness goals including creation, tracking and progress updates
 class GoalService {
   // Singleton instance
   static final GoalService instance = GoalService._internal();
@@ -20,7 +21,7 @@ class GoalService {
   // Private constructor
   GoalService._internal();
 
-  // Get the current user ID or throw an error if not logged in
+  /// Returns current user ID or throws exception if not logged in
   String _getCurrentUserId() {
     final user = firebase_auth.FirebaseAuth.instance.currentUser;
     if (user == null) {
@@ -29,7 +30,7 @@ class GoalService {
     return user.uid;
   }
 
-  // Create a strength target goal
+  /// Creates a strength goal for a specific exercise
   Future<int> createStrengthGoal({
     required int exerciseId,
     required double currentWeight,
@@ -52,7 +53,7 @@ class GoalService {
     return await _dbHelper.insertGoal(goal);
   }
 
-  // Create a weight target goal
+  /// Creates a weight goal (gain or loss)
   Future<int> createWeightGoal({
     required double currentWeight,
     required double targetWeight,
@@ -77,7 +78,7 @@ class GoalService {
     return await _dbHelper.insertGoal(goal);
   }
 
-  // Create a workout frequency goal
+  /// Creates a workout frequency goal
   Future<int> createFrequencyGoal({
     required int targetWorkouts,
     required DateTime endDate,
@@ -97,30 +98,30 @@ class GoalService {
     return await _dbHelper.insertGoal(goal);
   }
 
-  // Get all goals for the current user
+  /// Retrieves all goals for the current user
   Future<List<Goal>> getAllGoals() async {
     final userId = _getCurrentUserId();
     return await _dbHelper.getGoalsForUser(userId);
   }
 
-  // Get active (not achieved) goals for the current user
+  /// Retrieves active (not achieved) goals for the current user
   Future<List<Goal>> getActiveGoals() async {
     final userId = _getCurrentUserId();
     return await _dbHelper.getActiveGoals(userId);
   }
 
-  // Get completed goals for the current user
+  /// Gets completed goals for the current user
   Future<List<Goal>> getCompletedGoals() async {
     final userId = _getCurrentUserId();
     return await _dbHelper.getCompletedGoals(userId);
   }
 
-  // Delete a goal
+  /// Deletes a goal by ID
   Future<void> deleteGoal(int goalId) async {
     await _dbHelper.deleteGoal(goalId);
   }
 
-  // Update goal progress
+  /// Updates goal progress and checks if goal is achieved
   Future<void> updateGoalProgress(int goalId, double progress) async {
     await _dbHelper.updateGoalProgress(goalId, progress);
 
@@ -131,7 +132,7 @@ class GoalService {
     }
   }
 
-  // Calculate current progress for strength goal
+  /// Calculates current progress for strength goals
   Future<double> calculateStrengthGoalProgress(int goalId) async {
     final goal = await _dbHelper.getGoalById(goalId);
     if (goal == null || goal.exerciseId == null || goal.targetValue == null) {
@@ -169,7 +170,7 @@ class GoalService {
     return maxWeight;
   }
 
-  // Calculate current progress for weight goal
+  /// Calculates current progress for weight goals
   Future<double> calculateWeightGoalProgress(int goalId) async {
     final goal = await _dbHelper.getGoalById(goalId);
     if (goal == null || goal.targetValue == null) {
@@ -200,7 +201,7 @@ class GoalService {
     return latestWeight;
   }
 
-  // Calculate current progress for frequency goal
+  /// Calculates current progress for workout frequency goals
   Future<double> calculateFrequencyGoalProgress(int goalId) async {
     final goal = await _dbHelper.getGoalById(goalId);
     if (goal == null || goal.targetValue == null) {
@@ -217,7 +218,7 @@ class GoalService {
     return workoutCount.toDouble();
   }
 
-  // Update progress for all goals
+  /// Updates progress for all active goals
   Future<void> updateAllGoalsProgress() async {
     final userId = _getCurrentUserId();
     final activeGoals = await _dbHelper.getActiveGoals(userId);
@@ -238,7 +239,7 @@ class GoalService {
     await _dbHelper.updateAllGoalStatuses(userId);
   }
 
-  // Helper method to determine if this is a weight loss goal
+  /// Determines if a weight goal is for weight loss
   bool isWeightLossGoal(Goal goal) {
     if (goal.type != 'WeightTarget' || goal.targetValue == null) return false;
 
@@ -251,7 +252,7 @@ class GoalService {
     return goal.targetValue! < goal.currentProgress;
   }
 
-  // Helper method to determine if this is a weight gain goal
+  /// Determines if a weight goal is for weight gain
   bool isWeightGainGoal(Goal goal) {
     if (goal.type != 'WeightTarget' || goal.targetValue == null) return false;
 
@@ -264,7 +265,7 @@ class GoalService {
     return goal.targetValue! > goal.currentProgress;
   }
 
-  // Calculate weight goal percentage completion
+  /// Calculates weight goal completion percentage
   double calculateWeightGoalPercentage(
       double startWeight, double currentWeight, double targetWeight) {
     // For weight loss
@@ -300,7 +301,7 @@ class GoalService {
     }
   }
 
-  // Get formatted goal information for display
+  /// Retrieves formatted goal information for display
   Future<Map<String, dynamic>> getGoalDisplayInfo(Goal goal) async {
     final Map<String, dynamic> info = {
       'goalId': goal.goalId,
@@ -437,7 +438,7 @@ class GoalService {
     return info;
   }
 
-  // Get weight history for weight goal
+  /// Retrieves weight history for a user
   Future<List<Map<String, dynamic>>> getWeightProgressHistory(String userId,
       [DateTime? startDate, DateTime? endDate]) async {
     final db = await _dbHelper.database;
@@ -477,7 +478,7 @@ class GoalService {
     }).toList();
   }
 
-  // Log a new weight entry for the user
+  /// Logs user weight and updates weight goals
   Future<void> logUserWeight(double weight, [DateTime? date]) async {
     final userId = _getCurrentUserId();
     final measureDate = date ?? DateTime.now();
@@ -545,19 +546,19 @@ class GoalService {
     }
   }
 
-  // Get check if there are any near-completion goals
+  /// Gets goals that are close to completion
   Future<List<Goal>> getNearCompletionGoals() async {
     final userId = _getCurrentUserId();
     return await _dbHelper.getNearCompletionGoals(userId);
   }
 
-  // Get goals that will expire soon
+  /// Gets goals that will expire soon
   Future<List<Goal>> getExpiringGoals() async {
     final userId = _getCurrentUserId();
     return await _dbHelper.getExpiringGoals(userId);
   }
 
-// Update an existing goal
+  /// Updates an existing goal
   Future<void> updateGoal(Goal goal) async {
     if (goal.goalId == null) {
       throw Exception('Cannot update a goal without an ID');
@@ -589,11 +590,12 @@ class GoalService {
     }
   }
 
+  /// Retrieves a goal by ID
   Future<Goal?> getGoalById(int goalId) async {
     return await _dbHelper.getGoalById(goalId);
   }
 
-  // Get historical progress data for an exercise
+  /// Gets historical progress data for an exercise
   Future<List<Map<String, dynamic>>> getExerciseProgressHistory(
       int exerciseId, String userId) async {
     final db = await _dbHelper.database;

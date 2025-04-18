@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fitjourney/database/database_helper.dart';
 import 'package:flutter/foundation.dart';
 
+/// AccountService handles user account operations including account deletion.
+/// Implements a singleton pattern for centralized account management.
 class AccountService {
   static final AccountService instance = AccountService._internal();
 
@@ -48,7 +50,8 @@ class AccountService {
     }
   }
 
-  /// Delete all user data from Firestore
+  /// Removes all user data from Firestore collections
+  /// Handles collections in batches to avoid exceeding Firestore limits
   Future<void> _deleteFirestoreData(String userId) async {
     try {
       // Delete user collections
@@ -69,7 +72,8 @@ class AccountService {
     }
   }
 
-  /// Delete all user data from local database
+  /// Removes all user data from local SQLite database
+  /// Uses a transaction to ensure data consistency during deletion
   Future<void> _deleteLocalData(String userId) async {
     try {
       final db = await _dbHelper.database;
@@ -171,7 +175,8 @@ class AccountService {
     }
   }
 
-  /// Helper method to delete a Firestore collection
+  /// Efficiently deletes Firestore collections by processing documents in batches
+  /// Recursively processes the collection to handle large datasets
   Future<void> _deleteCollection(String collectionPath) async {
     final collection = _firestore.collection(collectionPath);
     final batch = _firestore.batch();

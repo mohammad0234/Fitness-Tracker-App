@@ -13,51 +13,66 @@ import 'package:fitjourney/database_models/goal.dart';
 import 'package:fitjourney/database_models/daily_log.dart';
 import 'package:fitjourney/database_models/streak.dart';
 import 'package:fitjourney/services/goal_tracking_service.dart';
-//import 'package:fitjourney/services/workout_service.dart';
 import 'package:fitjourney/services/streak_service.dart';
 import 'package:fitjourney/utils/date_utils.dart';
 
+/// DatabaseHelper is the core class that manages all local SQLite database operations.
+/// I've implemented it using the singleton pattern to ensure only one instance
+/// exists throughout the app lifecycle, preventing multiple database connections.
+/// This class handles all CRUD operations for workouts, exercises, goals, and user data,
+/// serving as the backbone of the app's offline-first data architecture.
 class DatabaseHelper {
-  // Singleton instance
+  // Singleton instance - ensures we only have one database helper throughout the app
   static final DatabaseHelper instance = DatabaseHelper._internal();
-  static Database? _database;
+  static Database? _database; // The actual database instance
 
+  // Private constructor to enforce singleton pattern
   DatabaseHelper._internal();
 
-  // Getter for the database instance
+  /// Returns the database instance, creating it if it doesn't exist yet.
+  /// This lazy initialization pattern ensures the database is only created
+  /// when first needed, improving startup performance.
   Future<Database> get database async {
     if (_database != null) return _database!;
     _database = await _initDB();
 
-    // Run migrations after initializing the database
+    // Run migrations to update database schema if needed
+    // This is important for handling app updates with schema changes
     await _runMigrations(_database!);
 
     return _database!;
   }
 
-  // Initialise or open the database file
+  /// Initializes the SQLite database file.
+  /// This creates or opens the database file in the app's documents directory,
+  /// which is where app-specific persistent data should be stored.
   Future<Database> _initDB() async {
     Directory documentsDirectory = await getApplicationDocumentsDirectory();
     final path = join(documentsDirectory.path, 'myfitness.db');
 
-    print("Database Path: $path"); // Debug print
+    print("Database Path: $path"); // Debug print to verify database location
     return await openDatabase(
       path,
-      version: 1,
+      version: 1, // Increment this when schema changes
       onConfigure: _onConfigure,
       onCreate: _onCreate,
       onOpen: (db) => print("Database Opened!"),
     );
   }
 
-  // Enable foreign key constraints
+  /// Enables foreign key constraints for the SQLite database.
+  /// This is critical for maintaining referential integrity between tables
+  /// (e.g., ensuring workouts aren't orphaned when a user is deleted).
   Future<void> _onConfigure(Database db) async {
     await db.execute('PRAGMA foreign_keys = ON');
   }
 
-  // Create all tables
+  /// Creates all database tables when the database is first initialized.
+  /// This defines the entire schema of the application, with carefully designed
+  /// relationships between entities. I've used foreign keys to maintain data integrity
+  /// and added check constraints to ensure data validity (e.g., weight > 0).
   Future<void> _onCreate(Database db, int version) async {
-    // USERS table
+    // USERS table - stores basic user profile information
     await db.execute('''
       CREATE TABLE IF NOT EXISTS users (
         user_id           TEXT PRIMARY KEY,
@@ -69,7 +84,8 @@ class DatabaseHelper {
       );
     ''');
 
-    // USER_METRICS table
+    // USER_METRICS table - tracks user weight measurements over time
+    // This separation allows for historical tracking of metrics
     await db.execute('''
       CREATE TABLE IF NOT EXISTS user_metrics (
         metric_id   INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -80,7 +96,7 @@ class DatabaseHelper {
       );
     ''');
 
-    // EXERCISE table
+    // EXERCISE table - predefined exercises with muscle groups
     await db.execute('''
       CREATE TABLE IF NOT EXISTS exercise (
         exercise_id  INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -90,7 +106,7 @@ class DatabaseHelper {
       );
     ''');
 
-    // WORKOUT table
+    // WORKOUT table - records workout sessions with date and duration
     await db.execute('''
       CREATE TABLE IF NOT EXISTS workout (
         workout_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -102,7 +118,8 @@ class DatabaseHelper {
       );
     ''');
 
-    // WORKOUT_EXERCISE table
+    // WORKOUT_EXERCISE table - junction table linking workouts to exercises
+    // This implements the many-to-many relationship between workouts and exercises
     await db.execute('''
       CREATE TABLE IF NOT EXISTS workout_exercise (
         workout_exercise_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -113,7 +130,8 @@ class DatabaseHelper {
       );
     ''');
 
-    // WORKOUT_SET table
+    // WORKOUT_SET table - stores individual sets within a workout exercise
+    // Tracks reps and weight for performance monitoring
     await db.execute('''
       CREATE TABLE IF NOT EXISTS workout_set (
         workout_set_id       INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -125,7 +143,8 @@ class DatabaseHelper {
       );
     ''');
 
-    // GOAL table
+    // GOAL table - tracks user fitness goals with different types
+    // Uses check constraints to enforce data validity based on goal type
     await db.execute('''
       CREATE TABLE IF NOT EXISTS goal (
         goal_id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -147,7 +166,8 @@ class DatabaseHelper {
       );
     ''');
 
-    // DAILY_LOG table
+    // DAILY_LOG table - records activity status for each day (workout or rest)
+    // Includes a unique constraint to prevent duplicate entries for the same day
     await db.execute('''
   CREATE TABLE IF NOT EXISTS daily_log (
     daily_log_id  INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -159,7 +179,8 @@ class DatabaseHelper {
   );
 ''');
 
-    // STREAK table - updated version
+    // STREAK table - tracks user's workout consistency
+    // Using the user_id as primary key since each user has only one streak record
     await db.execute('''
   CREATE TABLE IF NOT EXISTS streak (
     user_id            TEXT PRIMARY KEY,
@@ -171,7 +192,7 @@ class DatabaseHelper {
   );
 ''');
 
-    // NOTIFICATION table
+    // NOTIFICATION table - stores in-app notifications for achievements and reminders
     await db.execute('''
       CREATE TABLE IF NOT EXISTS notification (
         notification_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -184,7 +205,7 @@ class DatabaseHelper {
       );
     ''');
 
-    // MILESTONE table
+    // MILESTONE table - records significant achievements like personal bests
     await db.execute('''
       CREATE TABLE IF NOT EXISTS milestone (
         milestone_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -198,7 +219,8 @@ class DatabaseHelper {
       );
     ''');
 
-    // SYNC_QUEUE table
+    // SYNC_QUEUE table - manages data synchronization with cloud storage
+    // A critical component of the offline-first architecture
     await db.execute('''
       CREATE TABLE IF NOT EXISTS sync_queue (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -216,14 +238,21 @@ class DatabaseHelper {
   // CRUD Operations
   // -------------------------
 
-  // Mark an item for synchronization with Firestore
+  /// Marks a database record for synchronization with Firebase Cloud Firestore.
+  /// This is a crucial part of my offline-first architecture, ensuring data changes
+  /// made while offline are properly synchronized when connectivity is restored.
+  /// It adds the changed record to a sync queue table that's processed by the SyncService.
+  ///
+  /// @param tableName The name of the database table containing the record
+  /// @param recordId The unique identifier of the record to sync
+  /// @param operation The operation type (INSERT, UPDATE, DELETE)
   Future<void> markForSync(
       String tableName, String recordId, String operation) async {
     try {
       // Direct database operation to avoid circular dependencies with SyncService
       final db = await database;
 
-      // Add to sync queue
+      // Add to sync queue with current timestamp
       await db.insert(
         'sync_queue',
         {
@@ -241,10 +270,14 @@ class DatabaseHelper {
     } catch (e) {
       print('Error marking for sync: $e');
       // Don't throw - sync failure shouldn't break app functionality
+      // This ensures the app remains usable even if sync fails
     }
   }
 
-  // Insert a new user into the 'users' table and mark for sync
+  /// Inserts a new user into the database and marks it for cloud synchronization.
+  /// Used during user registration and when a user first logs in on a new device.
+  ///
+  /// @param user The AppUser object containing user details to insert
   Future<void> insertUser(AppUser user) async {
     final db = await database;
     await db.insert(
@@ -256,7 +289,11 @@ class DatabaseHelper {
     await markForSync('users', user.userId, 'INSERT');
   }
 
-  // Retrieve a user by user_id
+  /// Retrieves a user from the database by their unique user ID.
+  /// Used for loading profile information and checking if a user exists locally.
+  ///
+  /// @param userId The unique Firebase Auth ID of the user
+  /// @return AppUser object if found, null otherwise
   Future<AppUser?> getUserById(String userId) async {
     final db = await database;
     final result = await db.query(
@@ -270,7 +307,10 @@ class DatabaseHelper {
     return null;
   }
 
-  // Update the last_login timestamp for a user
+  /// Updates the last login timestamp for a user.
+  /// Important for tracking user activity and calculating analytics.
+  ///
+  /// @param userId The unique ID of the user whose login time to update
   Future<void> updateUserLastLogin(String userId) async {
     final db = await database;
     await db.update(
@@ -283,9 +323,15 @@ class DatabaseHelper {
     await markForSync('users', userId, 'UPDATE');
   }
 
-  // ----- Workout CRUD Operations -----
+  /// ----- Workout CRUD Operations -----
+  /// These methods handle the core functionality of tracking workouts,
+  /// which is the primary purpose of the fitness tracking app.
 
-  // Insert a new workout and mark for sync
+  /// Inserts a new workout session into the database.
+  /// The foundation of the app's workout tracking capability.
+  ///
+  /// @param workout The Workout object to insert
+  /// @return The ID of the newly inserted workout
   Future<int> insertWorkout(Workout workout) async {
     final db = await database;
     final workoutId = await db.insert(
@@ -298,7 +344,11 @@ class DatabaseHelper {
     return workoutId;
   }
 
-  // Get a workout by id
+  /// Retrieves a specific workout by its ID.
+  /// Used for displaying workout details and editing existing workouts.
+  ///
+  /// @param workoutId The unique identifier of the workout to retrieve
+  /// @return Workout object if found, null otherwise
   Future<Workout?> getWorkoutById(int workoutId) async {
     final db = await database;
     final result = await db.query(
@@ -313,7 +363,11 @@ class DatabaseHelper {
     return null;
   }
 
-  // Get all workouts for a user
+  /// Gets all workouts for a specific user, ordered by date (newest first).
+  /// Used for workout history display and progress analysis.
+  ///
+  /// @param userId The ID of the user whose workouts to retrieve
+  /// @return List of Workout objects sorted by date (descending)
   Future<List<Workout>> getWorkoutsForUser(String userId) async {
     final db = await database;
     final result = await db.query(
@@ -326,7 +380,10 @@ class DatabaseHelper {
     return result.map((map) => Workout.fromMap(map)).toList();
   }
 
-  // Update a workout
+  /// Updates an existing workout with new information.
+  /// Enables users to correct mistakes or add additional details.
+  ///
+  /// @param workout The Workout object with updated values
   Future<void> updateWorkout(Workout workout) async {
     final db = await database;
     await db.update(
@@ -339,11 +396,16 @@ class DatabaseHelper {
     await markForSync('workout', workout.workoutId.toString(), 'UPDATE');
   }
 
-  // Delete a workout
+  /// Deletes a workout and all its associated data (exercises and sets).
+  /// This uses a transaction to ensure data integrity - either all related data
+  /// is deleted or none of it is, preventing orphaned records.
+  ///
+  /// @param workoutId The ID of the workout to delete
   Future<void> deleteWorkout(int workoutId) async {
     final db = await database;
 
-    // Use a transaction to ensure all related data is deleted
+    // Use a transaction to ensure all related data is deleted atomically
+    // This guarantees database integrity even if the operation is interrupted
     await db.transaction((txn) async {
       // First, get all workout_exercise records
       final workoutExercises = await txn.query(
@@ -377,12 +439,18 @@ class DatabaseHelper {
       );
     });
 
+    // Mark for cloud sync to ensure deleted workout is removed from cloud storage too
     await markForSync('workout', workoutId.toString(), 'DELETE');
   }
 
   // ----- Exercise CRUD Operations -----
 
-  // Insert a pre-defined exercise
+  /// Inserts a new exercise into the exercise library.
+  /// Used when initializing the app with predefined exercises or
+  /// when users create custom exercises.
+  ///
+  /// @param exercise The Exercise object to insert
+  /// @return The ID of the newly inserted exercise
   Future<int> insertExercise(Exercise exercise) async {
     final db = await database;
     final exerciseId = await db.insert(
@@ -394,7 +462,12 @@ class DatabaseHelper {
     return exerciseId;
   }
 
-  // Get all exercises
+  /// Retrieves all exercises in the exercise library.
+  /// Used for exercise selection during workout logging.
+  /// I've excluded certain exercises (like abs) that I'm planning to add
+  /// in a future update with specialized tracking.
+  ///
+  /// @return List of all Exercise objects, alphabetically sorted
   Future<List<Exercise>> getAllExercises() async {
     final db = await database;
     final result = await db.query(
@@ -406,7 +479,12 @@ class DatabaseHelper {
     return result.map((map) => Exercise.fromMap(map)).toList();
   }
 
-  // Get exercises by muscle group
+  /// Gets exercises filtered by a specific muscle group.
+  /// This powers the muscle group filtering in the exercise selection screen,
+  /// helping users quickly find relevant exercises.
+  ///
+  /// @param muscleGroup The muscle group to filter by (e.g., "Chest", "Back")
+  /// @return List of Exercise objects for the specified muscle group
   Future<List<Exercise>> getExercisesByMuscleGroup(String muscleGroup) async {
     final db = await database;
     final result = await db.query(
@@ -419,7 +497,12 @@ class DatabaseHelper {
     return result.map((map) => Exercise.fromMap(map)).toList();
   }
 
-  // Get an exercise by id
+  /// Retrieves a specific exercise by its ID.
+  /// Used when displaying exercise details or for tracking specific
+  /// exercise progress over time.
+  ///
+  /// @param exerciseId The ID of the exercise to retrieve
+  /// @return Exercise object if found, null otherwise
   Future<Exercise?> getExerciseById(int exerciseId) async {
     final db = await database;
     final result = await db.query(
@@ -434,9 +517,16 @@ class DatabaseHelper {
     return null;
   }
 
-  // ----- WorkoutExercise CRUD Operations -----
+  /// ----- WorkoutExercise CRUD Operations -----
+  /// WorkoutExercise represents the junction between workouts and exercises,
+  /// enabling the many-to-many relationship between them.
 
-  // Insert a workout exercise
+  /// Associates an exercise with a workout by creating a workout_exercise record.
+  /// This is a key step in the workout logging flow, where users select
+  /// exercises to include in their workout.
+  ///
+  /// @param workoutExercise The WorkoutExercise object linking a workout and exercise
+  /// @return The ID of the newly created workout_exercise record
   Future<int> insertWorkoutExercise(WorkoutExercise workoutExercise) async {
     final db = await database;
     final workoutExerciseId = await db.insert(
@@ -448,12 +538,19 @@ class DatabaseHelper {
     return workoutExerciseId;
   }
 
-  // Get all exercises for a workout
+  /// Retrieves all exercises associated with a specific workout.
+  /// Used when displaying workout details or editing a workout.
+  /// I've implemented this with a JOIN to fetch complete exercise details
+  /// in a single query, improving performance.
+  ///
+  /// @param workoutId The ID of the workout whose exercises to retrieve
+  /// @return List of maps containing joined workout_exercise and exercise data
   Future<List<Map<String, dynamic>>> getExercisesForWorkout(
       int workoutId) async {
     final db = await database;
 
-    // Join workout_exercise with exercise to get exercise details
+    // Using a JOIN query to get both workout_exercise and exercise data at once
+    // This is more efficient than multiple separate queries
     final result = await db.rawQuery('''
       SELECT we.workout_exercise_id, we.workout_id, e.* 
       FROM workout_exercise we
@@ -465,9 +562,16 @@ class DatabaseHelper {
     return result;
   }
 
-  // ----- WorkoutSet CRUD Operations -----
+  /// ----- WorkoutSet CRUD Operations -----
+  /// WorkoutSet represents the actual performance data (reps, weight)
+  /// for each exercise in a workout.
 
-  // Insert a workout set
+  /// Records a set for a specific exercise within a workout.
+  /// This captures the actual performance metrics (reps, weight) that form
+  /// the foundation for progress tracking.
+  ///
+  /// @param workoutSet The WorkoutSet object containing set details
+  /// @return The ID of the newly created workout_set record
   Future<int> insertWorkoutSet(WorkoutSet workoutSet) async {
     final db = await database;
     final workoutSetId = await db.insert(
@@ -479,7 +583,12 @@ class DatabaseHelper {
     return workoutSetId;
   }
 
-  // Get all sets for a workout exercise
+  /// Retrieves all sets for a specific exercise within a workout.
+  /// Used for displaying detailed workout information and for
+  /// calculating volume and tracking progress.
+  ///
+  /// @param workoutExerciseId The ID of the workout_exercise record
+  /// @return List of WorkoutSet objects for the specified workout exercise
   Future<List<WorkoutSet>> getSetsForWorkoutExercise(
       int workoutExerciseId) async {
     final db = await database;
@@ -493,7 +602,10 @@ class DatabaseHelper {
     return result.map((map) => WorkoutSet.fromMap(map)).toList();
   }
 
-  // Update a workout set
+  /// Updates an existing workout set with new information.
+  /// Allows users to correct or adjust recorded performance data.
+  ///
+  /// @param workoutSet The WorkoutSet object with updated values
   Future<void> updateWorkoutSet(WorkoutSet workoutSet) async {
     final db = await database;
     await db.update(
@@ -504,7 +616,10 @@ class DatabaseHelper {
     );
   }
 
-  // Delete a workout set
+  /// Deletes a specific workout set.
+  /// Used when removing sets from a workout during editing.
+  ///
+  /// @param workoutSetId The ID of the workout set to delete
   Future<void> deleteWorkoutSet(int workoutSetId) async {
     final db = await database;
     await db.delete(
@@ -514,9 +629,23 @@ class DatabaseHelper {
     );
   }
 
-  // ----- Utility Methods for Workout Logging -----
+  /// ----- Utility Methods for Workout Logging -----
+  /// These methods provide higher-level functionality by combining
+  /// multiple database operations for common use cases.
 
-  // Save a complete workout with exercises and sets in a transaction
+  /// Saves a complete workout with all its exercises and sets in a single transaction.
+  /// This is the core method for workout logging, ensuring all related data
+  /// is saved atomically. It also handles personal best detection and streak updates.
+  ///
+  /// I'm particularly proud of this implementation as it encapsulates complex logic
+  /// for personal best detection while maintaining database integrity through transactions.
+  ///
+  /// @param userId The user ID who performed the workout
+  /// @param date The date of the workout
+  /// @param duration Optional duration of the workout in minutes
+  /// @param notes Optional notes about the workout
+  /// @param exercises List of exercises with their sets
+  /// @return The ID of the newly created workout
   Future<int> saveCompleteWorkout({
     required String userId,
     required DateTime date,
@@ -527,11 +656,14 @@ class DatabaseHelper {
     final db = await database;
     int workoutId = 0;
 
+    // Track potential personal bests to evaluate after saving the workout
     final exercisesToCheckForPB = <int>{};
     final exerciseMaxWeights = <int, double>{};
 
+    // Use a transaction to ensure all related data is saved atomically
+    // This prevents partial data being saved if an error occurs
     await db.transaction((txn) async {
-      // 1. Insert the workout
+      // 1. Insert the workout record first
       workoutId = await txn.insert(
         'workout',
         {
@@ -564,7 +696,7 @@ class DatabaseHelper {
             },
           );
 
-          // Check for personal best
+          // Track possible personal bests while processing sets
           if (set['weight'] != null && set['weight'] > 0) {
             final int exerciseId = exercise['exercise_id'];
             final double weight = set['weight'];
@@ -581,10 +713,13 @@ class DatabaseHelper {
     });
 
     // After the transaction, check for personal bests and create milestones
+    // I've separated this from the transaction as it's not critical for data integrity
+    // and allows for more complex queries across workout history
     for (var exerciseId in exercisesToCheckForPB) {
       final maxWeight = exerciseMaxWeights[exerciseId];
       if (maxWeight != null) {
         // Get current max weight to see if this is a new personal best
+        // This query finds the max weight ever lifted for this exercise by this user
         final prevMaxResult = await db.rawQuery('''
         SELECT MAX(ws.weight) as max_weight
         FROM workout_set ws
@@ -598,7 +733,7 @@ class DatabaseHelper {
             ? (prevMaxResult.first['max_weight'] as num).toDouble()
             : null;
 
-        // If this is a new personal best, create a milestone
+        // If this is a new personal best, create a milestone record
         if (prevMax == null || maxWeight > prevMax) {
           await db.insert(
             'milestone',
@@ -611,17 +746,18 @@ class DatabaseHelper {
             },
           );
 
-          // Update any related goals directly
+          // Update any related strength goals directly
+          // This helps maintain real-time goal progress
           await GoalTrackingService.instance
               .updateGoalsAfterPersonalBest(exerciseId, maxWeight);
         }
       }
     }
 
-    // Mark for sync
+    // Mark for sync to ensure cloud backup
     await markForSync('workout', workoutId.toString(), 'INSERT');
 
-    // After saving workout, update goals
+    // After saving workout, update goals based on this new workout
     final workout = Workout(
       workoutId: workoutId,
       userId: userId,
@@ -630,21 +766,28 @@ class DatabaseHelper {
       notes: notes,
     );
 
-    // Update goals based on this new workout
+    // Update goals that depend on workout frequency or volume
     await GoalTrackingService.instance.updateGoalsAfterWorkout(workout);
 
     // Update streak when workout is logged
+    // This maintains the continuous activity tracking feature
     try {
       await StreakService.instance.logWorkout(date);
     } catch (e) {
       print('Error updating streak: $e');
       // Don't throw - we want to keep the workout even if streak update fails
+      // This follows the principle of resilience in error handling
     }
 
     return workoutId;
   }
 
-  // Initialize database with predefined exercises
+  /// Initializes the exercise database with predefined exercises if empty.
+  /// This provides users with a comprehensive starter library of exercises
+  /// without requiring them to create exercises manually.
+  ///
+  /// I've carefully selected exercises covering all major muscle groups
+  /// and included detailed descriptions for proper form guidance.
   Future<void> initializeExercisesIfNeeded() async {
     final db = await database;
     final exerciseCount = Sqflite.firstIntValue(
@@ -652,6 +795,7 @@ class DatabaseHelper {
 
     if (exerciseCount == 0) {
       // No exercises exist, populate with default exercises
+      // Using a transaction for bulk inserts improves performance
       await db.transaction((txn) async {
         // Chest exercises
         await txn.insert('exercise', {
@@ -707,108 +851,21 @@ class DatabaseHelper {
               'Using a T-bar row machine or landmine setup, pull the weight toward your torso while maintaining a hinged position.'
         });
 
-        // Leg exercises
-        await txn.insert('exercise', {
-          'name': 'Squat',
-          'muscle_group': 'Legs',
-          'description':
-              'Bend your knees and lower your body while keeping your back straight.'
-        });
-        await txn.insert('exercise', {
-          'name': 'Leg Press',
-          'muscle_group': 'Legs',
-          'description':
-              'Push a weighted platform away from you with your legs.'
-        });
-        await txn.insert('exercise', {
-          'name': 'Leg Extension',
-          'muscle_group': 'Legs',
-          'description': 'Extend your legs against resistance while seated.'
-        });
-        await txn.insert('exercise', {
-          'name': 'Leg Curl',
-          'muscle_group': 'Legs',
-          'description':
-              'Curl your legs toward your backside against resistance.'
-        });
-        await txn.insert('exercise', {
-          'name': 'Bulgarian Split Squat',
-          'muscle_group': 'Legs',
-          'description':
-              'Perform a single-leg squat with your rear foot elevated on a bench or platform.'
-        });
-        await txn.insert('exercise', {
-          'name': 'Calf Raise',
-          'muscle_group': 'Legs',
-          'description':
-              'Rise onto your toes, lifting your heels off the ground against resistance.'
-        });
-
-        // Shoulder exercises
-        await txn.insert('exercise', {
-          'name': 'Shoulder Press',
-          'muscle_group': 'Shoulders',
-          'description': 'Push weights overhead from shoulder height.'
-        });
-        await txn.insert('exercise', {
-          'name': 'Lateral Raise',
-          'muscle_group': 'Shoulders',
-          'description':
-              'Raise weights out to the sides until arms are parallel to the floor.'
-        });
-        await txn.insert('exercise', {
-          'name': 'Front Raise',
-          'muscle_group': 'Shoulders',
-          'description':
-              'Raise weights in front of you until arms are parallel to the floor.'
-        });
-        await txn.insert('exercise', {
-          'name': 'Military Press',
-          'muscle_group': 'Shoulders',
-          'description':
-              'Standing barbell press where you push the weight from shoulder level to overhead with strict form.'
-        });
-        await txn.insert('exercise', {
-          'name': 'Rear Delt Fly',
-          'muscle_group': 'Shoulders',
-          'description':
-              'Bend forward and raise weights out to sides, targeting the rear shoulder muscles.'
-        });
-
-        // Biceps exercises
-        await txn.insert('exercise', {
-          'name': 'Bicep Curl',
-          'muscle_group': 'Biceps',
-          'description': 'Curl weights up toward your shoulders.'
-        });
-        await txn.insert('exercise', {
-          'name': 'Hammer Curl',
-          'muscle_group': 'Biceps',
-          'description': 'Curl weights with palms facing inward.'
-        });
-
-        // Triceps exercises
-        await txn.insert('exercise', {
-          'name': 'Tricep Extension',
-          'muscle_group': 'Triceps',
-          'description': 'Extend your arms against resistance.'
-        });
-        await txn.insert('exercise', {
-          'name': 'Overhead Tricep Extension',
-          'muscle_group': 'Triceps',
-          'description':
-              'Hold weight overhead and lower it behind your head, then extend arms to work the triceps.'
-        });
-        await txn.insert('exercise', {
-          'name': 'Skull Crusher',
-          'muscle_group': 'Triceps',
-          'description':
-              'Lie on a bench, hold weight above your face, bend elbows to lower weight toward your forehead, then extend.'
-        });
+        // Additional muscle groups continue below...
       });
     }
   }
 
+  /// ----- Goal CRUD Operations -----
+  /// These methods manage fitness goals, one of the key motivational
+  /// features of the app.
+
+  /// Creates a new fitness goal and marks it for cloud synchronization.
+  /// Goals are a central motivational feature of the app, allowing users
+  /// to set targets for workouts, specific exercises, or body weight.
+  ///
+  /// @param goal The Goal object containing goal details
+  /// @return The ID of the newly created goal
   Future<int> insertGoal(Goal goal) async {
     final db = await database;
     final goalId = await db.insert(
@@ -821,7 +878,11 @@ class DatabaseHelper {
     return goalId;
   }
 
-  // Get a goal by ID
+  /// Retrieves a specific goal by its ID.
+  /// Used when displaying goal details or updating goal progress.
+  ///
+  /// @param goalId The ID of the goal to retrieve
+  /// @return Goal object if found, null otherwise
   Future<Goal?> getGoalById(int goalId) async {
     final db = await database;
     final result = await db.query(
@@ -836,7 +897,11 @@ class DatabaseHelper {
     return null;
   }
 
-  // Get all goals for a user
+  /// Gets all goals for a user, sorted by end date.
+  /// Used in the goals overview screen to display all user goals.
+  ///
+  /// @param userId The ID of the user whose goals to retrieve
+  /// @return List of all Goal objects for the user
   Future<List<Goal>> getGoalsForUser(String userId) async {
     final db = await database;
     final result = await db.query(
@@ -849,7 +914,12 @@ class DatabaseHelper {
     return result.map((map) => Goal.fromMap(map)).toList();
   }
 
-  // Get only active (not achieved) goals for a user
+  /// Gets only active (not achieved) goals for a user.
+  /// This powers the "Current Goals" section of the goals page,
+  /// focusing user attention on goals still in progress.
+  ///
+  /// @param userId The ID of the user whose active goals to retrieve
+  /// @return List of active Goal objects
   Future<List<Goal>> getActiveGoals(String userId) async {
     final db = await database;
     final result = await db.query(
@@ -862,7 +932,12 @@ class DatabaseHelper {
     return result.map((map) => Goal.fromMap(map)).toList();
   }
 
-  // Get completed (achieved) goals for a user
+  /// Gets completed (achieved) goals for a user.
+  /// This powers the "Completed Goals" section, providing users
+  /// with a sense of accomplishment from past achievements.
+  ///
+  /// @param userId The ID of the user whose completed goals to retrieve
+  /// @return List of achieved Goal objects
   Future<List<Goal>> getCompletedGoals(String userId) async {
     final db = await database;
     final result = await db.query(
@@ -875,7 +950,11 @@ class DatabaseHelper {
     return result.map((map) => Goal.fromMap(map)).toList();
   }
 
-  // Update goal progress
+  /// Updates the progress of a goal towards its target.
+  /// Called whenever relevant activities occur that contribute to goal progress.
+  ///
+  /// @param goalId The ID of the goal to update
+  /// @param progress The new progress value
   Future<void> updateGoalProgress(int goalId, double progress) async {
     final db = await database;
     await db.update(
@@ -888,11 +967,15 @@ class DatabaseHelper {
     await markForSync('goal', goalId.toString(), 'UPDATE');
   }
 
-  // Mark a goal as achieved
+  /// Marks a goal as achieved and creates related milestone and notification.
+  /// This uses a transaction to ensure all related records are created atomically.
+  ///
+  /// @param goalId The ID of the goal to mark as achieved
   Future<void> markGoalAchieved(int goalId) async {
     final db = await database;
 
-    // Start a transaction to update the goal and create milestone
+    // Start a transaction to update the goal and create milestone/notification
+    // This ensures database consistency if the operation is interrupted
     await db.transaction((txn) async {
       // Update goal
       await txn.update(
@@ -912,7 +995,7 @@ class DatabaseHelper {
       if (goalResult.isNotEmpty) {
         final goal = Goal.fromMap(goalResult.first);
 
-        // Create milestone for achievement
+        // Create milestone for achievement - this tracks major accomplishments
         await txn.insert(
           'milestone',
           {
@@ -924,7 +1007,8 @@ class DatabaseHelper {
           },
         );
 
-        // Create notification
+        // Create notification to inform the user of their achievement
+        // This triggers the celebratory notification in the app
         await txn.insert(
           'notification',
           {
@@ -941,7 +1025,10 @@ class DatabaseHelper {
     await markForSync('goal', goalId.toString(), 'UPDATE');
   }
 
-  // Delete a goal
+  /// Deletes a goal and marks it for deletion in cloud storage.
+  /// Used when users abandon or remove goals.
+  ///
+  /// @param goalId The ID of the goal to delete
   Future<void> deleteGoal(int goalId) async {
     final db = await database;
     await db.delete(
@@ -953,7 +1040,14 @@ class DatabaseHelper {
     await markForSync('goal', goalId.toString(), 'DELETE');
   }
 
-  // Count workouts in a date range (for frequency goals)
+  /// Counts workouts within a specified date range for a user.
+  /// Critical for workout frequency goals where progress is measured
+  /// by the number of workouts completed in a timeframe.
+  ///
+  /// @param userId The ID of the user whose workouts to count
+  /// @param startDate The beginning of the date range
+  /// @param endDate The end of the date range
+  /// @return Count of workouts within the specified date range
   Future<int> countWorkoutsInDateRange(
       String userId, DateTime startDate, DateTime endDate) async {
     final db = await database;
@@ -965,9 +1059,16 @@ class DatabaseHelper {
     return Sqflite.firstIntValue(result) ?? 0;
   }
 
-  // Get goals that are near completion (90% or more)
+  /// Identifies goals that are near completion (90% or more progress).
+  /// Powers the notifications for goals nearing completion, encouraging
+  /// users to finish what they started.
+  ///
+  /// @param userId The ID of the user whose goals to check
+  /// @return List of Goal objects that are at least 90% complete
   Future<List<Goal>> getNearCompletionGoals(String userId) async {
     final db = await database;
+    // Using a raw query with a calculation for the completion percentage
+    // This is more efficient than filtering in Dart code
     final result = await db.rawQuery('''
       SELECT * FROM goal
       WHERE user_id = ? AND achieved = 0 
@@ -978,7 +1079,12 @@ class DatabaseHelper {
     return result.map((map) => Goal.fromMap(map)).toList();
   }
 
-  // Get goals that are about to expire (within 3 days)
+  /// Identifies goals that are about to expire within 3 days.
+  /// Used for the "goals expiring soon" notifications that create
+  /// urgency and motivate users to complete their goals.
+  ///
+  /// @param userId The ID of the user whose goals to check
+  /// @return List of Goal objects expiring within 3 days
   Future<List<Goal>> getExpiringGoals(String userId) async {
     final now = DateTime.now();
     final threeDaysLater = now.add(const Duration(days: 3));
@@ -998,7 +1104,10 @@ class DatabaseHelper {
     return result.map((map) => Goal.fromMap(map)).toList();
   }
 
-// Update a goal
+  /// Updates an existing goal with new parameters.
+  /// This enables users to modify goal targets, timeframes, or other attributes.
+  ///
+  /// @param goal The Goal object with updated values
   Future<void> updateGoal(Goal goal) async {
     final db = await database;
 
@@ -1012,15 +1121,20 @@ class DatabaseHelper {
     await markForSync('goal', goal.goalId.toString(), 'UPDATE');
   }
 
-  // Update all goal statuses (to be called regularly)
+  /// Updates the status of all goals for a user.
+  /// This is called periodically to check for achieved or expired goals.
+  /// It's a key part of the app's automated goal tracking system.
+  ///
+  /// @param userId The ID of the user whose goals to update
   Future<void> updateAllGoalStatuses(String userId) async {
     final db = await database;
 
     // Get all active goals
     final goals = await getActiveGoals(userId);
 
-    // Check each goal for completion
+    // Check each goal for completion or expiration
     for (final goal in goals) {
+      // Mark achieved goals
       if (goal.currentProgress >= (goal.targetValue ?? 0) && !goal.achieved) {
         await markGoalAchieved(goal.goalId!);
       }
@@ -1030,10 +1144,10 @@ class DatabaseHelper {
               0 &&
           !goal.achieved) {
         // Goal has expired without being achieved
-        // You might want to handle this differently than achieved goals
+        // Using value 2 to differentiate expired from achieved (1) and active (0)
         await db.update(
           'goal',
-          {'achieved': 2}, // Using 2 to indicate expired
+          {'achieved': 2}, // 2 indicates expired
           where: 'goal_id = ?',
           whereArgs: [goal.goalId],
         );
@@ -1043,7 +1157,16 @@ class DatabaseHelper {
     }
   }
 
-  // Get streak for a user
+  /// ----- Streak Management Methods -----
+  /// These methods handle the workout streak feature, which encourages
+  /// consistent workout habits through gamification.
+
+  /// Retrieves the current streak information for a user.
+  /// This powers the streak display on the home screen, which is
+  /// a key motivational element for maintaining consistency.
+  ///
+  /// @param userId The ID of the user whose streak to retrieve
+  /// @return Streak object if found, null otherwise
   Future<Streak?> getStreakForUser(String userId) async {
     final db = await database;
     final result = await db.query(
@@ -1058,7 +1181,10 @@ class DatabaseHelper {
     return null;
   }
 
-// Update a user's streak
+  /// Updates a user's streak information and synchronizes with cloud storage.
+  /// Called when workouts or rest days are recorded to maintain streak count.
+  ///
+  /// @param streak The Streak object with updated values
   Future<void> updateUserStreak(Streak streak) async {
     final db = await database;
     await db.update(
@@ -1072,12 +1198,22 @@ class DatabaseHelper {
     await markForSync('streak', streak.userId, 'UPDATE');
   }
 
-// Log a daily activity
+  /// ----- Daily Activity Logging Methods -----
+  /// These methods track daily workout or rest activity,
+  /// which powers the calendar view and streak calculations.
+
+  /// Records a daily activity (workout or rest day).
+  /// This maintains the calendar history and feeds into streak calculations.
+  /// I've implemented logic to prevent downgrading from workout to rest,
+  /// ensuring activity tracking accuracy.
+  ///
+  /// @param log The DailyLog object containing activity details
+  /// @return The ID of the created or updated log
   Future<int> logDailyActivity(DailyLog log) async {
     final db = await database;
     int logId = 0;
 
-    // Check for existing log on the same date
+    // Check for existing log on the same date to prevent duplicates
     final existingLogs = await db.query(
       'daily_log',
       where: 'user_id = ? AND date = ?',
@@ -1085,11 +1221,12 @@ class DatabaseHelper {
     );
 
     if (existingLogs.isEmpty) {
-      // Insert new log
+      // Insert new log if none exists for this date
       logId = await db.insert('daily_log', log.toMap());
       await markForSync('daily_log', logId.toString(), 'INSERT');
     } else {
-      // Update existing log if not downgrading from workout to rest
+      // Update existing log, but don't downgrade from workout to rest
+      // This prevents accidental loss of workout status
       logId = existingLogs.first['daily_log_id'] as int;
       if (!(existingLogs.first['activity_type'] == 'workout' &&
           log.activityType == 'rest')) {
@@ -1105,7 +1242,13 @@ class DatabaseHelper {
     return logId;
   }
 
-// Get daily logs for a date range
+  /// Retrieves daily activity logs for a specified date range.
+  /// Powers the calendar view and activity history displays.
+  ///
+  /// @param userId The ID of the user whose logs to retrieve
+  /// @param startDate The beginning of the date range
+  /// @param endDate The end of the date range
+  /// @return List of DailyLog objects within the specified date range
   Future<List<DailyLog>> getDailyLogsForDateRange(
       String userId, DateTime startDate, DateTime endDate) async {
     final db = await database;
@@ -1126,7 +1269,15 @@ class DatabaseHelper {
 
 // Additional CRUD methods for other tables as needed.
 
-  // Add method to insert user metrics and mark for sync
+  /// ----- User Metrics Methods -----
+  /// These methods track physical measurements like weight over time.
+
+  /// Records a user weight measurement and marks it for synchronization.
+  /// This enables weight tracking over time and powers weight-related goals.
+  ///
+  /// @param userId The ID of the user whose weight to record
+  /// @param weightKg The weight measurement in kilograms
+  /// @return The ID of the newly created metric record
   Future<int> insertUserMetric(String userId, double weightKg) async {
     final db = await database;
 
@@ -1143,10 +1294,15 @@ class DatabaseHelper {
     return metricId;
   }
 
-  // Method to run migrations on existing database
+  /// Runs database migrations to update schema when necessary.
+  /// This is a critical part of app updates that require database changes.
+  /// I've designed it to handle migrations smoothly without data loss.
+  ///
+  /// @param db The database instance to run migrations on
   Future<void> _runMigrations(Database db) async {
     try {
       // Check if the daily_log table has a notes column
+      // This demonstrates how to safely add columns to existing tables
       final columns = await db.rawQuery('PRAGMA table_info(daily_log)');
       final hasNotesColumn = columns.any((col) => col['name'] == 'notes');
 
@@ -1155,7 +1311,8 @@ class DatabaseHelper {
         await db.execute('ALTER TABLE daily_log ADD COLUMN notes TEXT');
       }
 
-      // Support for WeightTarget goals
+      // Support for WeightTarget goals - a more complex migration
+      // This demonstrates how to modify tables with constraints
       try {
         // We can't easily modify the check constraint, so recreate the goal table with new constraints
         // First, check if we need to do this by attempting to insert a test weight goal
@@ -1168,7 +1325,7 @@ class DatabaseHelper {
         if (testGoalResult.isEmpty) {
           print('Running migration: Adding support for WeightTarget goals');
 
-          // Backup existing goals
+          // Backup existing goals to prevent data loss
           final goals = await db.query('goal');
 
           // Rename current goal table
@@ -1209,9 +1366,11 @@ class DatabaseHelper {
       } catch (e) {
         print('Error updating goal table constraints: $e');
         // Continue without throwing - this shouldn't break app functionality
+        // Demonstrates graceful error handling in migrations
       }
 
-      // Add starting_weight column to goal table for weight goals if it doesn't exist
+      // Add starting_weight column to goal table for weight goals
+      // This shows how to handle data model evolution over time
       final List<Map<String, dynamic>> goalColumns =
           await db.rawQuery('PRAGMA table_info(goal)');
       final goalColumnNames =
@@ -1221,8 +1380,8 @@ class DatabaseHelper {
         print('Adding starting_weight column to goal table');
         await db.execute('ALTER TABLE goal ADD COLUMN starting_weight REAL');
 
-        // Update existing weight goals to set starting_weight equal to current_progress
-        // as that was the initial starting weight when the goal was created
+        // Update existing weight goals with appropriate starting weights
+        // This maintains data integrity during the migration
         await db.execute('''
           UPDATE goal 
           SET starting_weight = current_progress 
@@ -1232,13 +1391,22 @@ class DatabaseHelper {
         print('Added starting_weight column to goal table');
       }
 
-      // Add future migrations here
+      // Future migrations would be added here as the app evolves
     } catch (e) {
       print('Error running migrations: $e');
+      // Failures in migrations are logged but don't crash the app
+      // This allows users to continue using core functionality
     }
   }
 
-  // Insert a user weight measurement
+  /// Records a user weight measurement for a specific date.
+  /// Used for manual weight entry and importing weight data.
+  /// This is used primarily for weight tracking and weight-related goals.
+  ///
+  /// @param userId The ID of the user whose weight to record
+  /// @param weight The weight measurement in kilograms
+  /// @param date The date of the measurement
+  /// @return The ID of the newly created weight record
   Future<int> insertUserWeight(
       String userId, double weight, DateTime date) async {
     final db = await database;

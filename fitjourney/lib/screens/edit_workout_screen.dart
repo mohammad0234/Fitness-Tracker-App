@@ -4,11 +4,13 @@ import 'package:fitjourney/database_models/workout.dart';
 import 'package:intl/intl.dart';
 import 'package:fitjourney/database/database_helper.dart';
 
+/// Screen for editing existing workout details and sets
+/// Allows users to modify weight, reps, and notes for completed workouts
 class EditWorkoutScreen extends StatefulWidget {
   final int workoutId;
-  
+
   const EditWorkoutScreen({
-    super.key, 
+    super.key,
     required this.workoutId,
   });
 
@@ -19,10 +21,10 @@ class EditWorkoutScreen extends StatefulWidget {
 class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
   final WorkoutService _workoutService = WorkoutService.instance;
   final TextEditingController _notesController = TextEditingController();
-  
+
   // Add this to track sets that need to be deleted from the database
   final List<int> _setsToDelete = [];
-  
+
   bool _isLoading = true;
   bool _isSaving = false;
   Workout? _workout;
@@ -31,17 +33,17 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
   // For keeping track of sets that were modified
   final Map<int, List<Map<String, dynamic>>> _exerciseSets = {};
   bool _hasChanges = false;
-  
+
   @override
   void initState() {
     super.initState();
     _loadWorkoutDetails();
   }
-  
+
   @override
   void dispose() {
     _notesController.dispose();
-    
+
     // Dispose of all TextEditingControllers for sets
     for (var sets in _exerciseSets.values) {
       for (var set in sets) {
@@ -49,39 +51,43 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
         set['repsController'].dispose();
       }
     }
-    
+
     super.dispose();
   }
-  
+
+  /// Loads workout details from the database
+  /// Populates UI with existing exercises, sets, and workout metadata
   Future<void> _loadWorkoutDetails() async {
     try {
       // Get workout details
       final details = await _workoutService.getWorkoutDetails(widget.workoutId);
       final workout = details['workout'] as Workout;
       final exercises = details['exercises'] as List<Map<String, dynamic>>;
-      
+
       // Initialize notes controller
       _notesController.text = workout.notes ?? '';
-      
+
       // Initialize sets for each exercise
       for (var exercise in exercises) {
         final workoutExerciseId = exercise['workout_exercise_id'] as int;
         final sets = exercise['sets'] as List<dynamic>;
-        
+
         _exerciseSets[workoutExerciseId] = [];
-        
+
         for (var set in sets) {
           _exerciseSets[workoutExerciseId]!.add({
             'setNumber': set.setNumber,
             'weight': set.weight?.toString() ?? '',
             'reps': set.reps?.toString() ?? '',
             'workoutSetId': set.workoutSetId,
-            'weightController': TextEditingController(text: set.weight?.toString() ?? ''),
-            'repsController': TextEditingController(text: set.reps?.toString() ?? ''),
+            'weightController':
+                TextEditingController(text: set.weight?.toString() ?? ''),
+            'repsController':
+                TextEditingController(text: set.reps?.toString() ?? ''),
           });
         }
       }
-      
+
       setState(() {
         _workout = workout;
         _exercises = exercises;
@@ -93,20 +99,22 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
         _isLoading = false;
       });
       if (!mounted) return;
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e')),
       );
     }
   }
-  
+
+  /// Adds a new set to an exercise
+  /// New set uses previous set values as defaults if available
   void _addSet(int workoutExerciseId) {
     setState(() {
       // Get previous set values if available
       final sets = _exerciseSets[workoutExerciseId]!;
       final prevWeight = sets.isNotEmpty ? sets.last['weight'] : '';
       final prevReps = sets.isNotEmpty ? sets.last['reps'] : '';
-      
+
       // Add new set with higher set number
       sets.add({
         'setNumber': sets.length + 1,
@@ -116,90 +124,96 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
         'weightController': TextEditingController(text: prevWeight),
         'repsController': TextEditingController(text: prevReps),
       });
-      
+
       _hasChanges = true;
     });
   }
-  
-  // Updated _removeSet method to track deleted sets
+
+  /// Removes a set from an exercise and tracks it for deletion
+  /// Recalculates set numbers for remaining sets
   void _removeSet(int workoutExerciseId, int index) {
     setState(() {
       final sets = _exerciseSets[workoutExerciseId]!;
-      
+
       // If this set exists in the database, mark it for deletion
       final workoutSetId = sets[index]['workoutSetId'];
       if (workoutSetId != null) {
         _setsToDelete.add(workoutSetId);
       }
-      
+
       // Dispose controllers for the removed set
       sets[index]['weightController'].dispose();
       sets[index]['repsController'].dispose();
-      
+
       // Remove the set
       sets.removeAt(index);
-      
+
       // Update set numbers
       for (int i = 0; i < sets.length; i++) {
         sets[i]['setNumber'] = i + 1;
       }
-      
+
       _hasChanges = true;
     });
   }
-  
-  // Updated _saveWorkout method to handle set deletions
+
+  /// Validates and saves workout changes to the database
+  /// Handles updating notes, adding/removing sets, and updating set data
   Future<void> _saveWorkout() async {
     if (_workout == null) return;
-    
+
     // Validate all fields
     bool hasEmptyFields = false;
     String errorMessage = '';
-    
+
     for (var exerciseId in _exerciseSets.keys) {
       final sets = _exerciseSets[exerciseId]!;
-      
+
       for (var set in sets) {
-        if (set['weight'].toString().isEmpty || set['reps'].toString().isEmpty) {
+        if (set['weight'].toString().isEmpty ||
+            set['reps'].toString().isEmpty) {
           final exerciseName = _exercises.firstWhere(
-            (e) => e['workout_exercise_id'] == exerciseId, 
-            orElse: () => {'name': 'Unknown'}
-          )['name'];
-          
-          errorMessage = 'Please fill in all weight and rep values for $exerciseName';
+              (e) => e['workout_exercise_id'] == exerciseId,
+              orElse: () => {'name': 'Unknown'})['name'];
+
+          errorMessage =
+              'Please fill in all weight and rep values for $exerciseName';
           hasEmptyFields = true;
           break;
         }
       }
-      
+
       if (hasEmptyFields) break;
     }
-    
+
     if (hasEmptyFields) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(errorMessage)),
       );
       return;
     }
-    
+
     setState(() {
       _isSaving = true;
     });
-    
+
     try {
       // Get database instance
       final db = await DatabaseHelper.instance.database;
-      
+
       // Use a transaction for all database operations
       await db.transaction((txn) async {
         // 1. Update workout notes
         await txn.update(
           'workout',
-          {'notes': _notesController.text.isEmpty ? null : _notesController.text},
+          {
+            'notes':
+                _notesController.text.isEmpty ? null : _notesController.text
+          },
           where: 'workout_id = ?',
           whereArgs: [widget.workoutId],
         );
-        
+
         // 2. Delete any sets that were removed
         for (int setId in _setsToDelete) {
           await txn.delete(
@@ -208,17 +222,17 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
             whereArgs: [setId],
           );
         }
-        
+
         // 3. Update all remaining sets
         for (var exerciseId in _exerciseSets.keys) {
           final sets = _exerciseSets[exerciseId]!;
-          
+
           for (var set in sets) {
             final weight = double.tryParse(set['weight'].toString());
             final reps = int.tryParse(set['reps'].toString());
             final setNumber = set['setNumber'] as int;
             final workoutSetId = set['workoutSetId'];
-            
+
             if (workoutSetId != null) {
               // Update existing set
               await txn.update(
@@ -246,25 +260,22 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
           }
         }
       });
-      
+
       // Mark for sync
-      await DatabaseHelper.instance.markForSync(
-        'workout', 
-        widget.workoutId.toString(), 
-        'UPDATE'
-      );
-      
+      await DatabaseHelper.instance
+          .markForSync('workout', widget.workoutId.toString(), 'UPDATE');
+
       if (!mounted) return;
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Workout updated successfully')),
       );
-      
+
       Navigator.pop(context, true); // Return true to indicate update
     } catch (e) {
       print('Error updating workout: $e');
       if (!mounted) return;
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error updating workout: $e')),
       );
@@ -290,7 +301,8 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
                 context: context,
                 builder: (context) => AlertDialog(
                   title: const Text('Discard Changes?'),
-                  content: const Text('You have unsaved changes. Are you sure you want to discard them?'),
+                  content: const Text(
+                      'You have unsaved changes. Are you sure you want to discard them?'),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(context),
@@ -353,7 +365,8 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
                                   const Icon(Icons.calendar_today, size: 20),
                                   const SizedBox(width: 8),
                                   Text(
-                                    DateFormat('EEEE, MMMM d, yyyy').format(_workout!.date),
+                                    DateFormat('EEEE, MMMM d, yyyy')
+                                        .format(_workout!.date),
                                     style: const TextStyle(fontSize: 16),
                                   ),
                                 ],
@@ -385,7 +398,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // Notes field
                       const Text(
                         'Notes',
@@ -408,7 +421,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
                           _hasChanges = true;
                         },
                       ),
-                      
+
                       const SizedBox(height: 24),
                       const Text(
                         'Exercises',
@@ -418,14 +431,15 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // Exercise cards with editable sets
                       ..._exercises.map((exercise) {
                         final exerciseName = exercise['name'] as String;
                         final muscleGroup = exercise['muscle_group'] as String;
-                        final workoutExerciseId = exercise['workout_exercise_id'] as int;
+                        final workoutExerciseId =
+                            exercise['workout_exercise_id'] as int;
                         final sets = _exerciseSets[workoutExerciseId] ?? [];
-                        
+
                         return Card(
                           margin: const EdgeInsets.only(bottom: 16),
                           child: Padding(
@@ -444,7 +458,8 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             exerciseName,
@@ -466,25 +481,36 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
                                   ],
                                 ),
                                 const SizedBox(height: 16),
-                                
+
                                 // Sets header
                                 Row(
                                   children: [
-                                    const SizedBox(width: 50, child: Text('SET', style: TextStyle(fontWeight: FontWeight.bold))),
+                                    const SizedBox(
+                                        width: 50,
+                                        child: Text('SET',
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold))),
                                     const SizedBox(width: 16),
-                                    const Expanded(child: Text('WEIGHT (kg)', style: TextStyle(fontWeight: FontWeight.bold))),
+                                    const Expanded(
+                                        child: Text('WEIGHT (kg)',
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold))),
                                     const SizedBox(width: 16),
-                                    const Expanded(child: Text('REPS', style: TextStyle(fontWeight: FontWeight.bold))),
-                                    const SizedBox(width: 40), // For delete button
+                                    const Expanded(
+                                        child: Text('REPS',
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold))),
+                                    const SizedBox(
+                                        width: 40), // For delete button
                                   ],
                                 ),
                                 const SizedBox(height: 8),
-                                
+
                                 // Editable sets
                                 ...sets.asMap().entries.map((entry) {
                                   final index = entry.key;
                                   final set = entry.value;
-                                  
+
                                   return Padding(
                                     padding: const EdgeInsets.only(bottom: 8),
                                     child: Row(
@@ -501,7 +527,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
                                           ),
                                         ),
                                         const SizedBox(width: 16),
-                                        
+
                                         // Weight input
                                         Expanded(
                                           child: TextField(
@@ -509,9 +535,13 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
                                             keyboardType: TextInputType.number,
                                             decoration: InputDecoration(
                                               border: OutlineInputBorder(
-                                                borderRadius: BorderRadius.circular(8),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
                                               ),
-                                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                              contentPadding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 12,
+                                                      vertical: 8),
                                             ),
                                             onChanged: (value) {
                                               set['weight'] = value;
@@ -520,7 +550,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
                                           ),
                                         ),
                                         const SizedBox(width: 16),
-                                        
+
                                         // Reps input
                                         Expanded(
                                           child: TextField(
@@ -528,9 +558,13 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
                                             keyboardType: TextInputType.number,
                                             decoration: InputDecoration(
                                               border: OutlineInputBorder(
-                                                borderRadius: BorderRadius.circular(8),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
                                               ),
-                                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                              contentPadding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 12,
+                                                      vertical: 8),
                                             ),
                                             onChanged: (value) {
                                               set['reps'] = value;
@@ -539,14 +573,16 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
                                           ),
                                         ),
                                         const SizedBox(width: 8),
-                                        
+
                                         // Delete button
                                         SizedBox(
                                           width: 40,
                                           child: IconButton(
-                                            icon: const Icon(Icons.delete_outline),
-                                            onPressed: sets.length > 1 
-                                                ? () => _removeSet(workoutExerciseId, index)
+                                            icon: const Icon(
+                                                Icons.delete_outline),
+                                            onPressed: sets.length > 1
+                                                ? () => _removeSet(
+                                                    workoutExerciseId, index)
                                                 : null,
                                             color: Colors.red.shade400,
                                           ),
@@ -555,7 +591,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
                                     ),
                                   );
                                 }).toList(),
-                                
+
                                 // Add set button
                                 OutlinedButton.icon(
                                   onPressed: () => _addSet(workoutExerciseId),
@@ -573,7 +609,6 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
                     ],
                   ),
                 ),
-            
     );
   }
 }

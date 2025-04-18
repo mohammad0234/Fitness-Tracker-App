@@ -4,6 +4,8 @@ import 'package:fitjourney/services/progress_service.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 
+/// Screen for tracking and visualizing a user's progress for a specific exercise
+/// Displays weight progression over time with charts and history data
 class ExerciseProgressScreen extends StatefulWidget {
   final int exerciseId;
 
@@ -39,6 +41,7 @@ class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
     _loadExerciseData();
   }
 
+  /// Loads all exercise history and progress data for the specified exercise
   Future<void> _loadExerciseData() async {
     setState(() {
       _isLoading = true;
@@ -64,6 +67,7 @@ class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
     }
   }
 
+  /// Returns sorted progress data based on user's sort selection
   List<Map<String, dynamic>> _getSortedProgressPoints() {
     if (_exerciseData.isEmpty || !_exerciseData.containsKey('progressPoints')) {
       return [];
@@ -185,6 +189,7 @@ class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
     );
   }
 
+  /// Builds a summary card displaying exercise stats like personal best and improvement
   Widget _buildSummaryCard() {
     final personalBest = _exerciseData['personalBest'] as double?;
     final startingWeight = _exerciseData['startingWeight'] as double?;
@@ -274,6 +279,7 @@ class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
     );
   }
 
+  /// Builds individual stat item for the summary card
   Widget _buildSummaryStat(
       String label, String value, IconData icon, Color color) {
     return Column(
@@ -304,6 +310,7 @@ class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
     );
   }
 
+  /// Builds line chart showing user's progress over time
   Widget _buildProgressChart() {
     if (!_exerciseData.containsKey('progressPoints') ||
         (_exerciseData['progressPoints'] as List).isEmpty) {
@@ -500,6 +507,7 @@ class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
     );
   }
 
+  /// Calculates appropriate y-axis interval based on max weight
   double _calculateInterval() {
     final maxWeight = _getMaxWeight();
     if (maxWeight <= 50) return 10;
@@ -509,6 +517,7 @@ class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
     return 200;
   }
 
+  /// Calculates appropriate date interval for x-axis to avoid label crowding
   double _calculateDateInterval(List<Map<String, dynamic>> progressPoints) {
     final int pointCount = progressPoints.length;
 
@@ -526,6 +535,7 @@ class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
     }
   }
 
+  /// Returns the maximum weight value for chart scaling
   double _getMaxWeight() {
     if (!_exerciseData.containsKey('progressPoints') ||
         (_exerciseData['progressPoints'] as List).isEmpty) {
@@ -546,6 +556,7 @@ class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
     return maxWeight == 0 ? 100 : maxWeight;
   }
 
+  /// Builds a table displaying all exercise history with dates and weights
   Widget _buildHistoryTable() {
     final progressPoints = _getSortedProgressPoints();
 
@@ -653,6 +664,7 @@ class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
     );
   }
 
+  /// Displays a placeholder when no chart data is available
   Widget _buildEmptyChartState() {
     return SizedBox(
       height: 250,
@@ -689,6 +701,7 @@ class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
     );
   }
 
+  /// Displays when no data exists for the exercise
   Widget _buildEmptyState() {
     return Center(
       child: Padding(
@@ -739,6 +752,7 @@ class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
     );
   }
 
+  /// Displays error state with retry option
   Widget _buildErrorState() {
     return Center(
       child: Padding(

@@ -8,6 +8,8 @@ import 'package:intl/intl.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:fitjourney/utils/date_utils.dart';
 
+/// Service for tracking and analyzing user fitness progress
+/// Provides methods for generating progress reports, charts and statistics
 class ProgressService {
   // Singleton instance
   static final ProgressService instance = ProgressService._internal();
@@ -18,7 +20,7 @@ class ProgressService {
   // Private constructor
   ProgressService._internal();
 
-  // Get the current user ID or throw an error if not logged in
+  /// Returns current user ID or throws exception if not logged in
   String _getCurrentUserId() {
     final user = firebase_auth.FirebaseAuth.instance.currentUser;
     if (user == null) {
@@ -29,8 +31,8 @@ class ProgressService {
 
   // 1. WORKOUT VOLUME DATA PROCESSING
 
-  /// Get workout volume data for charts
-  /// Returns a list of date-volume pairs for a time period
+  /// Retrieves workout volume data for visualization
+  /// Returns date-volume pairs for charting workout intensity over time
   Future<List<Map<String, dynamic>>> getWorkoutVolumeData({
     required DateTime startDate,
     required DateTime endDate,
@@ -70,7 +72,8 @@ class ProgressService {
     return volumeData;
   }
 
-  /// Calculate total volume for a single workout (sum of weight × reps for all sets)
+  /// Calculates total volume for a single workout
+  /// Volume is the sum of (weight × reps) across all sets in the workout
   Future<double> _calculateWorkoutVolume(int workoutId) async {
     final db = await _dbHelper.database;
 
@@ -99,7 +102,8 @@ class ProgressService {
 
   // 2. MUSCLE GROUP DISTRIBUTION PROCESSING
 
-  /// Get muscle group distribution data for pie charts
+  /// Analyzes muscle group distribution for balanced training assessment
+  /// Returns pie chart data showing relative focus on different muscle groups
   Future<List<Map<String, dynamic>>> getMuscleGroupDistribution({
     required DateTime startDate,
     required DateTime endDate,
@@ -148,7 +152,8 @@ class ProgressService {
 
   // 3. EXERCISE PROGRESS PROCESSING
 
-  /// Get strength progression data for a specific exercise
+  /// Tracks strength progression for a specific exercise over time
+  /// Returns detailed information including personal bests and improvement percentages
   Future<Map<String, dynamic>> getExerciseProgressData(int exerciseId) async {
     final String userId = _getCurrentUserId();
     final db = await _dbHelper.database;
@@ -253,7 +258,8 @@ class ProgressService {
 
   // 4. WORKOUT FREQUENCY PROCESSING (continued)
 
-  /// Get workout frequency data for consistency tracking
+  /// Analyzes workout frequency patterns and consistency
+  /// Returns calendar data with workout/rest days and statistics on workout habits
   Future<Map<String, dynamic>> getWorkoutFrequencyData({
     required DateTime startDate,
     required DateTime endDate,
@@ -359,7 +365,8 @@ class ProgressService {
 
   // 5. COMBINED PROGRESS SUMMARY
 
-  /// Get a summary of all key progress metrics
+  /// Generates comprehensive fitness progress summary with key metrics
+  /// Combines workout counts, streaks, and training balance information
   Future<Map<String, dynamic>> getProgressSummary() async {
     final String userId = _getCurrentUserId();
     final db = await _dbHelper.database;
@@ -451,7 +458,8 @@ class ProgressService {
 
   // 6. PERSONAL BESTS COLLECTION
 
-  /// Get all personal bests for exercises the user has performed
+  /// Retrieves personal bests across all exercises performed by the user
+  /// Returns comprehensive list of the user's highest achievements
   Future<List<Map<String, dynamic>>> getAllPersonalBests() async {
     final String userId = _getCurrentUserId();
     final db = await _dbHelper.database;
@@ -508,7 +516,8 @@ class ProgressService {
 
   // Helper methods for date ranges
 
-  /// Get start and end dates for a specific time period
+  /// Gets date range based on a specified time period
+  /// Supports Week, Month, 3 Months, 6 Months, Year, and All Time periods
   Map<String, DateTime> getDateRangeForPeriod(String period) {
     final DateTime now = DateTime.now();
     DateTime startDate;
@@ -550,8 +559,8 @@ class ProgressService {
     };
   }
 
-  /// Get appropriate date formatting based on time range
-  /// For shorter time periods, show more detail; for longer periods, aggregate
+  /// Determines appropriate date format based on the range duration
+  /// For short ranges shows more detail, for longer ranges shows less detail
   String getDateFormatForRange(DateTime startDate, DateTime endDate) {
     final Duration difference = endDate.difference(startDate);
 
@@ -569,8 +578,8 @@ class ProgressService {
 
   // 6. EXERCISE VOLUME DATA PROCESSING
 
-  /// Get total volume lifted for each exercise type
-  /// Returns a list of exercises with their total volume (weight × reps)
+  /// Analyzes volume data by exercise to identify most significant contributions
+  /// Returns detailed breakdown of exercise volumes, sets, reps and frequency
   Future<List<Map<String, dynamic>>> getExerciseVolumeData({
     required DateTime startDate,
     required DateTime endDate,

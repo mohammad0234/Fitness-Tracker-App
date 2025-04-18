@@ -12,6 +12,8 @@ import 'package:fitjourney/screens/workout_detail_screen.dart';
 import 'package:fitjourney/services/sync_service.dart';
 //import 'package:fitjourney/utils/date_utils.dart';
 
+/// Calendar view that displays user's workout history and streak information
+/// Shows workout days, rest days, and streak milestones visually on a calendar
 class CalendarStreakScreen extends StatefulWidget {
   final bool showAppBar;
 
@@ -66,11 +68,13 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
     super.dispose();
   }
 
+  /// Loads both streak and activity data
   Future<void> _loadData() async {
     await _loadStreak();
     await _loadActivities();
   }
 
+  /// Fetches user's streak information from the database
   Future<void> _loadStreak() async {
     try {
       final streak = await _streakService.getUserStreak();
@@ -85,6 +89,7 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
     }
   }
 
+  /// Loads workout and rest day history for the calendar display
   Future<void> _loadActivities() async {
     if (!mounted) return;
 
@@ -137,7 +142,7 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
     }
   }
 
-  // Load workouts for a selected day
+  /// Loads workout details for the selected calendar day
   Future<void> _loadWorkoutsForSelectedDay(DateTime date) async {
     if (!mounted) return;
 
@@ -203,7 +208,7 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
     }
   }
 
-  // Helper method to get workouts for a specific date
+  /// Retrieves workouts for a specific date from the database
   Future<List<Workout>> _getWorkoutsForDate(DateTime date) async {
     // When you need the DateTime object
     final normalizedDate = DateTime(date.year, date.month, date.day);
@@ -221,7 +226,7 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
     return await _workoutService.getWorkoutsForDate(date);
   }
 
-  // Determine the event color based on activity type
+  /// Returns appropriate color for calendar day markers based on activity type
   Color _getEventColor(List<DailyLog>? logs) {
     if (logs == null || logs.isEmpty) {
       return Colors.grey.shade200; // No activity
@@ -237,7 +242,7 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
     return Colors.green.shade300; // Rest day
   }
 
-  // Check if a date is part of a milestone streak
+  /// Checks if a date is part of a streak milestone (7 or 30 days)
   bool _isStreakMilestone(DateTime day) {
     // Create a normalized date for comparison
     final normalizedDate = DateTime(day.year, day.month, day.day);
@@ -608,6 +613,8 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
   }
 
   // NEW: Build workout cards
+  /// Builds the list of workout cards for the selected day
+  /// Shows exercise details, weights, and muscle groups
   List<Widget> _buildWorkoutsList() {
     if (_selectedDayWorkouts.isEmpty || _workoutDetails.isEmpty) {
       return [
@@ -870,7 +877,7 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
   }
 
   // Helper methods from the home page
-  // Helper method to determine card color based on muscle groups
+  /// Determines card color based on the muscle groups worked
   Color _getWorkoutColor(List<String> muscleGroups) {
     if (muscleGroups.isEmpty) return Colors.blue;
 
@@ -892,7 +899,7 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
     return Colors.blue;
   }
 
-  // Helper method to get icon for workout
+  /// Returns appropriate icon for workout based on muscle groups
   IconData _getWorkoutIcon(List<String> muscleGroups) {
     if (muscleGroups.isEmpty) return Icons.fitness_center;
 
@@ -912,7 +919,7 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
     return Icons.fitness_center; // Default to dumbbell
   }
 
-  // Helper method to get color for specific muscle group
+  /// Returns a color for a specific muscle group
   Color _getMuscleGroupColor(String muscleGroup) {
     switch (muscleGroup) {
       case 'Chest':
@@ -939,7 +946,7 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
     }
   }
 
-  // Helper method to get icon for specific muscle group
+  /// Returns appropriate icon for a specific muscle group
   IconData _getMuscleGroupIcon(String muscleGroup) {
     switch (muscleGroup) {
       case 'Chest':
@@ -954,18 +961,12 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
         return Icons.fitness_center; // Dumbbell for triceps
       case 'Legs':
         return Icons.directions_run; // Running for legs
-      case 'Calves':
-        return Icons.directions_run; // Running for calves
-      case 'Glutes':
-        return Icons.directions_run; // Running for glutes
-      case 'Core':
-      case 'Abs':
-        return Icons.fitness_center; // Dumbbell for core/abs
       default:
         return Icons.fitness_center; // Default to dumbbell
     }
   }
 
+  /// Builds the header section displaying streak statistics
   Widget _buildStreakHeader() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -1021,6 +1022,7 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
     );
   }
 
+  /// Creates a statistics card for streak statistics
   Widget _buildStatCard(
       String label, String value, IconData icon, Color color) {
     return Column(
@@ -1056,6 +1058,7 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
     );
   }
 
+  /// Builds a legend item for the calendar
   Widget _buildLegendItem(String label, Color color) {
     return Row(
       children: [
@@ -1076,6 +1079,7 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
     );
   }
 
+  /// Displays information about the selected day
   Widget _buildSelectedDayInfo() {
     // Normalize the selected date to remove time
     final normalizedDate = DateTime(
@@ -1148,6 +1152,7 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
     );
   }
 
+  /// Calculates and formats monthly activity statistics
   String _calculateMonthlyActivity() {
     // Calculate activity for the current month
     final now = DateTime.now();
@@ -1176,7 +1181,8 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
     return '$activeCount/$elapsedDays';
   }
 
-  // Method to force a deep refresh of calendar data
+  /// Forces a complete refresh of all calendar data
+  /// Regenerates daily logs and triggers data sync
   Future<void> _deepRefreshData() async {
     setState(() {
       _isLoading = true;
@@ -1215,6 +1221,7 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
 }
 
 // Helper function to get minimum of two integers
+/// Returns the minimum of two integer values
 int min(int a, int b) {
   return a < b ? a : b;
 }

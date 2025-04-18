@@ -7,6 +7,8 @@ import 'package:fitjourney/screens/edit_goal_screen.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
 
+/// Screen for viewing detailed information about a fitness goal
+/// Displays goal progress, history, and charts for tracking improvement
 class GoalDetailScreen extends StatefulWidget {
   final int goalId;
 
@@ -34,6 +36,8 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
     _loadGoalDetails();
   }
 
+  /// Loads the goal data and formatted display information
+  /// For strength goals, also loads exercise progress history for charting
   Future<void> _loadGoalDetails() async {
     try {
       // First, get the goal object
@@ -84,6 +88,8 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
     }
   }
 
+  /// Handles goal deletion with user confirmation
+  /// Shows a confirmation dialog before deleting and handles success/error states
   Future<void> _deleteGoal() async {
     // Show confirmation dialog
     final confirmed = await showDialog<bool>(
@@ -532,6 +538,7 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
 
   // Helper widgets
 
+  /// Creates a row with label and value for displaying goal details
   Widget _buildDetailRow(String label, String value) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -556,6 +563,7 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
 
   // Helper methods
 
+  /// Returns an appropriate color based on goal type for visual identification
   Color _getGoalColor(String goalType) {
     switch (goalType) {
       case 'ExerciseTarget':
@@ -567,6 +575,7 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
     }
   }
 
+  /// Returns an appropriate icon based on goal type
   IconData _getGoalIcon(String goalType) {
     switch (goalType) {
       case 'ExerciseTarget':
@@ -578,24 +587,28 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
     }
   }
 
+  /// Returns a color based on goal status (achieved, expired, in progress)
   Color _getStatusColor(bool achieved, bool isExpired) {
     if (achieved) return Colors.green;
     if (isExpired) return Colors.red;
     return Colors.blue;
   }
 
+  /// Returns an icon based on goal status
   IconData _getStatusIcon(bool achieved, bool isExpired) {
     if (achieved) return Icons.check_circle_outline;
     if (isExpired) return Icons.error_outline;
     return Icons.pending_outlined;
   }
 
+  /// Returns status text based on goal completion state
   String _getStatusText(bool achieved, bool isExpired) {
     if (achieved) return 'Goal Achieved';
     if (isExpired) return 'Goal Expired';
     return 'In Progress';
   }
 
+  /// Generates an appropriate motivational message based on goal status
   String _getStatusMessage(bool achieved, bool isExpired, double progress) {
     if (achieved) {
       return 'Congratulations! You\'ve successfully achieved this goal.';
@@ -616,7 +629,8 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
     }
   }
 
-  // Helper method to build the exercise progress chart
+  /// Builds a chart showing progress over time for strength goals
+  /// Displays start weight, current weight, and target with visual indicators
   Widget _buildProgressChart() {
     if (_isLoadingChart) {
       return const SizedBox(

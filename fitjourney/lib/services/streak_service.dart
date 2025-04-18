@@ -9,6 +9,8 @@ import 'package:fitjourney/utils/date_utils.dart';
 import 'package:fitjourney/services/notification_trigger_service.dart';
 import 'package:flutter/material.dart';
 
+/// Service for managing user workout streaks and daily activity tracking
+/// Handles streak calculation, maintenance, and milestone achievements
 class StreakService {
   // Singleton instance
   static final StreakService instance = StreakService._internal();
@@ -23,7 +25,7 @@ class StreakService {
   // Private constructor
   StreakService._internal();
 
-  // Get the current user ID or throw an error if not logged in
+  /// Returns current user ID or throws exception if not logged in
   String _getCurrentUserId() {
     final user = firebase_auth.FirebaseAuth.instance.currentUser;
     if (user == null) {
@@ -32,7 +34,8 @@ class StreakService {
     return user.uid;
   }
 
-  // Get the user's current streak
+  /// Retrieves the user's current streak information
+  /// Creates a new streak record if one doesn't exist
   Future<Streak> getUserStreak() async {
     final userId = _getCurrentUserId();
     final db = await _dbHelper.database;
@@ -59,7 +62,8 @@ class StreakService {
     return Streak.fromMap(streakRecords.first);
   }
 
-  // Record a workout day
+  /// Records a workout for the current day and updates streak information
+  /// Handles streak incrementation, milestone tracking, and notifications
   Future<void> logWorkout(DateTime date) async {
     final userId = _getCurrentUserId();
     final db = await _dbHelper.database;
@@ -208,7 +212,8 @@ class StreakService {
     });
   }
 
-  // Record a rest day
+  /// Records a rest day while maintaining the current streak
+  /// Rest days count for streak maintenance but don't increment streak count
   Future<void> logRestDay(DateTime date) async {
     final userId = _getCurrentUserId();
     final db = await _dbHelper.database;
@@ -332,7 +337,8 @@ class StreakService {
     }
   }
 
-  // Check for streak milestone achievements
+  /// Tracks and celebrates significant streak milestones
+  /// Triggers notifications at key streak lengths (7 days, 30 days)
   Future<void> _checkStreakMilestones(
       dynamic txn, String userId, int currentStreak) async {
     // Check for 7-day streak
@@ -369,7 +375,8 @@ class StreakService {
     }
   }
 
-  // Perform daily streak check (to be called once per day)
+  /// Performs daily check of streak status and sends notifications if needed
+  /// Should be called once per day to maintain accurate streak tracking
   Future<void> performDailyStreakCheck() async {
     final userId = _getCurrentUserId();
     final db = await _dbHelper.database;
@@ -416,7 +423,8 @@ class StreakService {
     }
   }
 
-  // Get the history of daily logs for a date range
+  /// Retrieves user's activity history for a specified date range
+  /// Returns a list of daily logs with workout and rest day information
   Future<List<DailyLog>> getDailyLogHistory(
       DateTime startDate, DateTime endDate) async {
     final userId = _getCurrentUserId();
@@ -469,7 +477,8 @@ class StreakService {
     }
   }
 
-  // Ensure all workout days have corresponding daily logs
+  /// Ensures all workout days have corresponding daily log entries
+  /// Creates missing logs to maintain data consistency across features
   Future<void> _ensureWorkoutsHaveDailyLogs(
       DateTime startDate, DateTime endDate) async {
     try {
@@ -530,7 +539,8 @@ class StreakService {
     }
   }
 
-  // Create daily logs from workouts if none exist
+  /// Creates daily log entries based on existing workout records
+  /// Used for data repair if daily logs are missing but workouts exist
   Future<void> _createDailyLogsFromWorkouts(
       DateTime startDate, DateTime endDate) async {
     try {
@@ -589,7 +599,8 @@ class StreakService {
     }
   }
 
-  // Method to regenerate daily logs from workouts for a date range
+  /// Rebuilds all daily logs from workout data to fix inconsistencies
+  /// Used for data repair and consistency maintenance
   Future<void> regenerateDailyLogs(DateTime startDate, DateTime endDate) async {
     try {
       final userId = _getCurrentUserId();
