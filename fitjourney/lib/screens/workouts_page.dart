@@ -229,17 +229,26 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
         children: [
           // Header with filters and Compare button
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Filter chips
-                Expanded(
-                  child: Wrap(
-                    spacing: 8.0,
-                    runSpacing: 8.0,
-                    children: [
-                      FilterChip(
+                // First row: Filter button and filters
+                Row(
+                  children: [
+                    // Filter icon button
+                    IconButton(
+                      icon: const Icon(Icons.filter_list),
+                      onPressed: _showFilterDialog,
+                      tooltip: 'Filter',
+                      padding: const EdgeInsets.all(8),
+                      constraints: const BoxConstraints(),
+                    ),
+                    const SizedBox(width: 4),
+                    // Date filter chip
+                    Expanded(
+                      flex: 1,
+                      child: FilterChip(
                         label: Text(_dateFilter),
                         onSelected: (selected) {
                           _showFilterDialog();
@@ -253,7 +262,12 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
                         visualDensity: VisualDensity.compact,
                         selected: _dateFilter != 'All Time',
                       ),
-                      FilterChip(
+                    ),
+                    const SizedBox(width: 8),
+                    // Workout type filter chip
+                    Expanded(
+                      flex: 1,
+                      child: FilterChip(
                         label: Text(_selectedFilter),
                         onSelected: (selected) {
                           _showFilterDialog();
@@ -267,44 +281,34 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
                         visualDensity: VisualDensity.compact,
                         selected: _selectedFilter != 'All Workouts',
                       ),
-                    ],
-                  ),
-                ),
-                Row(
-                  children: [
-                    // Compare button
-                    OutlinedButton.icon(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                const WorkoutComparisonSelectionScreen(),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.compare_arrows, size: 18),
-                      label: const Text('Compare'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.blue,
-                        side: BorderSide(color: Colors.blue),
-                        visualDensity: VisualDensity.compact,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 0),
-                      ),
-                    ),
-                    // Filter button
-                    IconButton(
-                      icon: const Icon(Icons.filter_list),
-                      onPressed: _showFilterDialog,
-                      tooltip: 'Filter',
                     ),
                   ],
+                ),
+                const SizedBox(height: 8),
+                // Second row: Compare button aligned to the left
+                OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            const WorkoutComparisonSelectionScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.compare_arrows, size: 18),
+                  label: const Text('Compare'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.blue,
+                    side: BorderSide(color: Colors.blue),
+                    visualDensity: VisualDensity.compact,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 8),
 
           // Workout history - grouped by date
           Expanded(
