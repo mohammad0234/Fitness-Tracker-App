@@ -361,16 +361,26 @@ class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 30,
-                interval: _calculateDateInterval(progressPoints),
                 getTitlesWidget: (double value, TitleMeta meta) {
                   if (value.toInt() < 0 ||
                       value.toInt() >= progressPoints.length) {
                     return const SizedBox();
                   }
+
+                  // Show only a subset of dates to avoid overcrowding
+                  final int interval =
+                      _calculateDateInterval(progressPoints).toInt();
+                  if (value.toInt() % interval != 0 &&
+                      value.toInt() != progressPoints.length - 1) {
+                    return const SizedBox();
+                  }
+
+                  final date =
+                      progressPoints[value.toInt()]['date'] as DateTime;
                   return Padding(
                     padding: const EdgeInsets.only(top: 8.0),
                     child: Text(
-                      progressPoints[value.toInt()]['formattedDate'],
+                      DateFormat('MM/dd').format(date),
                       style: const TextStyle(
                         color: Colors.black54,
                         fontSize: 10,
@@ -502,13 +512,20 @@ class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
   }
 
   double _calculateDateInterval(List<Map<String, dynamic>> progressPoints) {
-    // Show fewer date labels when there are many data points
-    if (progressPoints.length > 20) {
-      return (progressPoints.length / 5).ceil().toDouble();
-    } else if (progressPoints.length > 10) {
-      return (progressPoints.length / 4).ceil().toDouble();
+    final int pointCount = progressPoints.length;
+
+    // Number of labels to display (aim for 4-7 labels total)
+    if (pointCount <= 7) {
+      return 1; // Show all dates if we have 7 or fewer points
+    } else if (pointCount <= 14) {
+      return 2; // Show every other date
+    } else if (pointCount <= 30) {
+      return 5; // Show roughly weekly intervals
+    } else if (pointCount <= 90) {
+      return 15; // Show roughly bi-weekly intervals
+    } else {
+      return 30; // Show monthly intervals for long time ranges
     }
-    return 1; // Show all date labels for few data points
   }
 
   double _getMaxWeight() {
