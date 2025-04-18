@@ -15,13 +15,13 @@ class ProgressCharts {
     try {
       // Get date range for the selected period
       final dateRange = _progressService.getDateRangeForPeriod(timeRange);
-      
+
       // Fetch data
       final volumeData = await _progressService.getWorkoutVolumeData(
         startDate: dateRange['startDate']!,
         endDate: dateRange['endDate']!,
       );
-      
+
       // Return chart widget
       return WorkoutVolumeChart(
         volumeData: volumeData,
@@ -39,13 +39,13 @@ class ProgressCharts {
     try {
       // Get date range for the selected period
       final dateRange = _progressService.getDateRangeForPeriod(timeRange);
-      
+
       // Fetch data
       final muscleGroupData = await _progressService.getMuscleGroupDistribution(
         startDate: dateRange['startDate']!,
         endDate: dateRange['endDate']!,
       );
-      
+
       // Return chart widget
       return MuscleGroupPieChart(
         muscleGroupData: muscleGroupData,
@@ -64,7 +64,7 @@ class ProgressCharts {
       final exerciseData = await _progressService.getExerciseProgressData(
         exerciseId,
       );
-      
+
       // Return chart widget
       return ExerciseProgressChart(
         exerciseData: exerciseData,
@@ -75,22 +75,27 @@ class ProgressCharts {
   }
 
   /// Creates a workout frequency chart for the given time period
+  /// @deprecated This chart is no longer used in the UI
+  @deprecated
   static Future<Widget> buildWorkoutFrequencyChart({
     required String timeRange,
   }) async {
     try {
       // Get date range for the selected period
       final dateRange = _progressService.getDateRangeForPeriod(timeRange);
-      
+
       // Fetch data
       final frequencyData = await _progressService.getWorkoutFrequencyData(
         startDate: dateRange['startDate']!,
         endDate: dateRange['endDate']!,
       );
-      
-      // Return chart widget
-      return WorkoutFrequencyChart(
-        frequencyData: frequencyData,
+
+      // Return placeholder instead of actual chart
+      return Container(
+        padding: const EdgeInsets.all(16),
+        child: const Center(
+          child: Text('This chart has been deprecated'),
+        ),
       );
     } catch (e) {
       return _buildErrorWidget('Error loading workout frequency data: $e');
