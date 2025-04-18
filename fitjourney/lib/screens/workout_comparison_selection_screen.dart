@@ -18,7 +18,6 @@ class _WorkoutComparisonSelectionScreenState
   final WorkoutService _workoutService = WorkoutService.instance;
 
   bool _isLoading = true;
-  List<Workout> _workouts = [];
   List<Map<String, dynamic>> _workoutDetails = [];
 
   // Filter options
@@ -93,14 +92,12 @@ class _WorkoutComparisonSelectionScreenState
       );
 
       setState(() {
-        _workouts = workouts;
         _workoutDetails = workoutDetails;
         _isLoading = false;
       });
     } catch (e) {
       print('Error loading workouts: $e');
       setState(() {
-        _workouts = [];
         _workoutDetails = [];
         _isLoading = false;
       });

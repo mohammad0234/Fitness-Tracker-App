@@ -56,48 +56,6 @@ class DatabaseHelper {
     );
   }
 
-  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    print('Upgrading database from version $oldVersion to $newVersion');
-
-    // Run upgrade scripts based on the old version
-    if (oldVersion < 2) {
-      // Add sync_queue table if upgrading from version 1
-      try {
-        await db.execute('''
-          CREATE TABLE IF NOT EXISTS sync_queue (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            table_name TEXT NOT NULL,
-            record_id TEXT NOT NULL,
-            operation TEXT NOT NULL,
-            timestamp INTEGER NOT NULL,
-            retry_count INTEGER DEFAULT 0,
-            last_error TEXT,
-            synced INTEGER DEFAULT 0,
-            UNIQUE(table_name, record_id, operation)
-          );
-        ''');
-        print('Created sync_queue table during upgrade');
-      } catch (e) {
-        print('Error creating sync_queue table: $e');
-      }
-    }
-
-    // Add notes column to daily_log table if it doesn't exist
-    try {
-      final List<Map<String, dynamic>> columns =
-          await db.rawQuery('PRAGMA table_info(daily_log)');
-      final columnNames = columns.map((col) => col['name'] as String).toList();
-
-      if (!columnNames.contains('notes')) {
-        print('Adding notes column to daily_log table');
-        await db.execute('ALTER TABLE daily_log ADD COLUMN notes TEXT');
-        print('Added notes column to daily_log table');
-      }
-    } catch (e) {
-      print('Error adding notes column to daily_log: $e');
-    }
-  }
-
   // Enable foreign key constraints
   Future<void> _onConfigure(Database db) async {
     await db.execute('PRAGMA foreign_keys = ON');

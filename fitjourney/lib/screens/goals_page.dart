@@ -484,7 +484,6 @@ class _GoalsPageState extends State<GoalsPage> {
     } else if (goalInfo['type'] == 'WeightTarget') {
       // For weight goals
       final isWeightLoss = goalInfo['isWeightLoss'] ?? false;
-      final isWeightGain = goalInfo['isWeightGain'] ?? false;
       final currentWeight = goalInfo['current']?.toStringAsFixed(1) ?? '0';
       final targetWeight = goalInfo['target']?.toStringAsFixed(1) ?? '0';
       final startingWeight =

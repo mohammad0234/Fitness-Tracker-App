@@ -1,7 +1,6 @@
 // lib/screens/exercise_progress_screen.dart
 import 'package:flutter/material.dart';
 import 'package:fitjourney/services/progress_service.dart';
-import 'package:fitjourney/services/workout_service.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 
@@ -19,7 +18,6 @@ class ExerciseProgressScreen extends StatefulWidget {
 
 class _ExerciseProgressScreenState extends State<ExerciseProgressScreen> {
   final ProgressService _progressService = ProgressService.instance;
-  final WorkoutService _workoutService = WorkoutService.instance;
 
   bool _isLoading = true;
   bool _hasError = false;

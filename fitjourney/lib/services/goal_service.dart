@@ -492,16 +492,6 @@ class GoalService {
       if (goal.goalId != null && goal.type == 'WeightTarget') {
         // Get previous progress and goal details to determine if we need to trigger notifications
         final previousProgress = goal.currentProgress;
-        final previousGoal = Goal(
-          goalId: goal.goalId,
-          userId: goal.userId,
-          type: goal.type,
-          targetValue: goal.targetValue,
-          startDate: goal.startDate,
-          endDate: goal.endDate,
-          achieved: goal.achieved,
-          currentProgress: previousProgress,
-        );
 
         // Update the goal's progress
         final newProgress = await calculateWeightGoalProgress(goal.goalId!);

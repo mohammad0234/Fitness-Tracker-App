@@ -139,7 +139,6 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
 
   // Load workouts for a selected day
   Future<void> _loadWorkoutsForSelectedDay(DateTime date) async {
-    if (date == null) return;
     if (!mounted) return;
 
     setState(() {
@@ -633,7 +632,6 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
       final muscleGroups = workoutData['muscleGroups'] as List<String>;
 
       // Determine the primary muscle group for display
-      String primaryType = 'Workout';
       if (muscleGroups.isNotEmpty) {
         // Check for common groupings
         if (muscleGroups.any((group) => [
@@ -643,13 +641,9 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
               'Biceps',
               'Triceps'
             ].contains(group))) {
-          primaryType = 'Upper Body';
         } else if (muscleGroups
             .any((group) => ['Legs', 'Calves', 'Glutes'].contains(group))) {
-          primaryType = 'Lower Body';
-        } else {
-          primaryType = muscleGroups.first;
-        }
+        } else {}
       }
 
       // Determine a color based on muscle groups
@@ -1190,9 +1184,7 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
 
     try {
       // Force a sync first to ensure we have the latest data
-      if (SyncService.instance != null) {
-        await SyncService.instance.triggerManualSync();
-      }
+      await SyncService.instance.triggerManualSync();
 
       // Calculate date range for past 6 months
       final today = DateTime.now();

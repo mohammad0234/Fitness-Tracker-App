@@ -29,8 +29,6 @@ class _WorkoutComparisonScreenState extends State<WorkoutComparisonScreen> {
   // Workout data
   Workout? _firstWorkout;
   Workout? _secondWorkout;
-  List<Map<String, dynamic>> _firstWorkoutExercises = [];
-  List<Map<String, dynamic>> _secondWorkoutExercises = [];
 
   // Comparison data
   Map<String, dynamic> _comparisonData = {};
@@ -73,8 +71,6 @@ class _WorkoutComparisonScreenState extends State<WorkoutComparisonScreen> {
       setState(() {
         _firstWorkout = firstWorkout;
         _secondWorkout = secondWorkout;
-        _firstWorkoutExercises = firstWorkoutExercises;
-        _secondWorkoutExercises = secondWorkoutExercises;
         _comparisonData = comparisonData;
         _isLoading = false;
       });
@@ -841,7 +837,6 @@ class _WorkoutComparisonScreenState extends State<WorkoutComparisonScreen> {
 
     final firstTotalVolume = exercise['firstTotalVolume'] as double;
     final secondTotalVolume = exercise['secondTotalVolume'] as double;
-    final volumeDifference = exercise['volumeDifference'] as double;
     final volumePercentChange = exercise['volumePercentChange'] as double;
 
     final firstSets = exercise['firstSets'] as int;

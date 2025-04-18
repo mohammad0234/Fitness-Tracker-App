@@ -33,7 +33,6 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
     'Last 3 Months'
   ];
 
-  List<Workout> _workouts = [];
   List<Map<String, dynamic>> _workoutDetails = [];
   bool _isLoading = true;
 
@@ -95,14 +94,12 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
       );
 
       setState(() {
-        _workouts = workouts;
         _workoutDetails = workoutDetails;
         _isLoading = false;
       });
     } catch (e) {
       print('Error loading workouts: $e');
       setState(() {
-        _workouts = [];
         _workoutDetails = [];
         _isLoading = false;
       });
@@ -218,12 +215,6 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Apply date filter to workouts
-    final filteredWorkouts = _applyDateFilter(_workoutDetails);
-
-    // Apply muscle group filter to workouts
-    final finalFilteredWorkouts = _applyMuscleGroupFilter(filteredWorkouts);
-
     return Scaffold(
       body: Column(
         children: [
@@ -505,7 +496,6 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
     final workout = workoutDetail['workout'] as Workout;
     final exerciseCount = workoutDetail['exerciseCount'] as int;
     final muscleGroups = workoutDetail['muscleGroups'] as List<String>;
-    final exerciseNames = workoutDetail['exerciseNames'] as List<String>;
     final exercises = workoutDetail['exercises'] as List;
 
     // Determine a color based on muscle groups
@@ -815,65 +805,6 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
   }
 
   // Apply date filter to workouts
-  List<Map<String, dynamic>> _applyDateFilter(
-      List<Map<String, dynamic>> workouts) {
-    if (_dateFilter == 'All Time') {
-      return workouts;
-    }
-
-    final now = DateTime.now();
-    DateTime startDate;
-
-    switch (_dateFilter) {
-      case 'This Week':
-        // Start of current week (Sunday)
-        startDate = now.subtract(Duration(days: now.weekday % 7));
-        startDate = DateTime(startDate.year, startDate.month, startDate.day);
-        break;
-      case 'This Month':
-        // Start of current month
-        startDate = DateTime(now.year, now.month, 1);
-        break;
-      case 'Last 3 Months':
-        // Start of 3 months ago
-        startDate = DateTime(now.year, now.month - 3, 1);
-        break;
-      default:
-        return workouts;
-    }
-
-    return workouts.where((workout) {
-      final workoutDate = (workout['workout'] as Workout).date;
-      return workoutDate.isAfter(startDate) ||
-          workoutDate.isAtSameMomentAs(startDate);
-    }).toList();
-  }
 
   // Apply muscle group filter to workouts
-  List<Map<String, dynamic>> _applyMuscleGroupFilter(
-      List<Map<String, dynamic>> workouts) {
-    if (_selectedFilter == 'All Workouts') {
-      return workouts;
-    }
-
-    return workouts.where((workout) {
-      final muscleGroups = workout['muscleGroups'] as List<String>;
-
-      switch (_selectedFilter) {
-        case 'Upper Body':
-          return muscleGroups.any((group) => [
-                'Chest',
-                'Back',
-                'Shoulders',
-                'Biceps',
-                'Triceps'
-              ].contains(group));
-        case 'Lower Body':
-          return muscleGroups
-              .any((group) => ['Legs', 'Glutes', 'Calves'].contains(group));
-        default:
-          return true;
-      }
-    }).toList();
-  }
 }

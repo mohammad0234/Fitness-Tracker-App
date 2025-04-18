@@ -13,7 +13,6 @@ class LogWorkoutFlow extends StatefulWidget {
 }
 
 class _LogWorkoutFlowState extends State<LogWorkoutFlow> {
-  final WorkoutService _workoutService = WorkoutService.instance;
   DateTime _startTime = DateTime.now();
   Timer? _workoutTimer;
 

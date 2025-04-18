@@ -53,7 +53,7 @@ class TestableGoalService {
     required double targetWeight,
     required DateTime targetDate,
   }) async {
-    final userId = _getCurrentUserId();
+    _getCurrentUserId();
 
     // For testing, we'll just return a mock goal ID
     return 1;
@@ -65,7 +65,7 @@ class TestableGoalService {
     required double targetWeight,
     required DateTime targetDate,
   }) async {
-    final userId = _getCurrentUserId();
+    _getCurrentUserId();
 
     // For testing, we'll just return a mock goal ID
     return 2;
@@ -76,7 +76,7 @@ class TestableGoalService {
     required int targetWorkouts,
     required DateTime endDate,
   }) async {
-    final userId = _getCurrentUserId();
+    _getCurrentUserId();
 
     // For testing, we'll just return a mock goal ID
     return 3;

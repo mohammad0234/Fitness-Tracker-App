@@ -23,9 +23,6 @@ class _ExerciseSelectionScreenState extends State<ExerciseSelectionScreen> {
   String _selectedMuscleGroup = 'All';
   List<String> _muscleGroups = ['All'];
 
-  // For favoriting functionality (to be implemented)
-  Set<int> _favoriteExerciseIds = {};
-
   @override
   void initState() {
     super.initState();

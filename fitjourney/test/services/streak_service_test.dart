@@ -65,11 +65,6 @@ class TestableStreakService {
 
   // Simplified version of logWorkout for testing
   Future<void> logWorkout(DateTime date) async {
-    // Just verify we can get the user ID
-    final userId = _getCurrentUserId();
-    // And that we can use the date parameter
-    final dateString = date.toIso8601String();
-
     // For testing, this is enough to verify the method runs
   }
 }

@@ -784,6 +784,7 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
               fitInsideVertically: true,
             ),
           ),
+          // ignore: unnecessary_null_comparison
           extraLinesData: targetValue != null
               ? ExtraLinesData(
                   horizontalLines: [

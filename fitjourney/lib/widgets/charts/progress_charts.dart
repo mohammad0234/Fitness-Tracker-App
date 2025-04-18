@@ -81,13 +81,7 @@ class ProgressCharts {
   }) async {
     try {
       // Get date range for the selected period
-      final dateRange = _progressService.getDateRangeForPeriod(timeRange);
-
-      // Fetch data
-      final frequencyData = await _progressService.getWorkoutFrequencyData(
-        startDate: dateRange['startDate']!,
-        endDate: dateRange['endDate']!,
-      );
+      _progressService.getDateRangeForPeriod(timeRange);
 
       // Return placeholder instead of actual chart
       return Container(

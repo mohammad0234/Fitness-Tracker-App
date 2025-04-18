@@ -584,7 +584,6 @@ class _ExerciseProgressTabState extends State<ExerciseProgressTab> {
   // Track the current view state
   bool _showingExerciseDetails = false;
   int? _currentExerciseId;
-  String _exerciseName = '';
 
   @override
   Widget build(BuildContext context) {
@@ -639,7 +638,6 @@ class _ExerciseProgressTabState extends State<ExerciseProgressTab> {
           setState(() {
             _showingExerciseDetails = true;
             _currentExerciseId = exerciseId;
-            _exerciseName = exerciseName;
           });
         },
       );
@@ -1076,45 +1074,6 @@ class _CustomExerciseProgressScreenState
         ),
       ),
     );
-  }
-
-  double _calculateInterval() {
-    final maxWeight = _getMaxWeight();
-    if (maxWeight <= 50) return 10;
-    if (maxWeight <= 100) return 20;
-    if (maxWeight <= 200) return 50;
-    if (maxWeight <= 500) return 100;
-    return 200;
-  }
-
-  double _calculateDateInterval(List<Map<String, dynamic>> progressPoints) {
-    // Show fewer date labels when there are many data points
-    if (progressPoints.length > 20) {
-      return (progressPoints.length / 5).ceil().toDouble();
-    } else if (progressPoints.length > 10) {
-      return (progressPoints.length / 4).ceil().toDouble();
-    }
-    return 1; // Show all date labels for few data points
-  }
-
-  double _getMaxWeight() {
-    if (!_exerciseData.containsKey('progressPoints') ||
-        (_exerciseData['progressPoints'] as List).isEmpty) {
-      return 100;
-    }
-
-    final progressPoints =
-        List<Map<String, dynamic>>.from(_exerciseData['progressPoints']);
-    double maxWeight = 0;
-
-    for (var point in progressPoints) {
-      final weight = point['weight'] as double;
-      if (weight > maxWeight) {
-        maxWeight = weight;
-      }
-    }
-
-    return maxWeight == 0 ? 100 : maxWeight;
   }
 
   Widget _buildHistoryTable() {

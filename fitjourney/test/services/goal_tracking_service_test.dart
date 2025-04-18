@@ -51,8 +51,6 @@ class TestableGoalTrackingService {
 
   // Update goals after a workout is logged
   Future<void> updateGoalsAfterWorkout(Workout workout) async {
-    final userId = _getCurrentUserId();
-
     // For testing purposes, we'll just record that this was called
     print(
         'updateGoalsAfterWorkout called with workoutId: ${workout.workoutId}');
@@ -61,8 +59,6 @@ class TestableGoalTrackingService {
   // Update goals after a personal best is recorded
   Future<void> updateGoalsAfterPersonalBest(
       int exerciseId, double weight) async {
-    final userId = _getCurrentUserId();
-
     // For testing purposes, we'll just record that this was called
     print(
         'updateGoalsAfterPersonalBest called with exerciseId: $exerciseId, weight: $weight');

@@ -627,7 +627,6 @@ class _HomePageState extends State<HomePage> {
     final exercises = _recentWorkoutData!['exercises'] as List;
 
     // Determine the primary muscle group for display
-    String primaryType = 'Workout';
     if (muscleGroups.isNotEmpty) {
       // Check for common groupings
       if (muscleGroups.any((group) => [
@@ -637,13 +636,9 @@ class _HomePageState extends State<HomePage> {
             'Biceps',
             'Triceps'
           ].contains(group))) {
-        primaryType = 'Upper Body';
       } else if (muscleGroups
           .any((group) => ['Legs', 'Calves', 'Glutes'].contains(group))) {
-        primaryType = 'Lower Body';
-      } else {
-        primaryType = muscleGroups.first;
-      }
+      } else {}
     }
 
     // Determine a color based on muscle groups
@@ -888,11 +883,6 @@ class _HomePageState extends State<HomePage> {
     final goalType = _activeGoalData!['type'] as String? ?? 'ExerciseTarget';
 
     // For strength goals
-    final current = _activeGoalData!['current'] as double?;
-    final target = _activeGoalData!['target'] as double?;
-    final formattedImprovement =
-        _activeGoalData!['formattedImprovement'] as String?;
-    final startingWeight = _activeGoalData!['startingWeight'] as double?;
 
     // Get the color and icon based on goal type
     final Color goalColor = _getGoalColor(goalType);
@@ -1065,7 +1055,6 @@ class _HomePageState extends State<HomePage> {
     } else if (goalInfo['type'] == 'WeightTarget') {
       // For weight goals
       final isWeightLoss = goalInfo['isWeightLoss'] ?? false;
-      final isWeightGain = goalInfo['isWeightGain'] ?? false;
       final currentWeight = goalInfo['current']?.toStringAsFixed(1) ?? '0';
       final targetWeight = goalInfo['target']?.toStringAsFixed(1) ?? '0';
       final startingWeight =

@@ -33,21 +33,12 @@ class TestableProgressService {
   TestableProgressService(this.dbHelper, this.auth);
 
   // Get the current user ID or throw an error if not logged in
-  String _getCurrentUserId() {
-    final user = auth.currentUser;
-    if (user == null) {
-      throw Exception('User not logged in');
-    }
-    return user.uid;
-  }
 
   // Get workout volume data for charts - simplified for testing
   Future<List<Map<String, dynamic>>> getWorkoutVolumeData({
     required DateTime startDate,
     required DateTime endDate,
   }) async {
-    final String userId = _getCurrentUserId();
-
     // Return mock data for testing
     return [
       {
@@ -73,8 +64,6 @@ class TestableProgressService {
     required DateTime startDate,
     required DateTime endDate,
   }) async {
-    final String userId = _getCurrentUserId();
-
     // Return mock data for testing
     return [
       {
@@ -100,8 +89,6 @@ class TestableProgressService {
 
   // Get progress summary - simplified for testing
   Future<Map<String, dynamic>> getProgressSummary() async {
-    final String userId = _getCurrentUserId();
-
     // Return mock data for testing
     return {
       'totalWorkouts': 24,
