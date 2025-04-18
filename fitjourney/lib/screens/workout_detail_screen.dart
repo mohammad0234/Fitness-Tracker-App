@@ -1,3 +1,11 @@
+/// WorkoutDetailScreen displays detailed information about a specific workout
+/// Features include:
+/// - Workout date and time display
+/// - Exercise list with sets and reps
+/// - Total volume calculation
+/// - Workout duration tracking
+/// - Exercise categorization by muscle groups
+/// - Visual exercise cards with progress data
 import 'package:flutter/material.dart';
 import 'package:fitjourney/services/workout_service.dart';
 import 'package:fitjourney/database_models/workout.dart';
@@ -5,6 +13,8 @@ import 'package:fitjourney/database_models/workout.dart';
 import 'package:intl/intl.dart';
 import 'edit_workout_screen.dart';
 
+/// Main screen widget for displaying workout details
+/// Takes a workout ID to load and display specific workout information
 class WorkoutDetailScreen extends StatefulWidget {
   final int workoutId;
 
@@ -17,6 +27,12 @@ class WorkoutDetailScreen extends StatefulWidget {
   State<WorkoutDetailScreen> createState() => _WorkoutDetailScreenState();
 }
 
+/// State management for WorkoutDetailScreen
+/// Handles:
+/// - Loading workout data
+/// - Calculating workout statistics
+/// - Managing UI state
+/// - Workout deletion
 class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
   final WorkoutService _workoutService = WorkoutService.instance;
   bool _isLoading = true;
@@ -30,6 +46,8 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
     _loadWorkoutDetails();
   }
 
+  /// Loads detailed workout information including exercises and sets
+  /// Calculates total volume and updates UI state
   Future<void> _loadWorkoutDetails() async {
     try {
       final details = await _workoutService.getWorkoutDetails(widget.workoutId);
@@ -61,6 +79,8 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
     }
   }
 
+  /// Handles workout deletion with user confirmation
+  /// Shows confirmation dialog and manages the deletion process
   Future<void> _deleteWorkout() async {
     // Show confirmation dialog
     final confirmed = await showDialog<bool>(
@@ -330,6 +350,8 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
     );
   }
 
+  /// Creates a visual representation of workout statistics
+  /// Shows icon, value, and label in a consistent format
   Widget _buildWorkoutStat(
       IconData icon, String value, String label, Color color) {
     // Determine appropriate color shade
@@ -377,6 +399,8 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
     );
   }
 
+  /// Builds a detailed card for each exercise in the workout
+  /// Shows exercise name, muscle group, and set information
   Widget _buildExerciseCard(Map<String, dynamic> exercise) {
     final exerciseName = exercise['name'] as String;
     final muscleGroup = exercise['muscle_group'] as String;
@@ -581,6 +605,8 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
     );
   }
 
+  /// Creates a formatted cell for the sets table
+  /// Handles both header and data cells with appropriate styling
   Widget _buildTableCell(String text, {bool isHeader = false, Color? color}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
@@ -599,7 +625,8 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
     );
   }
 
-  // Helper method to get color for specific muscle group
+  /// Maps muscle groups to their corresponding colors
+  /// Used for visual categorization of exercises
   Color _getColorForMuscleGroup(String muscleGroup) {
     switch (muscleGroup) {
       case 'Chest':
@@ -626,7 +653,8 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
     }
   }
 
-  // Helper method to get icon for specific muscle group
+  /// Maps muscle groups to their corresponding icons
+  /// Provides visual indicators for different exercise types
   IconData _getIconForMuscleGroup(String muscleGroup) {
     switch (muscleGroup) {
       case 'Chest':

@@ -1,3 +1,10 @@
+/// WeightGoalDetailScreen provides a detailed view of a user's weight-related goal
+/// Features include:
+/// - Goal progress tracking and visualization
+/// - Weight logging functionality
+/// - Progress statistics and projections
+/// - Weight history chart
+/// - Goal editing and deletion
 import 'package:flutter/material.dart';
 import 'package:fitjourney/services/goal_service.dart';
 import 'package:fitjourney/database_models/goal.dart';
@@ -5,6 +12,8 @@ import 'package:fitjourney/screens/edit_goal_screen.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
 
+/// Main screen widget for displaying weight goal details
+/// Takes a goalId parameter to load specific goal information
 class WeightGoalDetailScreen extends StatefulWidget {
   final int goalId;
 
@@ -17,6 +26,13 @@ class WeightGoalDetailScreen extends StatefulWidget {
   State<WeightGoalDetailScreen> createState() => _WeightGoalDetailScreenState();
 }
 
+/// State management for WeightGoalDetailScreen
+/// Handles:
+/// - Goal data loading and display
+/// - Weight logging
+/// - Progress tracking
+/// - Chart visualization
+/// - Goal management (edit/delete)
 class _WeightGoalDetailScreenState extends State<WeightGoalDetailScreen> {
   final GoalService _goalService = GoalService.instance;
   bool _isLoading = true;
@@ -43,6 +59,10 @@ class _WeightGoalDetailScreenState extends State<WeightGoalDetailScreen> {
     super.dispose();
   }
 
+  /// Loads all goal-related data including:
+  /// - Basic goal information
+  /// - Progress details
+  /// - Weight history
   Future<void> _loadGoalDetails() async {
     try {
       // First, get the goal object
@@ -91,6 +111,8 @@ class _WeightGoalDetailScreenState extends State<WeightGoalDetailScreen> {
     }
   }
 
+  /// Handles goal deletion with user confirmation
+  /// Removes goal from database and returns to previous screen
   Future<void> _deleteGoal() async {
     // Show confirmation dialog
     final confirmed = await showDialog<bool>(
@@ -145,6 +167,11 @@ class _WeightGoalDetailScreenState extends State<WeightGoalDetailScreen> {
     }
   }
 
+  /// Shows dialog for logging new weight entries
+  /// Features:
+  /// - Weight input validation
+  /// - Date selection
+  /// - Immediate progress update
   Future<void> _showLogWeightDialog() async {
     // Reset controller and selected date
     _weightController.text = '';
@@ -677,6 +704,12 @@ class _WeightGoalDetailScreenState extends State<WeightGoalDetailScreen> {
     );
   }
 
+  /// Builds the weight progress chart
+  /// Features:
+  /// - Interactive line chart
+  /// - Target and starting weight indicators
+  /// - Progress point highlighting
+  /// - Touch tooltips with detailed information
   Widget _buildWeightChart(
       bool isWeightLoss, Color primaryColor, Color secondaryColor) {
     if (_weightHistory.isEmpty) {
@@ -922,6 +955,8 @@ class _WeightGoalDetailScreenState extends State<WeightGoalDetailScreen> {
     );
   }
 
+  /// Creates a statistics row with label and value
+  /// Used for displaying various progress metrics
   Widget _buildStatisticRow(String label, String value,
       {IconData? icon, bool isPositive = true}) {
     return Padding(
@@ -956,7 +991,8 @@ class _WeightGoalDetailScreenState extends State<WeightGoalDetailScreen> {
     );
   }
 
-  // Calculate weekly rate of weight change
+  /// Calculates the weekly rate of weight change
+  /// Based on the first and last weight entries
   double _calculateWeeklyChangeRate() {
     if (_weightHistory.length < 2) return 0;
 
@@ -984,7 +1020,8 @@ class _WeightGoalDetailScreenState extends State<WeightGoalDetailScreen> {
     return weeklyRate;
   }
 
-  // Calculate total weight change
+  /// Calculates total weight change from start
+  /// Compares first and last weight entries
   double _calculateTotalChange() {
     if (_weightHistory.length < 2) return 0;
 
@@ -994,7 +1031,8 @@ class _WeightGoalDetailScreenState extends State<WeightGoalDetailScreen> {
     return currentWeight - startingWeight;
   }
 
-  // Calculate projected completion date
+  /// Projects goal completion date based on current progress
+  /// Uses weekly rate to estimate time to target weight
   DateTime? _calculateProjectedCompletion() {
     if (_weightHistory.length < 2 ||
         _goal == null ||
@@ -1026,9 +1064,11 @@ class _WeightGoalDetailScreenState extends State<WeightGoalDetailScreen> {
     return projectedDate;
   }
 
-  // Helper function to find minimum of two numbers
+  /// Helper function for finding minimum of two numbers
+  /// Used in chart scaling calculations
   double min(double a, double b) => a < b ? a : b;
 
-  // Helper function to find maximum of two numbers
+  /// Helper function for finding maximum of two numbers
+  /// Used in chart scaling calculations
   double max(double a, double b) => a > b ? a : b;
 }

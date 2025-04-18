@@ -1,3 +1,19 @@
+/**
+ * SyncService - A comprehensive data synchronization service that manages data flow between local SQLite storage and Firebase Cloud Firestore.
+ * 
+ * Features:
+ * - Bidirectional sync between local and cloud storage
+ * - Automatic background syncing with network awareness
+ * - Queue-based sync operations for reliability
+ * - Conflict resolution strategies
+ * - Support for multiple data types:
+ *   - User profiles
+ *   - Workouts and exercises
+ *   - Goals and progress
+ *   - Metrics and measurements
+ *   - Activity streaks
+ */
+
 import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -34,7 +50,13 @@ class SyncService {
   final _syncStatusController = StreamController<SyncStatus>.broadcast();
   Stream<SyncStatus> get syncStatusStream => _syncStatusController.stream;
 
-  // Initialize sync service and set up listeners
+  /**
+   * Initializes the sync service and sets up necessary infrastructure.
+   * - Creates/updates sync queue table
+   * - Sets up network connectivity monitoring
+   * - Establishes periodic sync schedule
+   * - Performs initial sync if network available
+   */
   Future<void> initialize() async {
     print('Initializing SyncService...');
 
@@ -140,7 +162,13 @@ class SyncService {
     _syncStatusController.close();
   }
 
-  // Add an item to the sync queue
+  /**
+   * Adds an item to the sync queue for later processing.
+   * 
+   * @param tableName The database table being modified
+   * @param recordId Unique identifier for the record
+   * @param operation Type of operation (INSERT/UPDATE/DELETE)
+   */
   Future<void> queueForSync(
       String tableName, String recordId, String operation) async {
     final db = await _dbHelper.database;
@@ -171,7 +199,14 @@ class SyncService {
     }
   }
 
-  // Sync all data
+  /**
+   * Processes all pending sync operations in both directions.
+   * - Uploads local changes to Firestore
+   * - Downloads remote changes to local database
+   * - Handles conflicts using last-write-wins strategy
+   * 
+   * @returns bool indicating sync success
+   */
   Future<bool> syncAll() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
@@ -286,7 +321,15 @@ class SyncService {
     _syncStatusController.add(status);
   }
 
-  // Process local changes and upload to Firestore
+  /**
+   * Processes outgoing sync operations from local to Firestore.
+   * - Groups operations by table for efficiency
+   * - Handles retries with exponential backoff
+   * - Maintains sync state and error tracking
+   * 
+   * @param userId Current user's ID
+   * @returns bool indicating success of outgoing sync
+   */
   Future<bool> _processOutgoingSync(String userId) async {
     final db = await _dbHelper.database;
     bool allSuccess = true;
@@ -546,7 +589,17 @@ class SyncService {
     return result;
   }
 
-  // Download changes from Firestore
+  /**
+   * Processes incoming sync operations from Firestore to local.
+   * - Syncs user profile data
+   * - Syncs workout history and exercises
+   * - Syncs goals and progress
+   * - Syncs metrics and measurements
+   * - Syncs activity streaks
+   * 
+   * @param userId Current user's ID
+   * @returns bool indicating success of incoming sync
+   */
   Future<bool> _processIncomingSync(String userId) async {
     bool allSuccess = true;
 
@@ -588,7 +641,15 @@ class SyncService {
     );
   }
 
-  // Sync user profile from Firestore to SQLite
+  /**
+   * Syncs user profile data from Firestore.
+   * - Downloads latest profile information
+   * - Updates local database
+   * - Handles missing or partial data
+   * 
+   * @param userId Current user's ID
+   * @returns bool indicating sync success
+   */
   Future<bool> _syncUserProfile(String userId) async {
     try {
       final docSnapshot = await _firestore
@@ -625,7 +686,15 @@ class SyncService {
     }
   }
 
-  // Sync workouts from Firestore to SQLite
+  /**
+   * Syncs workout data from Firestore.
+   * - Downloads workouts modified since last sync
+   * - Handles complex workout structure (exercises, sets)
+   * - Maintains data integrity during sync
+   * 
+   * @param userId Current user's ID
+   * @returns bool indicating sync success
+   */
   Future<bool> _syncWorkouts(String userId) async {
     try {
       print('Syncing workouts for user: $userId');
@@ -803,7 +872,15 @@ class SyncService {
     }
   }
 
-  // Sync goals from Firestore to SQLite
+  /**
+   * Syncs fitness goals from Firestore.
+   * - Downloads goals modified since last sync
+   * - Updates progress and achievement status
+   * - Handles goal type-specific data
+   * 
+   * @param userId Current user's ID
+   * @returns bool indicating sync success
+   */
   Future<bool> _syncGoals(String userId) async {
     try {
       print('Syncing goals for user: $userId');
@@ -908,7 +985,15 @@ class SyncService {
     }
   }
 
-  // Sync metrics from Firestore to SQLite
+  /**
+   * Syncs user metrics from Firestore.
+   * - Downloads metrics modified since last sync
+   * - Handles measurement data (weight, etc.)
+   * - Maintains historical tracking
+   * 
+   * @param userId Current user's ID
+   * @returns bool indicating sync success
+   */
   Future<bool> _syncMetrics(String userId) async {
     try {
       print('Syncing metrics for user: $userId');
@@ -987,7 +1072,15 @@ class SyncService {
     }
   }
 
-  // Sync streak from Firestore to SQLite
+  /**
+   * Syncs activity streak data from Firestore.
+   * - Handles streak calculations
+   * - Resolves conflicts between local and remote streaks
+   * - Updates streak-related statistics
+   * 
+   * @param userId Current user's ID
+   * @returns bool indicating sync success
+   */
   Future<bool> _syncStreak(String userId) async {
     try {
       print('Syncing streak for user: $userId');
@@ -1101,7 +1194,15 @@ class SyncService {
     }
   }
 
-  // Sync daily activity logs for calendar display
+  /**
+   * Syncs daily activity logs for calendar display.
+   * - Downloads recent activity history
+   * - Maintains activity type information
+   * - Handles notes and additional metadata
+   * 
+   * @param userId Current user's ID
+   * @returns bool indicating sync success
+   */
   Future<bool> _syncDailyLogs(String userId) async {
     try {
       print('Syncing daily logs for user: $userId');
@@ -1206,7 +1307,14 @@ class SyncService {
     }
   }
 
-  // Create daily logs from workouts if no logs exist
+  /**
+   * Creates daily activity logs from existing workout data.
+   * - Generates missing log entries
+   * - Maintains consistency with workout history
+   * - Handles data migration scenarios
+   * 
+   * @param userId Current user's ID
+   */
   Future<void> _createDailyLogsFromWorkouts(String userId) async {
     try {
       print('Creating daily logs from workouts');
@@ -1309,7 +1417,14 @@ class SyncService {
     }
   }
 
-  // Helper method to update streak in Firestore
+  /**
+   * Updates streak information in Firestore.
+   * - Uploads current streak status
+   * - Updates longest streak if necessary
+   * - Maintains last activity timestamps
+   * 
+   * @param streak Current streak object to update
+   */
   Future<void> _updateStreakInFirestore(Streak streak) async {
     try {
       await _firestore
@@ -1332,7 +1447,14 @@ class SyncService {
     }
   }
 
-  // Generate daily logs from workout data
+  /**
+   * Generates daily logs from local workout data.
+   * - Creates missing log entries
+   * - Handles data consistency
+   * - Manages schema variations
+   * 
+   * @param userId Current user's ID
+   */
   Future<void> _generateDailyLogsFromWorkouts(String userId) async {
     try {
       final db = await _dbHelper.database;
@@ -1415,7 +1537,15 @@ class SyncService {
   }
 }
 
-// Class to represent sync status for UI updates
+/**
+ * SyncStatus - Data class representing the current state of synchronization.
+ * 
+ * Properties:
+ * - isInProgress: Whether a sync operation is currently running
+ * - lastAttempt: Timestamp of the most recent sync attempt
+ * - lastSuccess: Timestamp of the last successful sync
+ * - lastError: Details of the most recent sync error, if any
+ */
 class SyncStatus {
   final bool isInProgress;
   final DateTime? lastAttempt;

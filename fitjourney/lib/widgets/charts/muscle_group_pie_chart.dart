@@ -1,3 +1,14 @@
+/**
+ * MuscleGroupPieChart - A widget that visualizes the distribution of exercises across different muscle groups.
+ * 
+ * Features:
+ * - Interactive pie chart showing muscle group proportions
+ * - Color-coded segments with consistent color scheme
+ * - Interactive legend with percentage breakdown
+ * - Smart recommendations for underworked muscle groups
+ * - Responsive layout with scrollable legend
+ */
+
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
@@ -18,7 +29,10 @@ class MuscleGroupPieChart extends StatefulWidget {
 class _MuscleGroupPieChartState extends State<MuscleGroupPieChart> {
   int touchedIndex = -1;
 
-  // Define colors for different muscle groups
+  /**
+   * Predefined color scheme for different muscle groups.
+   * Colors are chosen to be visually distinct while maintaining aesthetic harmony.
+   */
   final Map<String, Color> muscleGroupColors = {
     'Chest': Colors.red.shade400,
     'Back': Colors.blue.shade400,
@@ -28,7 +42,10 @@ class _MuscleGroupPieChartState extends State<MuscleGroupPieChart> {
     'Triceps': Colors.cyan.shade400,
   };
 
-  // Get a color for a muscle group, with a fallback
+  /**
+   * Retrieves the color for a specific muscle group.
+   * Falls back to a grey shade if the muscle group is not in the predefined color map.
+   */
   Color _getColorForMuscleGroup(String muscleGroup) {
     return muscleGroupColors[muscleGroup] ?? Colors.grey.shade400;
   }
@@ -112,6 +129,14 @@ class _MuscleGroupPieChartState extends State<MuscleGroupPieChart> {
     );
   }
 
+  /**
+   * Builds a legend item for a specific muscle group.
+   * Features:
+   * - Color indicator dot
+   * - Muscle group name
+   * - Percentage value
+   * - Highlights when corresponding pie segment is touched
+   */
   Widget _buildLegendItem(int index) {
     final data = widget.muscleGroupData[index];
     final isHighlighted = touchedIndex == index;
@@ -152,6 +177,14 @@ class _MuscleGroupPieChartState extends State<MuscleGroupPieChart> {
     );
   }
 
+  /**
+   * Generates the sections for the pie chart.
+   * Each section represents a muscle group with:
+   * - Size proportional to usage percentage
+   * - Consistent color coding
+   * - Interactive highlighting on touch
+   * - Percentage label shown on highlight
+   */
   List<PieChartSectionData> _showingSections() {
     return List.generate(
       widget.muscleGroupData.length,
@@ -176,6 +209,13 @@ class _MuscleGroupPieChartState extends State<MuscleGroupPieChart> {
     );
   }
 
+  /**
+   * Creates an empty state widget shown when no muscle group data is available.
+   * Includes:
+   * - Informative icon
+   * - Clear message about data availability
+   * - Instructions for users to start logging workouts
+   */
   Widget _buildEmptyState() {
     return SizedBox(
       height: 200,
@@ -211,7 +251,14 @@ class _MuscleGroupPieChartState extends State<MuscleGroupPieChart> {
     );
   }
 
-  // New method to build muscle group recommendation
+  /**
+   * Builds a recommendation widget based on muscle group distribution.
+   * Features:
+   * - Identifies underworked muscle groups
+   * - Provides actionable suggestions
+   * - Visual styling to draw attention
+   * - Only shows when there's sufficient data for meaningful recommendations
+   */
   Widget _buildMuscleGroupRecommendation() {
     // If we have less than 2 muscle groups, don't show a recommendation
     if (widget.muscleGroupData.length < 2) {

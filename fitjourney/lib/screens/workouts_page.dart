@@ -705,11 +705,8 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
     } else if (muscleGroups
         .any((group) => ['Back', 'Biceps'].contains(group))) {
       return Colors.green;
-    } else if (muscleGroups
-        .any((group) => ['Legs', 'Glutes', 'Calves'].contains(group))) {
+    } else if (muscleGroups.any((group) => ['Legs'].contains(group))) {
       return Colors.orange;
-    } else if (muscleGroups.any((group) => ['Core', 'Abs'].contains(group))) {
-      return Colors.purple;
     }
 
     // Default color
@@ -726,13 +723,9 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
     } else if (muscleGroups
         .any((group) => ['Back', 'Biceps'].contains(group))) {
       return Icons.fitness_center; // Dumbbell for upper body pull
-    } else if (muscleGroups
-        .any((group) => ['Legs', 'Glutes', 'Calves'].contains(group))) {
+    } else if (muscleGroups.any((group) => ['Legs'].contains(group))) {
       return Icons.directions_run; // Running for lower body
-    } else if (muscleGroups.any((group) => ['Core', 'Abs'].contains(group))) {
-      return Icons.fitness_center; // Dumbbell for core
     }
-
     return Icons.fitness_center; // Default to dumbbell
   }
 
@@ -751,13 +744,6 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
         return Colors.indigo;
       case 'Legs':
         return Colors.orange;
-      case 'Calves':
-        return Colors.amber;
-      case 'Glutes':
-        return Colors.deepOrange;
-      case 'Core':
-      case 'Abs':
-        return Colors.purple;
       default:
         return Colors.blueGrey;
     }
@@ -778,13 +764,6 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
         return Icons.fitness_center; // Dumbbell for triceps
       case 'Legs':
         return Icons.directions_run; // Running for legs
-      case 'Calves':
-        return Icons.directions_run; // Running for calves
-      case 'Glutes':
-        return Icons.directions_run; // Running for glutes
-      case 'Core':
-      case 'Abs':
-        return Icons.fitness_center; // Dumbbell for core/abs
       default:
         return Icons.fitness_center; // Default to dumbbell
     }

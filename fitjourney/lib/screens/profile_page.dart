@@ -1,3 +1,9 @@
+/// ProfilePage handles user profile management and account settings
+/// Features:
+/// - Display user profile information
+/// - Data synchronization management
+/// - Privacy policy and terms access
+/// - Account management (sign out and deletion)
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:fitjourney/database/database_helper.dart';
@@ -7,6 +13,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fitjourney/widgets/sync_status_widget.dart';
 import 'package:fitjourney/services/account_service.dart';
 
+/// Main profile screen widget that displays user information and account settings
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
@@ -14,6 +21,11 @@ class ProfilePage extends StatefulWidget {
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
+/// State management for ProfilePage
+/// Handles:
+/// - User data fetching from local and cloud storage
+/// - Account operations (sign out, deletion)
+/// - Navigation to settings pages
 class _ProfilePageState extends State<ProfilePage> {
   AppUser? _currentUser;
   bool _isLoading = true;
@@ -25,6 +37,8 @@ class _ProfilePageState extends State<ProfilePage> {
     _fetchUserData();
   }
 
+  /// Fetches user data from SQLite first, then falls back to Firestore
+  /// Updates the UI with user information when available
   Future<void> _fetchUserData() async {
     final firebase_auth.User? user =
         firebase_auth.FirebaseAuth.instance.currentUser;
@@ -94,18 +108,22 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  // Navigate to the Privacy Policy page
+  /// Navigates to the Privacy Policy screen
+  /// Updates the UI to reflect policy acceptance
   void _navigateToPrivacyPolicy() async {
     await Navigator.push(context,
         MaterialPageRoute(builder: (context) => const PrivacyPolicyPage()));
   }
 
-  // Navigate to the Terms of Use page
+  /// Navigates to the Terms of Use screen
+  /// Updates the UI to reflect terms acceptance
   void _navigateToTermsOfUse() async {
     await Navigator.push(context,
         MaterialPageRoute(builder: (context) => const TermsOfUsePage()));
   }
 
+  /// Handles user sign out process
+  /// Clears authentication state and navigates to login screen
   Future<void> _signOut() async {
     try {
       await firebase_auth.FirebaseAuth.instance.signOut();
@@ -117,6 +135,12 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  /// Manages the account deletion process
+  /// Steps:
+  /// 1. Prompts for password re-authentication
+  /// 2. Verifies user identity
+  /// 3. Confirms deletion intent
+  /// 4. Deletes account and associated data
   Future<void> _deleteAccount() async {
     // Prompt for password re-authentication
     final bool proceedWithReauth = await showDialog(

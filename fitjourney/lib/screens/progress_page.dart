@@ -1,4 +1,8 @@
-// lib/screens/progress_page.dart
+/// ProgressPage is the main progress tracking interface of the application
+/// Features three main tabs:
+/// 1. Insights - Shows workout volume, muscle distribution, and personal bests
+/// 2. Exercise Progress - Detailed tracking for individual exercises
+/// 3. Calendar View - Visual representation of workout streaks
 import 'package:fitjourney/screens/exercise_progress_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:fitjourney/services/progress_service.dart';
@@ -12,6 +16,8 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import 'package:fitjourney/widgets/charts/exercise_volume_chart.dart';
 
+/// Main progress tracking widget with tabbed navigation
+/// Manages switching between different progress visualization modes
 class ProgressPage extends StatefulWidget {
   const ProgressPage({super.key});
 
@@ -19,6 +25,10 @@ class ProgressPage extends StatefulWidget {
   State<ProgressPage> createState() => _ProgressPageState();
 }
 
+/// State management for ProgressPage
+/// Handles:
+/// - Tab controller lifecycle
+/// - Tab switching between Insights, Exercise Progress, and Calendar views
 class _ProgressPageState extends State<ProgressPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
@@ -94,7 +104,13 @@ class _ProgressPageState extends State<ProgressPage>
   }
 }
 
-// Tab 1: Insights Tab - Contains workout volume chart, muscle group pie chart, and personal bests
+/// InsightsTab displays overall workout statistics and trends
+/// Features:
+/// - Time-based filtering (Weekly, Monthly, 3 Months, All Time)
+/// - Workout volume visualization
+/// - Muscle group distribution analysis
+/// - Personal best records
+/// - Exercise volume trends
 class InsightsTab extends StatefulWidget {
   const InsightsTab({Key? key}) : super(key: key);
 
@@ -102,8 +118,13 @@ class InsightsTab extends StatefulWidget {
   State<InsightsTab> createState() => _InsightsTabState();
 }
 
+/// State management for InsightsTab
+/// Handles:
+/// - Data loading and refresh
+/// - Time period filtering
+/// - Error states and empty states
+/// - Chart data preparation
 class _InsightsTabState extends State<InsightsTab> {
-  // Selected time filter
   String _timeFilter = 'Weekly';
   final List<String> _timeFilters = [
     'Weekly',
@@ -112,13 +133,13 @@ class _InsightsTabState extends State<InsightsTab> {
     'All Time'
   ];
 
-  // Services
+  /// Service instance for accessing progress data
   final ProgressService _progressService = ProgressService.instance;
 
-  // Data future
+  /// Stores the future for loading progress data
   Future<ProgressData>? _dataFuture;
 
-  // Loading state
+  /// Loading and error state flags
   bool _isLoading = false;
   bool _hasError = false;
   String _errorMessage = '';
@@ -129,7 +150,8 @@ class _InsightsTabState extends State<InsightsTab> {
     _loadData();
   }
 
-  // Load all data at once
+  /// Loads all progress data for the selected time period
+  /// Updates UI state during loading and handles errors
   void _loadData() {
     setState(() {
       _isLoading = true;
@@ -155,7 +177,13 @@ class _InsightsTabState extends State<InsightsTab> {
     });
   }
 
-  // Fetch all data from the progress service
+  /// Fetches all required progress data in parallel
+  /// Includes:
+  /// - Workout volume data
+  /// - Muscle group distribution
+  /// - Progress summary
+  /// - Personal bests
+  /// - Exercise volume data
   Future<ProgressData> _fetchAllProgressData() async {
     final dateRange = _progressService.getDateRangeForPeriod(_timeFilter);
 
@@ -572,7 +600,11 @@ class _InsightsTabState extends State<InsightsTab> {
   }
 }
 
-// Tab 2: Exercise Progress Tab - Contains exercise selection and progress view
+/// ExerciseProgressTab manages individual exercise progress tracking
+/// Features:
+/// - Exercise selection interface
+/// - Detailed progress visualization for selected exercises
+/// - Historical data viewing
 class ExerciseProgressTab extends StatefulWidget {
   const ExerciseProgressTab({Key? key}) : super(key: key);
 
@@ -580,6 +612,10 @@ class ExerciseProgressTab extends StatefulWidget {
   State<ExerciseProgressTab> createState() => _ExerciseProgressTabState();
 }
 
+/// State management for ExerciseProgressTab
+/// Handles:
+/// - Navigation between exercise list and detail views
+/// - Exercise selection and progress display
 class _ExerciseProgressTabState extends State<ExerciseProgressTab> {
   // Track the current view state
   bool _showingExerciseDetails = false;
@@ -645,7 +681,12 @@ class _ExerciseProgressTabState extends State<ExerciseProgressTab> {
   }
 }
 
-// Custom version of ExerciseProgressScreen without AppBar
+/// Custom implementation of exercise progress screen without app bar
+/// Provides detailed progress tracking for a specific exercise
+/// Features:
+/// - Progress summary card
+/// - Progress over time chart
+/// - Exercise history with sorting options
 class _CustomExerciseProgressScreen extends StatefulWidget {
   final int exerciseId;
 
@@ -659,6 +700,11 @@ class _CustomExerciseProgressScreen extends StatefulWidget {
       _CustomExerciseProgressScreenState();
 }
 
+/// State management for CustomExerciseProgressScreen
+/// Handles:
+/// - Data loading and refresh
+/// - Progress data visualization
+/// - History sorting and filtering
 class _CustomExerciseProgressScreenState
     extends State<_CustomExerciseProgressScreen> {
   final ProgressService _progressService = ProgressService.instance;
@@ -831,7 +877,11 @@ class _CustomExerciseProgressScreenState
     );
   }
 
-  // Use the same helper methods from the original ExerciseProgressScreen
+  /// Builds a summary card showing exercise statistics
+  /// Displays:
+  /// - Personal best
+  /// - Starting weight
+  /// - Overall improvement percentage
   Widget _buildSummaryCard() {
     final personalBest = _exerciseData['personalBest'] as double?;
     final startingWeight = _exerciseData['startingWeight'] as double?;
@@ -951,8 +1001,12 @@ class _CustomExerciseProgressScreenState
     );
   }
 
-  // Other helper methods would be copied from ExerciseProgressScreen...
-  // For brevity, assume they are implemented exactly as in the original screen
+  /// Creates a progress chart showing weight progression over time
+  /// Features:
+  /// - Line chart with weight data points
+  /// - Date-based X-axis
+  /// - Weight-based Y-axis
+  /// - Trend line visualization
   Widget _buildProgressChart() {
     if (!_exerciseData.containsKey('progressPoints') ||
         (_exerciseData['progressPoints'] as List).isEmpty) {
@@ -1076,6 +1130,11 @@ class _CustomExerciseProgressScreenState
     );
   }
 
+  /// Displays a table of exercise history entries
+  /// Features:
+  /// - Sortable by date and weight
+  /// - Personal best highlighting
+  /// - Date and weight formatting
   Widget _buildHistoryTable() {
     final progressPoints = _getSortedProgressPoints();
 
@@ -1318,7 +1377,11 @@ class _CustomExerciseProgressScreenState
   }
 }
 
-// Internal version of ExerciseSelectionScreen for use within the tab
+/// Internal exercise selection screen for use within the progress tab
+/// Features:
+/// - Exercise search functionality
+/// - Muscle group filtering
+/// - Exercise cards with personal best information
 class _InternalExerciseSelectionScreen extends StatefulWidget {
   final Function(int, String) onExerciseSelected;
 
@@ -1332,6 +1395,11 @@ class _InternalExerciseSelectionScreen extends StatefulWidget {
       _InternalExerciseSelectionScreenState();
 }
 
+/// State management for InternalExerciseSelectionScreen
+/// Handles:
+/// - Exercise data loading
+/// - Search and filtering
+/// - Exercise selection callbacks
 class _InternalExerciseSelectionScreenState
     extends State<_InternalExerciseSelectionScreen> {
   final WorkoutService _workoutService = WorkoutService.instance;
@@ -1643,7 +1711,8 @@ class _InternalExerciseSelectionScreenState
   }
 }
 
-// Tab 3: Calendar View Tab - Contains calendar streak view
+/// Calendar view tab showing workout streak information
+/// Provides a visual calendar interface for tracking workout consistency
 class CalendarViewTab extends StatefulWidget {
   const CalendarViewTab({Key? key}) : super(key: key);
 
@@ -1651,6 +1720,8 @@ class CalendarViewTab extends StatefulWidget {
   State<CalendarViewTab> createState() => _CalendarViewTabState();
 }
 
+/// State management for CalendarViewTab
+/// Handles calendar view display and interactions
 class _CalendarViewTabState extends State<CalendarViewTab> {
   @override
   Widget build(BuildContext context) {
@@ -1659,7 +1730,9 @@ class _CalendarViewTabState extends State<CalendarViewTab> {
   }
 }
 
-// Custom calendar streak screen wrapper that doesn't show the back and refresh buttons
+/// Custom implementation of calendar streak screen
+/// Removes navigation elements for embedded view
+/// Maintains core calendar functionality
 class _CustomCalendarStreakScreen extends StatelessWidget {
   const _CustomCalendarStreakScreen({Key? key}) : super(key: key);
 

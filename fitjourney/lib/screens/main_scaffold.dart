@@ -1,3 +1,5 @@
+/// MainScaffold serves as the primary navigation container for the app
+/// Implements bottom navigation bar and manages screen transitions
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'home_page.dart';
@@ -8,6 +10,11 @@ import 'profile_page.dart';
 import 'package:fitjourney/widgets/notification_badge.dart';
 import 'package:fitjourney/screens/notification_screen.dart';
 
+/// Main container widget that handles navigation between primary app screens
+/// Features:
+/// - Bottom navigation bar
+/// - Screen management
+/// - Notification badge updates
 class MainScaffold extends StatefulWidget {
   const MainScaffold({super.key});
 
@@ -15,6 +22,11 @@ class MainScaffold extends StatefulWidget {
   State<MainScaffold> createState() => _MainScaffoldState();
 }
 
+/// State management for MainScaffold
+/// Handles:
+/// - Screen selection and navigation
+/// - Periodic notification checks
+/// - Navigation bar state
 class _MainScaffoldState extends State<MainScaffold> {
   int _selectedIndex = 0;
   Timer? _notificationTimer;

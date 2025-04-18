@@ -5,6 +5,12 @@ import 'package:fitjourney/database_models/workout.dart';
 import 'package:intl/intl.dart';
 import 'package:fitjourney/screens/workout_comparison_screen.dart';
 
+/// WorkoutComparisonSelectionScreen provides a user interface for selecting two workouts to compare
+/// Features include:
+/// - Two-step workout selection process
+/// - Filtering workouts by type and date range
+/// - Visual workout cards with muscle group information
+/// - Progress tracking through selection steps
 class WorkoutComparisonSelectionScreen extends StatefulWidget {
   const WorkoutComparisonSelectionScreen({Key? key}) : super(key: key);
 
@@ -13,6 +19,12 @@ class WorkoutComparisonSelectionScreen extends StatefulWidget {
       _WorkoutComparisonSelectionScreenState();
 }
 
+/// State management for WorkoutComparisonSelectionScreen
+/// Handles:
+/// - Loading and filtering workouts
+/// - Selection process tracking
+/// - Filter management
+/// - UI state updates
 class _WorkoutComparisonSelectionScreenState
     extends State<WorkoutComparisonSelectionScreen> {
   final WorkoutService _workoutService = WorkoutService.instance;
@@ -49,6 +61,8 @@ class _WorkoutComparisonSelectionScreenState
     _loadWorkouts();
   }
 
+  /// Loads all user workouts and their details
+  /// Includes exercise counts and muscle groups for each workout
   Future<void> _loadWorkouts() async {
     setState(() {
       _isLoading = true;
@@ -110,6 +124,8 @@ class _WorkoutComparisonSelectionScreenState
     }
   }
 
+  /// Handles workout selection process
+  /// Manages the two-step selection and navigation to comparison screen
   void _selectWorkout(Workout workout) {
     setState(() {
       if (_selectionStep == 1) {
@@ -143,6 +159,8 @@ class _WorkoutComparisonSelectionScreenState
     });
   }
 
+  /// Resets the workout selection process
+  /// Clears both selected workouts and returns to step 1
   void _resetSelection() {
     setState(() {
       _firstWorkout = null;

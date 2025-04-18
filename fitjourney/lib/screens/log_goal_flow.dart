@@ -1,9 +1,13 @@
+/// LogGoalFlow manages the process of creating new fitness goals
+/// Provides a multi-step flow for users to set weight, strength, or frequency goals
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:fitjourney/services/goal_service.dart';
 import 'package:fitjourney/services/workout_service.dart';
 import 'package:fitjourney/database_models/exercise.dart';
 
+/// Main entry point for the goal creation flow
+/// Manages the navigation between different goal type screens
 class LogGoalFlow extends StatefulWidget {
   const LogGoalFlow({super.key});
 
@@ -11,6 +15,7 @@ class LogGoalFlow extends StatefulWidget {
   State<LogGoalFlow> createState() => _LogGoalFlowState();
 }
 
+/// Initial screen that directs users to the goal type selection
 class _LogGoalFlowState extends State<LogGoalFlow> {
   @override
   Widget build(BuildContext context) {
@@ -19,7 +24,11 @@ class _LogGoalFlowState extends State<LogGoalFlow> {
   }
 }
 
-// First screen: Goal Type Selection
+/// First screen in the goal creation flow
+/// Presents users with different types of goals they can create:
+/// - Weight goals for body weight targets
+/// - Strength goals for specific exercises
+/// - Frequency goals for workout consistency
 class GoalTypeSelectionScreen extends StatelessWidget {
   const GoalTypeSelectionScreen({super.key});
 
@@ -166,7 +175,12 @@ class GoalTypeSelectionScreen extends StatelessWidget {
   }
 }
 
-// Weight Goal Details Screen
+/// Screen for creating weight-based goals
+/// Allows users to set:
+/// - Current weight
+/// - Target weight
+/// - Target date
+/// - Weight unit (kg/lbs)
 class WeightGoalDetailsScreen extends StatefulWidget {
   const WeightGoalDetailsScreen({super.key});
 
@@ -176,14 +190,16 @@ class WeightGoalDetailsScreen extends StatefulWidget {
 }
 
 class _WeightGoalDetailsScreenState extends State<WeightGoalDetailsScreen> {
+  // Controllers for user input
   final TextEditingController _currentWeightController =
       TextEditingController();
   final TextEditingController _targetWeightController = TextEditingController();
   DateTime _targetDate = DateTime.now().add(const Duration(days: 30));
-  bool _isMetric = true; // kg vs lbs
+  bool _isMetric = true; // Default to metric system
 
   @override
   void dispose() {
+    // Clean up controllers
     _currentWeightController.dispose();
     _targetWeightController.dispose();
     super.dispose();
@@ -426,7 +442,12 @@ class _WeightGoalDetailsScreenState extends State<WeightGoalDetailsScreen> {
   }
 }
 
-// Strength Goal Details Screen
+/// Screen for creating strength-based goals
+/// Allows users to:
+/// - Select specific exercises
+/// - Set current and target weights
+/// - Choose target date
+/// - Select weight unit
 class StrengthGoalDetailsScreen extends StatefulWidget {
   const StrengthGoalDetailsScreen({super.key});
 
@@ -436,13 +457,14 @@ class StrengthGoalDetailsScreen extends StatefulWidget {
 }
 
 class _StrengthGoalDetailsScreenState extends State<StrengthGoalDetailsScreen> {
+  // State management for exercise selection and weight inputs
   String? _selectedExerciseId;
   String _selectedExerciseName = 'Select an exercise';
   final TextEditingController _currentWeightController =
       TextEditingController();
   final TextEditingController _targetWeightController = TextEditingController();
   DateTime _targetDate = DateTime.now().add(const Duration(days: 30));
-  bool _isMetric = true; // kg vs lbs
+  bool _isMetric = true;
   bool _isLoading = false;
   List<Exercise> _exercises = [];
 
@@ -452,6 +474,8 @@ class _StrengthGoalDetailsScreenState extends State<StrengthGoalDetailsScreen> {
     _loadExercises();
   }
 
+  /// Loads available exercises from the database
+  /// Populates the exercise selection list
   Future<void> _loadExercises() async {
     setState(() {
       _isLoading = true;
@@ -471,13 +495,8 @@ class _StrengthGoalDetailsScreenState extends State<StrengthGoalDetailsScreen> {
     }
   }
 
-  @override
-  void dispose() {
-    _currentWeightController.dispose();
-    _targetWeightController.dispose();
-    super.dispose();
-  }
-
+  /// Shows bottom sheet for exercise selection
+  /// Displays exercises grouped by muscle groups
   void _selectExercise() {
     showModalBottomSheet(
       context: context,
@@ -823,7 +842,11 @@ class _StrengthGoalDetailsScreenState extends State<StrengthGoalDetailsScreen> {
   }
 }
 
-// Frequency Goal Details Screen
+/// Screen for creating workout frequency goals
+/// Allows users to set:
+/// - Number of workouts per week
+/// - Goal duration in weeks
+/// Automatically calculates total workout target
 class FrequencyGoalDetailsScreen extends StatefulWidget {
   const FrequencyGoalDetailsScreen({super.key});
 
@@ -834,6 +857,7 @@ class FrequencyGoalDetailsScreen extends StatefulWidget {
 
 class _FrequencyGoalDetailsScreenState
     extends State<FrequencyGoalDetailsScreen> {
+  // Default values for frequency goals
   int _workoutsPerWeek = 3;
   int _goalDuration = 4; // weeks
 
@@ -1079,7 +1103,9 @@ class _FrequencyGoalDetailsScreenState
   }
 }
 
-// Goal Review Screen
+/// Final screen in the goal creation flow
+/// Shows summary of goal details before saving
+/// Handles the actual creation of goals in the database
 class GoalReviewScreen extends StatefulWidget {
   final String goalType;
   final Map<String, dynamic> details;
@@ -1097,6 +1123,8 @@ class GoalReviewScreen extends StatefulWidget {
 class _GoalReviewScreenState extends State<GoalReviewScreen> {
   bool _isSaving = false;
 
+  /// Saves the goal to the database based on its type
+  /// Handles different goal types with appropriate service calls
   Future<void> _saveGoal() async {
     setState(() {
       _isSaving = true;
@@ -1171,6 +1199,64 @@ class _GoalReviewScreenState extends State<GoalReviewScreen> {
           _isSaving = false;
         });
       }
+    }
+  }
+
+  /// Creates a row displaying a goal detail label and value
+  Widget _buildDetailRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.grey.shade700,
+          ),
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Calculates the number of days between now and the target date
+  int _calculateDays(DateTime targetDate) {
+    return targetDate.difference(DateTime.now()).inDays;
+  }
+
+  /// Returns appropriate color for different goal types
+  /// Maintains consistent color coding throughout the app
+  Color _getGoalColor(String goalType) {
+    switch (goalType) {
+      case 'Weight Goal':
+        return Colors.blue;
+      case 'Strength Goal':
+        return Colors.orange;
+      case 'Frequency Goal':
+        return Colors.green;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  /// Returns appropriate icon for different goal types
+  /// Maintains consistent visual representation
+  IconData _getGoalIcon(String goalType) {
+    switch (goalType) {
+      case 'Weight Goal':
+        return Icons.monitor_weight_outlined;
+      case 'Strength Goal':
+        return Icons.fitness_center_outlined;
+      case 'Frequency Goal':
+        return Icons.calendar_today_outlined;
+      default:
+        return Icons.flag_outlined;
     }
   }
 
@@ -1354,57 +1440,5 @@ class _GoalReviewScreenState extends State<GoalReviewScreen> {
         ),
       ),
     );
-  }
-
-  Widget _buildDetailRow(String label, String value) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 16,
-            color: Colors.grey.shade700,
-          ),
-        ),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
-    );
-  }
-
-  int _calculateDays(DateTime targetDate) {
-    return targetDate.difference(DateTime.now()).inDays;
-  }
-
-  Color _getGoalColor(String goalType) {
-    switch (goalType) {
-      case 'Weight Goal':
-        return Colors.blue;
-      case 'Strength Goal':
-        return Colors.orange;
-      case 'Frequency Goal':
-        return Colors.green;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  IconData _getGoalIcon(String goalType) {
-    switch (goalType) {
-      case 'Weight Goal':
-        return Icons.monitor_weight_outlined;
-      case 'Strength Goal':
-        return Icons.fitness_center_outlined;
-      case 'Frequency Goal':
-        return Icons.calendar_today_outlined;
-      default:
-        return Icons.flag_outlined;
-    }
   }
 }

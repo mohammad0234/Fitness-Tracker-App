@@ -1,10 +1,13 @@
+/// LogWorkoutFlow manages the process of recording workouts
+/// Provides a multi-step flow for selecting exercises and logging sets
 import 'package:flutter/material.dart';
 import 'package:fitjourney/services/workout_service.dart';
 import 'package:fitjourney/database_models/exercise.dart';
 
 import 'dart:async';
 
-// Main entry point for the workout logging flow
+/// Main entry point for the workout logging flow
+/// Tracks workout duration and manages navigation between screens
 class LogWorkoutFlow extends StatefulWidget {
   const LogWorkoutFlow({super.key});
 
@@ -13,13 +16,14 @@ class LogWorkoutFlow extends StatefulWidget {
 }
 
 class _LogWorkoutFlowState extends State<LogWorkoutFlow> {
+  // Track workout start time and duration
   DateTime _startTime = DateTime.now();
   Timer? _workoutTimer;
 
   @override
   void initState() {
     super.initState();
-    // Just track time for duration calculation later
+    // Initialize timer for workout duration tracking
     _workoutTimer = Timer.periodic(const Duration(seconds: 60), (timer) {
       // Empty - duration will be calculated when saving
     });
@@ -40,7 +44,8 @@ class _LogWorkoutFlowState extends State<LogWorkoutFlow> {
   }
 }
 
-// First screen: Muscle Group Selection
+/// First screen in the workout logging flow
+/// Displays available muscle groups for exercise selection
 class MuscleGroupSelectionScreen extends StatefulWidget {
   final DateTime startTime;
 
@@ -66,6 +71,8 @@ class _MuscleGroupSelectionScreenState
     _loadMuscleGroups();
   }
 
+  /// Retrieves all available muscle groups from the database
+  /// Used to populate the selection list
   Future<void> _loadMuscleGroups() async {
     try {
       final muscleGroups = await _workoutService.getAllMuscleGroups();
@@ -124,7 +131,8 @@ class _MuscleGroupSelectionScreenState
   }
 }
 
-// Second screen: Exercise Selection
+/// Second screen in the workout logging flow
+/// Shows exercises available for the selected muscle group
 class ExerciseSelectionScreen extends StatefulWidget {
   final String muscleGroup;
   final DateTime startTime;
@@ -151,6 +159,8 @@ class _ExerciseSelectionScreenState extends State<ExerciseSelectionScreen> {
     _loadExercises();
   }
 
+  /// Loads exercises specific to the selected muscle group
+  /// Includes exercise details like name and description
   Future<void> _loadExercises() async {
     try {
       final exercises =
@@ -229,7 +239,8 @@ class _ExerciseSelectionScreenState extends State<ExerciseSelectionScreen> {
   }
 }
 
-// Exercise info dialog
+/// Dialog showing detailed exercise information
+/// Displays exercise description
 class ExerciseInfoDialog extends StatelessWidget {
   final String exerciseName;
   final String description;
@@ -284,7 +295,9 @@ class ExerciseInfoDialog extends StatelessWidget {
   }
 }
 
-// Third screen: Set Entry
+/// Final screen in the workout logging flow
+/// Allows users to log sets with weight and reps
+/// Handles saving the workout to the database
 class SetEntryScreen extends StatefulWidget {
   final int exerciseId;
   final String muscleGroup;
@@ -306,21 +319,21 @@ class SetEntryScreen extends StatefulWidget {
 class _SetEntryScreenState extends State<SetEntryScreen> {
   final WorkoutService _workoutService = WorkoutService.instance;
   final List<Map<String, dynamic>> _sets = [];
-  bool _isMetric = true; // kg vs lbs
+  bool _isMetric = true; // Weight unit selection
   final TextEditingController _notesController = TextEditingController();
   bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
-    // Add the first set automatically
+    // Initialize with one empty set
     _addSet();
   }
 
   @override
   void dispose() {
+    // Clean up controllers
     _notesController.dispose();
-    // Dispose all set controllers
     for (var set in _sets) {
       set['weightController'].dispose();
       set['repsController'].dispose();
@@ -328,6 +341,8 @@ class _SetEntryScreenState extends State<SetEntryScreen> {
     super.dispose();
   }
 
+  /// Adds a new set to the exercise
+  /// Pre-fills with values from the previous set if available
   void _addSet() {
     setState(() {
       // Get previous set values if available
@@ -344,6 +359,8 @@ class _SetEntryScreenState extends State<SetEntryScreen> {
     });
   }
 
+  /// Removes a set from the exercise
+  /// Updates set numbers to maintain sequence
   void _removeSet(int index) {
     setState(() {
       // Dispose controllers for the removed set
@@ -358,6 +375,8 @@ class _SetEntryScreenState extends State<SetEntryScreen> {
     });
   }
 
+  /// Saves the exercise and its sets to the database
+  /// Creates a new workout if this is the first exercise
   Future<void> _saveExercise() async {
     // Validate inputs
     bool hasEmptyFields = false;

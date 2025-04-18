@@ -1,3 +1,13 @@
+/**
+ * ExerciseProgressChart - A widget that displays the progression of weight lifted for a specific exercise over time.
+ * 
+ * Features:
+ * - Visualizes weight progression using a line chart
+ * - Shows personal best and improvement metrics
+ * - Displays interactive tooltips with date and weight information
+ * - Handles loading and empty states gracefully
+ */
+
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 //import 'package:intl/intl.dart';
@@ -14,19 +24,24 @@ class ExerciseProgressChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Display loading indicator while data is being fetched
     if (isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (exerciseData.isEmpty || (exerciseData['progressPoints'] as List).isEmpty) {
+    // Show empty state if no data is available
+    if (exerciseData.isEmpty ||
+        (exerciseData['progressPoints'] as List).isEmpty) {
       return _buildEmptyState();
     }
 
-    final List<Map<String, dynamic>> progressPoints = 
+    // Extract data points and metadata for the exercise
+    final List<Map<String, dynamic>> progressPoints =
         exerciseData['progressPoints'] as List<Map<String, dynamic>>;
     final String exerciseName = exerciseData['exerciseName'] as String;
     final double? personalBest = exerciseData['personalBest'] as double?;
-    final String improvementText = exerciseData['formattedImprovement'] as String;
+    final String improvementText =
+        exerciseData['formattedImprovement'] as String;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -55,7 +70,8 @@ class ExerciseProgressChart extends StatelessWidget {
                   ),
                   const SizedBox(width: 12),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
                       color: Colors.green.shade100,
                       borderRadius: BorderRadius.circular(12),
@@ -168,7 +184,8 @@ class ExerciseProgressChart extends StatelessWidget {
                 ],
                 lineTouchData: LineTouchData(
                   touchTooltipData: LineTouchTooltipData(
-                    getTooltipColor: (LineBarSpot spot) => Colors.green.shade700,
+                    getTooltipColor: (LineBarSpot spot) =>
+                        Colors.green.shade700,
                     getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
                       return touchedBarSpots.map((barSpot) {
                         final index = barSpot.x.toInt();
@@ -203,7 +220,8 @@ class ExerciseProgressChart extends StatelessWidget {
   }
 
   Widget _bottomTitleWidgets(double value, TitleMeta meta) {
-    final progressPoints = exerciseData['progressPoints'] as List<Map<String, dynamic>>;
+    final progressPoints =
+        exerciseData['progressPoints'] as List<Map<String, dynamic>>;
     final index = value.toInt();
     if (index < 0 || index >= progressPoints.length) {
       return const SizedBox.shrink();
@@ -240,8 +258,14 @@ class ExerciseProgressChart extends StatelessWidget {
     );
   }
 
+  /**
+   * Creates data points for the line chart.
+   * Converts the progress points into FlSpot objects that can be rendered by fl_chart.
+   * Each spot represents a weight value at a specific time point.
+   */
   List<FlSpot> _createSpots() {
-    final progressPoints = exerciseData['progressPoints'] as List<Map<String, dynamic>>;
+    final progressPoints =
+        exerciseData['progressPoints'] as List<Map<String, dynamic>>;
     return List.generate(progressPoints.length, (index) {
       return FlSpot(
         index.toDouble(),
@@ -250,8 +274,14 @@ class ExerciseProgressChart extends StatelessWidget {
     });
   }
 
+  /**
+   * Calculates the maximum weight value from all progress points.
+   * Used to determine the Y-axis scale of the chart.
+   * Returns 100 as default if no data is available.
+   */
   double _getMaxWeight() {
-    final progressPoints = exerciseData['progressPoints'] as List<Map<String, dynamic>>;
+    final progressPoints =
+        exerciseData['progressPoints'] as List<Map<String, dynamic>>;
     if (progressPoints.isEmpty) return 100;
     double maxWeight = 0;
     for (var data in progressPoints) {
@@ -262,6 +292,16 @@ class ExerciseProgressChart extends StatelessWidget {
     return maxWeight == 0 ? 100 : maxWeight;
   }
 
+  /**
+   * Determines the interval for the Y-axis grid lines based on the maximum weight.
+   * Adjusts the scale to ensure readable and meaningful grid intervals.
+   * Returns appropriate interval values based on weight ranges:
+   * - ≤50kg: 10kg intervals
+   * - ≤100kg: 20kg intervals
+   * - ≤200kg: 50kg intervals
+   * - ≤500kg: 100kg intervals
+   * - >500kg: 200kg intervals
+   */
   double _calculateInterval() {
     final maxWeight = _getMaxWeight();
     if (maxWeight <= 50) return 10;
@@ -271,6 +311,13 @@ class ExerciseProgressChart extends StatelessWidget {
     return 200;
   }
 
+  /**
+   * Builds an empty state widget displayed when no exercise data is available.
+   * Includes:
+   * - Informative icon
+   * - Clear message about missing data
+   * - Instructions for users to start logging workouts
+   */
   Widget _buildEmptyState() {
     return SizedBox(
       height: 200,

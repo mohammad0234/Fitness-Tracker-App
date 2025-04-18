@@ -1,3 +1,10 @@
+/// SyncManagementScreen provides a user interface for managing data synchronization
+/// between local device storage and cloud storage. Features include:
+/// - Viewing sync status and history
+/// - Comparing local and cloud data statistics
+/// - Managing sync queue
+/// - Manual sync triggering
+/// - Cloud data reset functionality
 import 'package:flutter/material.dart';
 import 'package:fitjourney/services/sync_service.dart';
 import 'package:intl/intl.dart';
@@ -6,6 +13,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fitjourney/database/database_helper.dart';
 import 'package:sqflite/sqflite.dart';
 
+/// State management for SyncManagementScreen
+/// Handles:
+/// - Loading and displaying sync statistics
+/// - Managing sync operations
+/// - Tracking sync queue status
+/// - Cloud data reset functionality
 class SyncManagementScreen extends StatefulWidget {
   const SyncManagementScreen({Key? key}) : super(key: key);
 
@@ -13,6 +26,12 @@ class SyncManagementScreen extends StatefulWidget {
   State<SyncManagementScreen> createState() => _SyncManagementScreenState();
 }
 
+/// State management for SyncManagementScreen
+/// Handles:
+/// - Loading and displaying sync statistics
+/// - Managing sync operations
+/// - Tracking sync queue status
+/// - Cloud data reset functionality
 class _SyncManagementScreenState extends State<SyncManagementScreen> {
   bool _isLoadingStats = true;
   Map<String, int> _localStats = {};
@@ -27,6 +46,10 @@ class _SyncManagementScreenState extends State<SyncManagementScreen> {
     _loadStats();
   }
 
+  /// Loads all sync-related statistics including:
+  /// - Local data counts
+  /// - Cloud data counts
+  /// - Sync queue status
   Future<void> _loadStats() async {
     setState(() {
       _isLoadingStats = true;
@@ -45,6 +68,12 @@ class _SyncManagementScreenState extends State<SyncManagementScreen> {
     }
   }
 
+  /// Retrieves counts of local data items by type
+  /// Includes:
+  /// - Workouts
+  /// - Goals
+  /// - Metrics
+  /// - Activity logs
   Future<void> _loadLocalStats() async {
     final db = await DatabaseHelper.instance.database;
 
@@ -79,6 +108,8 @@ class _SyncManagementScreenState extends State<SyncManagementScreen> {
     });
   }
 
+  /// Fetches counts of cloud data items from Firestore
+  /// Mirrors the structure of local stats for comparison
   Future<void> _loadCloudStats() async {
     final stats = <String, int>{};
 
@@ -132,6 +163,8 @@ class _SyncManagementScreenState extends State<SyncManagementScreen> {
     });
   }
 
+  /// Retrieves the number of items waiting in the sync queue
+  /// Used to track pending synchronization tasks
   Future<void> _loadQueueCount() async {
     final db = await DatabaseHelper.instance.database;
 
@@ -143,6 +176,8 @@ class _SyncManagementScreenState extends State<SyncManagementScreen> {
     });
   }
 
+  /// Initiates a manual synchronization process
+  /// Updates UI to show sync progress and results
   Future<void> _triggerSync() async {
     setState(() {
       _isSyncing = true;
@@ -177,6 +212,11 @@ class _SyncManagementScreenState extends State<SyncManagementScreen> {
     }
   }
 
+  /// Resets cloud data by:
+  /// 1. Deleting all cloud collections
+  /// 2. Clearing sync queue
+  /// 3. Re-marking all local data for sync
+  /// 4. Triggering a full re-sync
   Future<void> _resetCloudData() async {
     // Show confirmation dialog
     final confirmed = await showDialog<bool>(
@@ -246,6 +286,8 @@ class _SyncManagementScreenState extends State<SyncManagementScreen> {
     }
   }
 
+  /// Recursively deletes all documents in a Firestore collection
+  /// Handles large collections by deleting in batches
   Future<void> _deleteCollection(
       FirebaseFirestore firestore, String path) async {
     final collection = firestore.collection(path);
@@ -260,6 +302,8 @@ class _SyncManagementScreenState extends State<SyncManagementScreen> {
     }
   }
 
+  /// Marks all local data for re-synchronization
+  /// Ensures complete data restoration after reset
   Future<void> _markAllForSync() async {
     final db = await DatabaseHelper.instance.database;
     final userId = FirebaseAuth.instance.currentUser?.uid;
@@ -352,6 +396,11 @@ class _SyncManagementScreenState extends State<SyncManagementScreen> {
     );
   }
 
+  /// Builds the main sync status card showing:
+  /// - Current sync status
+  /// - Last sync attempt
+  /// - Last successful sync
+  /// - Any sync errors
   Widget _buildSyncStatusCard() {
     return StreamBuilder<SyncStatus>(
       stream: SyncService.instance.syncStatusStream,
@@ -430,6 +479,8 @@ class _SyncManagementScreenState extends State<SyncManagementScreen> {
     );
   }
 
+  /// Creates a card displaying data statistics
+  /// Shows comparison between local and cloud data counts
   Widget _buildDataStatsCard() {
     return Card(
       child: Padding(
@@ -492,6 +543,8 @@ class _SyncManagementScreenState extends State<SyncManagementScreen> {
     );
   }
 
+  /// Displays information about the sync queue
+  /// Shows number of pending items and sync status
   Widget _buildQueueInfoCard() {
     return Card(
       child: Padding(
@@ -534,6 +587,8 @@ class _SyncManagementScreenState extends State<SyncManagementScreen> {
     );
   }
 
+  /// Creates action buttons for sync operations
+  /// Includes sync trigger and cloud reset options
   Widget _buildActionButtons() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -563,6 +618,8 @@ class _SyncManagementScreenState extends State<SyncManagementScreen> {
     );
   }
 
+  /// Helper method to create consistent status row layout
+  /// Used in various cards to display key-value pairs
   Widget _buildStatusRow(String label, String value, [Color? valueColor]) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
@@ -587,6 +644,8 @@ class _SyncManagementScreenState extends State<SyncManagementScreen> {
     );
   }
 
+  /// Creates a data comparison row showing local vs cloud counts
+  /// Includes visual indicators for sync status
   Widget _buildDataRow(String label, int localCount, int cloudCount) {
     final isInSync = localCount == cloudCount;
 
@@ -638,6 +697,8 @@ class _SyncManagementScreenState extends State<SyncManagementScreen> {
     );
   }
 
+  /// Formats DateTime objects for display
+  /// Uses consistent date-time format across the screen
   String _formatDateTime(DateTime dateTime) {
     return DateFormat('MMM d, yyyy - h:mm a').format(dateTime);
   }

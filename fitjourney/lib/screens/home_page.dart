@@ -17,6 +17,9 @@ import 'package:fitjourney/services/goal_service.dart';
 import 'package:fitjourney/screens/goal_detail_screen.dart';
 import 'package:fitjourney/screens/weight_goal_detail_screen.dart';
 
+// HomePage is the main dashboard screen of the fitness app
+// Displays user information, workout streaks, recent workouts, and active fitness goals
+// Provides quick access to logging workouts and rest days
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -24,34 +27,39 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
+/// HomePageState manages the state and UI for the main dashboard
+/// Handles data loading, user interactions, and display of fitness tracking information
 class _HomePageState extends State<HomePage> {
+  // Core user data and loading states
   AppUser? _currentUser;
   bool _isLoading = true;
   bool _isLoadingStreak = true;
   int _currentStreak = 0;
   bool _isLoggingRestDay = false;
 
-  // Variables for the recent workout
+  // State management for recent workout display
   bool _isLoadingRecentWorkout = true;
   Map<String, dynamic>? _recentWorkoutData;
 
-  // Variables for the active goal section
+  // State management for active goal display
   bool _isLoadingGoal = true;
   Map<String, dynamic>? _activeGoalData;
 
   @override
   void initState() {
     super.initState();
+    // Initialize all required data when the page loads
     _fetchUserData();
     _fetchStreakData();
     _fetchRecentWorkout();
     _fetchMostImportantGoal();
 
-    // Add new exercises that might be useful
+    // Populate database with predefined exercises
     _addNewExercises();
-    // _removeUnwantedExercises(); // Remove unwanted exercises
   }
 
+  /// Fetches and sets up user data from both Firebase and local database
+  /// Handles synchronization between remote and local user data
   Future<void> _fetchUserData() async {
     setState(() {
       _isLoading = true;
@@ -122,6 +130,8 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  /// Retrieves the user's current workout streak from the streak service
+  /// Updates the UI to show the number of consecutive days with activity
   Future<void> _fetchStreakData() async {
     setState(() {
       _isLoadingStreak = true;
@@ -141,6 +151,8 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  /// Loads and formats the most recent workout data for display
+  /// Includes exercise details, timing information, and workout statistics
   Future<void> _fetchRecentWorkout() async {
     setState(() {
       _isLoadingRecentWorkout = true;
@@ -212,7 +224,8 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  // New method to fetch the most important active goal
+  /// Retrieves the most important active goal based on deadline proximity
+  /// Formats goal data for display including progress and target information
   Future<void> _fetchMostImportantGoal() async {
     setState(() {
       _isLoadingGoal = true;
@@ -251,6 +264,8 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  /// Handles the process of logging a rest day
+  /// Shows confirmation dialog and updates streak information
   Future<void> _logRestDay() async {
     try {
       final confirm = await showDialog<bool>(
@@ -302,7 +317,8 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  // Function to insert new exercises into the database
+  /// Populates the exercise database with predefined exercises
+  /// Checks for existing entries to avoid duplicates
   Future<void> _addNewExercises() async {
     final db = await DatabaseHelper.instance.database;
 
@@ -379,6 +395,8 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  /// Builds the main layout of the home page
+  /// Includes user info, streak data, recent workout, and active goal sections
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -568,6 +586,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  /// Creates a placeholder card when no workouts are available
+  /// Provides user guidance for starting their fitness journey
   Widget _buildNoWorkoutsCard() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -599,6 +619,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  /// Constructs a detailed card showing recent workout information
+  /// Displays exercise details, timing, and muscle groups worked
   Widget _buildRecentWorkoutCard() {
     final workout = _recentWorkoutData!['workout'] as Workout;
     final exerciseCount = _recentWorkoutData!['exerciseCount'] as int;
@@ -798,6 +820,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  /// Creates a placeholder card when no active goals are set
+  /// Encourages users to set new fitness goals
   Widget _buildNoGoalsCard() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -841,6 +865,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  /// Builds a card displaying the most important active goal
+  /// Shows progress, deadline, and goal-specific metrics
   Widget _buildActiveGoalCard() {
     final goalTitle = _activeGoalData!['title'] as String;
     final goalId = _activeGoalData!['goalId'] as int?;
@@ -953,6 +979,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  /// Creates a detailed view of goal progress based on goal type
+  /// Handles different formats for exercise, frequency, and weight goals
   Widget _buildGoalDetails(Map<String, dynamic> goalInfo) {
     if (goalInfo['type'] == 'ExerciseTarget') {
       // For strength goals
@@ -1064,6 +1092,8 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  /// Returns appropriate color coding for different goal types
+  /// Helps visually distinguish between different types of goals
   Color _getGoalColor(String type) {
     switch (type) {
       case 'ExerciseTarget':
@@ -1077,6 +1107,8 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  /// Provides appropriate icons for different goal types
+  /// Enhances visual recognition of goal categories
   Widget _getGoalIcon(String type) {
     switch (type) {
       case 'ExerciseTarget':
@@ -1106,7 +1138,8 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  // Helper method to determine card color based on muscle groups
+  /// Determines appropriate color scheme for workout cards based on muscle groups
+  /// Groups similar muscle categories under consistent color themes
   Color _getWorkoutColor(List<String> muscleGroups) {
     if (muscleGroups.isEmpty) return Colors.blue;
 
@@ -1117,18 +1150,15 @@ class _HomePageState extends State<HomePage> {
     } else if (muscleGroups
         .any((group) => ['Back', 'Biceps'].contains(group))) {
       return Colors.green;
-    } else if (muscleGroups
-        .any((group) => ['Legs', 'Glutes', 'Calves'].contains(group))) {
+    } else if (muscleGroups.any((group) => ['Legs'].contains(group))) {
       return Colors.orange;
-    } else if (muscleGroups.any((group) => ['Core'].contains(group))) {
-      return Colors.purple;
     }
-
     // Default color
     return Colors.blue;
   }
 
-  // Helper method to get icon for workout
+  /// Selects appropriate icons for different workout types
+  /// Based on the primary muscle groups targeted in the workout
   IconData _getWorkoutIcon(List<String> muscleGroups) {
     if (muscleGroups.isEmpty) return Icons.fitness_center;
 
@@ -1138,17 +1168,15 @@ class _HomePageState extends State<HomePage> {
     } else if (muscleGroups
         .any((group) => ['Back', 'Biceps'].contains(group))) {
       return Icons.fitness_center; // Dumbbell for upper body pull
-    } else if (muscleGroups
-        .any((group) => ['Legs', 'Glutes', 'Calves'].contains(group))) {
+    } else if (muscleGroups.any((group) => ['Legs'].contains(group))) {
       return Icons.directions_run; // Running for lower body
-    } else if (muscleGroups.any((group) => ['Core'].contains(group))) {
-      return Icons.fitness_center; // Dumbbell for core
     }
 
     return Icons.fitness_center; // Default to dumbbell
   }
 
-  // Helper method to get color for specific muscle group
+  /// Assigns specific colors to different muscle groups
+  /// Creates consistent visual coding throughout the app
   Color _getMuscleGroupColor(String muscleGroup) {
     switch (muscleGroup) {
       case 'Chest':
@@ -1163,18 +1191,13 @@ class _HomePageState extends State<HomePage> {
         return Colors.indigo;
       case 'Legs':
         return Colors.orange;
-      case 'Calves':
-        return Colors.amber;
-      case 'Glutes':
-        return Colors.deepOrange;
-      case 'Core':
-        return Colors.purple;
       default:
         return Colors.blueGrey;
     }
   }
 
-  // Helper method to get icon for specific muscle group
+  /// Provides specific icons for different muscle groups
+  /// Helps in quick visual identification of exercise types
   IconData _getMuscleGroupIcon(String muscleGroup) {
     switch (muscleGroup) {
       case 'Chest':
@@ -1189,12 +1212,6 @@ class _HomePageState extends State<HomePage> {
         return Icons.fitness_center; // Dumbbell for triceps
       case 'Legs':
         return Icons.directions_run; // Running for legs
-      case 'Calves':
-        return Icons.directions_run; // Running for calves
-      case 'Glutes':
-        return Icons.directions_run; // Running for glutes
-      case 'Core':
-        return Icons.fitness_center; // Dumbbell for core
       default:
         return Icons.fitness_center; // Default to dumbbell
     }

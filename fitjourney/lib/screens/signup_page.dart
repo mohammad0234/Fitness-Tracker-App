@@ -1,3 +1,9 @@
+/// SignUpPage handles new user registration and account creation
+/// Features:
+/// - User information collection (name, email, password)
+/// - Firebase Authentication integration
+/// - Privacy policy and terms acceptance
+/// - Email verification process
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
@@ -5,6 +11,7 @@ import 'package:fitjourney/database/database_helper.dart';
 import 'package:fitjourney/database_models/user.dart'; // This should define AppUser
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// Main signup screen widget that manages user registration process
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
 
@@ -12,8 +19,14 @@ class SignUpPage extends StatefulWidget {
   State<SignUpPage> createState() => _SignUpPageState();
 }
 
+/// State management for SignUpPage
+/// Handles:
+/// - Form input validation
+/// - Firebase user creation
+/// - Local database user creation
+/// - Navigation to verification
 class _SignUpPageState extends State<SignUpPage> {
-  // Controllers for text fields
+  // Controllers for form input fields
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
@@ -28,8 +41,13 @@ class _SignUpPageState extends State<SignUpPage> {
 
   final firebase_auth.FirebaseAuth _auth = firebase_auth.FirebaseAuth.instance;
 
-  /// Attempts to sign up the user using Firebase Authentication
-  /// and inserts the user into the local SQLite database.
+  /// Handles the user registration process
+  /// Steps:
+  /// 1. Validates user input
+  /// 2. Creates Firebase account
+  /// 3. Sends verification email
+  /// 4. Creates local database entry
+  /// 5. Navigates to verification screen
   Future<void> _signUp() async {
     final String firstName = _firstNameController.text.trim();
     final String lastName = _lastNameController.text.trim();
@@ -124,7 +142,8 @@ class _SignUpPageState extends State<SignUpPage> {
     }
   }
 
-  /// Navigate to the Privacy Policy page
+  /// Navigates to Privacy Policy page and tracks user review
+  /// Updates state to reflect policy review status
   void _navigateToPrivacyPolicy() async {
     final result = await Navigator.push(context,
         MaterialPageRoute(builder: (context) => const PrivacyPolicyPage()));
@@ -137,7 +156,8 @@ class _SignUpPageState extends State<SignUpPage> {
     }
   }
 
-  /// Navigate to the Terms of Use page
+  /// Navigates to Terms of Use page and tracks user review
+  /// Updates state to reflect terms review status
   void _navigateToTermsOfUse() async {
     final result = await Navigator.push(context,
         MaterialPageRoute(builder: (context) => const TermsOfUsePage()));
@@ -150,7 +170,7 @@ class _SignUpPageState extends State<SignUpPage> {
     }
   }
 
-  /// Show a dialog with a message
+  /// Displays error or information dialogs to the user
   void _showDialog(String title, String message) {
     showDialog(
       context: context,
@@ -169,7 +189,7 @@ class _SignUpPageState extends State<SignUpPage> {
     );
   }
 
-  /// Displays an error message using a SnackBar.
+  /// Displays error messages using a SnackBar
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
@@ -423,7 +443,10 @@ class _SignUpPageState extends State<SignUpPage> {
   }
 }
 
-/// Page that displays the Privacy Policy
+/// Privacy Policy screen that displays the app's privacy policy
+/// Features:
+/// - Scrollable policy content
+/// - Tracks user review completion
 class PrivacyPolicyPage extends StatelessWidget {
   const PrivacyPolicyPage({super.key});
 
@@ -571,7 +594,10 @@ class PrivacyPolicyPage extends StatelessWidget {
   }
 }
 
-/// Page that displays the Terms of Use
+/// Terms of Use screen that displays the app's terms of service
+/// Features:
+/// - Scrollable terms content
+/// - Tracks user review completion
 class TermsOfUsePage extends StatelessWidget {
   const TermsOfUsePage({super.key});
 

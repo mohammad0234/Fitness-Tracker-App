@@ -1,3 +1,16 @@
+/**
+ * ProgressCharts - A utility class that manages the creation and data fetching for various fitness tracking charts.
+ * 
+ * Features:
+ * - Centralized chart creation with error handling
+ * - Consistent error state presentation
+ * - Automated data fetching from ProgressService
+ * - Support for multiple chart types:
+ *   - Workout volume trends
+ *   - Muscle group distribution
+ *   - Exercise-specific progress
+ */
+
 import 'package:flutter/material.dart';
 import 'package:fitjourney/services/progress_service.dart';
 import 'package:fitjourney/widgets/charts/workout_volume_chart.dart';
@@ -7,7 +20,13 @@ import 'package:fitjourney/widgets/charts/exercise_progress_chart.dart';
 class ProgressCharts {
   static final ProgressService _progressService = ProgressService.instance;
 
-  /// Creates a workout volume chart for the given time period
+  /**
+   * Creates a workout volume chart for a specified time period.
+   * Handles data fetching and error states automatically.
+   * 
+   * @param timeRange The time period to display (e.g., 'Weekly', 'Monthly')
+   * @returns A Widget containing either the chart or an error state
+   */
   static Future<Widget> buildWorkoutVolumeChart({
     required String timeRange,
   }) async {
@@ -31,7 +50,13 @@ class ProgressCharts {
     }
   }
 
-  /// Creates a muscle group distribution pie chart for the given time period
+  /**
+   * Creates a pie chart showing the distribution of exercises across muscle groups.
+   * Automatically fetches and processes muscle group data for the specified period.
+   * 
+   * @param timeRange The time period to analyze
+   * @returns A Widget containing either the pie chart or an error state
+   */
   static Future<Widget> buildMuscleGroupChart({
     required String timeRange,
   }) async {
@@ -54,7 +79,13 @@ class ProgressCharts {
     }
   }
 
-  /// Creates an exercise progress chart for the specified exercise
+  /**
+   * Creates a progress chart for a specific exercise.
+   * Shows weight progression and performance metrics over time.
+   * 
+   * @param exerciseId The unique identifier of the exercise to analyze
+   * @returns A Widget containing either the progress chart or an error state
+   */
   static Future<Widget> buildExerciseProgressChart({
     required int exerciseId,
   }) async {
@@ -73,7 +104,19 @@ class ProgressCharts {
     }
   }
 
-  /// Helper method to build an error widget when data loading fails
+  /**
+   * Creates a standardized error display widget.
+   * Used when chart data loading or processing fails.
+   * 
+   * Features:
+   * - Consistent error styling across all charts
+   * - Clear error message presentation
+   * - Visual error indicator
+   * - Contained within a bounded space
+   * 
+   * @param errorMessage The specific error message to display
+   * @returns A Widget containing the formatted error display
+   */
   static Widget _buildErrorWidget(String errorMessage) {
     return Container(
       height: 200,

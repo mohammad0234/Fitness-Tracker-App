@@ -1,3 +1,14 @@
+/**
+ * WorkoutVolumeChart - A widget that visualizes total workout volume over time.
+ * 
+ * Features:
+ * - Line chart showing volume trends
+ * - Interactive tooltips with date and volume information
+ * - Automatic scale adjustment based on data range
+ * - Support for different time ranges (weekly, monthly, etc.)
+ * - Responsive layout with clear data presentation
+ */
+
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 //import 'package:intl/intl.dart';
@@ -30,16 +41,17 @@ class WorkoutVolumeChart extends StatelessWidget {
         // Improved title with information icon
         // Replace the title row with this more flexible layout
         Padding(
-          padding: const EdgeInsets.only(left: 16.0, top: 8.0, bottom: 8.0, right: 16.0),
+          padding: const EdgeInsets.only(
+              left: 16.0, top: 8.0, bottom: 8.0, right: 16.0),
           child: Text(
             'Workout Volume (Weight × Reps) - $timeRange',
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              ),
-              overflow: TextOverflow.ellipsis,
-              ),
-              ),
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
         SizedBox(
           height: 220,
           child: Padding(
@@ -164,7 +176,7 @@ class WorkoutVolumeChart extends StatelessWidget {
             ),
           ),
         ),
-        
+
         // Added explanation text for better user understanding
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -181,6 +193,13 @@ class WorkoutVolumeChart extends StatelessWidget {
     );
   }
 
+  /**
+   * Generates bottom axis labels for the chart.
+   * Implements smart label density to prevent overcrowding:
+   * - Shows dates at regular intervals
+   * - Always shows the last date
+   * - Adjusts spacing based on data points
+   */
   Widget _bottomTitleWidgets(double value, TitleMeta meta) {
     final index = value.toInt();
     if (index < 0 || index >= volumeData.length) {
@@ -206,6 +225,13 @@ class WorkoutVolumeChart extends StatelessWidget {
     );
   }
 
+  /**
+   * Creates left axis labels showing volume values.
+   * Features:
+   * - Automatic unit formatting (k for thousands)
+   * - Consistent kg unit display
+   * - Clear text styling for readability
+   */
   Widget _leftTitleWidgets(double value, TitleMeta meta) {
     // Format numbers with units (kg)
     String formatted = '';
@@ -214,7 +240,7 @@ class WorkoutVolumeChart extends StatelessWidget {
     } else {
       formatted = '${value.toInt()} kg';
     }
-    
+
     return SideTitleWidget(
       axisSide: meta.axisSide,
       space: 8,
@@ -230,6 +256,11 @@ class WorkoutVolumeChart extends StatelessWidget {
     );
   }
 
+  /**
+   * Converts volume data points into chart coordinates.
+   * Maps each data point to a FlSpot for rendering by fl_chart.
+   * X-axis represents time points, Y-axis represents volume.
+   */
   List<FlSpot> _createSpots() {
     return List.generate(volumeData.length, (index) {
       return FlSpot(
@@ -239,6 +270,11 @@ class WorkoutVolumeChart extends StatelessWidget {
     });
   }
 
+  /**
+   * Determines the maximum volume from all data points.
+   * Used to set the Y-axis scale of the chart.
+   * Returns 100 as default if no data is available.
+   */
   double _getMaxVolume() {
     if (volumeData.isEmpty) return 100;
     double maxVolume = 0;
@@ -250,6 +286,15 @@ class WorkoutVolumeChart extends StatelessWidget {
     return maxVolume == 0 ? 100 : maxVolume;
   }
 
+  /**
+   * Calculates appropriate interval for Y-axis grid lines.
+   * Adapts to the data range for optimal readability:
+   * - ≤100: 20 unit intervals
+   * - ≤500: 100 unit intervals
+   * - ≤1000: 200 unit intervals
+   * - ≤5000: 1000 unit intervals
+   * - >5000: 2000 unit intervals
+   */
   double _calculateInterval() {
     final maxVolume = _getMaxVolume();
     if (maxVolume <= 100) return 20;
@@ -259,6 +304,14 @@ class WorkoutVolumeChart extends StatelessWidget {
     return 2000;
   }
 
+  /**
+   * Creates an empty state widget when no workout data is available.
+   * Features:
+   * - Clear visual indicator
+   * - Informative message
+   * - Instructions for users
+   * - Consistent styling with other charts
+   */
   Widget _buildEmptyState() {
     return SizedBox(
       height: 220,

@@ -1,3 +1,14 @@
+/**
+ * ExerciseVolumeChart - A widget that visualizes the total volume (weight × reps) for different exercises.
+ * 
+ * Features:
+ * - Displays exercise volumes as horizontal bars
+ * - Color-codes exercises by muscle group
+ * - Supports both fixed and scrollable layouts based on data size
+ * - Provides interactive tooltips with detailed volume information
+ * - Automatically adjusts scale and intervals based on data range
+ */
+
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
@@ -26,13 +37,12 @@ class _ExerciseVolumeChartState extends State<ExerciseVolumeChart> {
     'Shoulders': Colors.purple.shade400,
     'Biceps': Colors.orange.shade400,
     'Triceps': Colors.cyan.shade400,
-    'Calves': Colors.pink.shade400,
-    'Forearms': Colors.teal.shade400,
-    'Traps': Colors.indigo.shade400,
-    'Cardio': Colors.brown.shade400,
   };
 
-  // Get color for a muscle group
+  /**
+   * Retrieves the color associated with a specific muscle group.
+   * Falls back to a default grey color if the muscle group is not found in the predefined map.
+   */
   Color _getColorForMuscleGroup(String muscleGroup) {
     return muscleGroupColors[muscleGroup] ?? Colors.grey.shade400;
   }
@@ -87,6 +97,14 @@ class _ExerciseVolumeChartState extends State<ExerciseVolumeChart> {
     );
   }
 
+  /**
+   * Builds a fixed-width chart suitable for displaying 6 or fewer exercises.
+   * Includes:
+   * - Horizontal bars representing exercise volumes
+   * - Grid lines for better readability
+   * - Exercise names on the bottom axis
+   * - Volume measurements on the left axis
+   */
   Widget _buildFixedChart() {
     // For fewer exercises, show a static chart
     return Padding(
@@ -144,6 +162,14 @@ class _ExerciseVolumeChartState extends State<ExerciseVolumeChart> {
     );
   }
 
+  /**
+   * Builds a horizontally scrollable chart for displaying more than 6 exercises.
+   * Features:
+   * - Horizontal scrolling with visual indicator
+   * - Gradient fade effect at the edges
+   * - Maintains all features of the fixed chart
+   * - Shows scroll hint for better UX
+   */
   Widget _buildScrollableChart() {
     // For many exercises, make it scrollable
     return Padding(
@@ -245,7 +271,14 @@ class _ExerciseVolumeChartState extends State<ExerciseVolumeChart> {
     );
   }
 
-  // Generate bar groups for the chart
+  /**
+   * Generates bar groups for the chart visualization.
+   * Each bar represents an exercise's total volume with:
+   * - Height proportional to the volume
+   * - Color based on muscle group
+   * - Background bar for scale reference
+   * - Interactive highlighting on touch
+   */
   List<BarChartGroupData> _generateBarGroups() {
     return List.generate(widget.exerciseVolumeData.length, (index) {
       final exercise = widget.exerciseVolumeData[index];
@@ -276,7 +309,13 @@ class _ExerciseVolumeChartState extends State<ExerciseVolumeChart> {
     });
   }
 
-  // Titles for the chart axes
+  /**
+   * Configures the chart's axes titles and labels.
+   * Includes:
+   * - Shortened exercise names on bottom axis
+   * - Formatted volume values on left axis (with k suffix for thousands)
+   * - Proper spacing and alignment
+   */
   FlTitlesData _getChartTitles() {
     return FlTitlesData(
       show: true,
@@ -351,7 +390,10 @@ class _ExerciseVolumeChartState extends State<ExerciseVolumeChart> {
     );
   }
 
-  // Titles specific for the scrollable chart
+  /**
+   * Similar to _getChartTitles but optimized for scrollable view.
+   * Allows for slightly longer exercise names since horizontal space is less constrained.
+   */
   FlTitlesData _getScrollableChartTitles() {
     return FlTitlesData(
       show: true,
@@ -426,7 +468,17 @@ class _ExerciseVolumeChartState extends State<ExerciseVolumeChart> {
     );
   }
 
-  // Calculate interval for the Y-axis based on max volume
+  /**
+   * Calculates appropriate interval for the Y-axis based on the maximum volume.
+   * Ensures readable scale divisions while maintaining visual clarity.
+   * Adapts intervals based on data range:
+   * - <500: 100 unit intervals
+   * - <1000: 250 unit intervals
+   * - <3000: 500 unit intervals
+   * - <6000: 1000 unit intervals
+   * - <10000: 2000 unit intervals
+   * - ≥10000: 5000 unit intervals
+   */
   double _calculateChartInterval() {
     final maxVolume = _getMaxVolume();
 
@@ -440,7 +492,11 @@ class _ExerciseVolumeChartState extends State<ExerciseVolumeChart> {
     return 5000;
   }
 
-  // Get the maximum volume for Y-axis scaling
+  /**
+   * Determines the maximum volume across all exercises.
+   * Used to set the Y-axis scale and calculate appropriate intervals.
+   * Returns 1000 as default if no data is available.
+   */
   double _getMaxVolume() {
     if (widget.exerciseVolumeData.isEmpty) return 1000;
 
@@ -453,7 +509,14 @@ class _ExerciseVolumeChartState extends State<ExerciseVolumeChart> {
     return max == 0 ? 1000 : max;
   }
 
-  // Empty state widget when no data is available
+  /**
+   * Creates a visually appealing empty state widget.
+   * Displayed when no exercise volume data is available.
+   * Includes:
+   * - Informative icon
+   * - Clear message about data availability
+   * - Instructions for users to start logging workouts
+   */
   Widget _buildEmptyState() {
     return Container(
       height: 250,

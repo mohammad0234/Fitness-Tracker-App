@@ -1,3 +1,5 @@
+/// NotificationScreen displays and manages in-app notifications
+/// Provides functionality to view, interact with, and clear notifications
 import 'package:flutter/material.dart';
 import 'package:fitjourney/database_models/notification.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -9,6 +11,9 @@ import 'package:fitjourney/screens/progress_page.dart';
 import 'package:fitjourney/services/goal_service.dart';
 import 'package:fitjourney/screens/weight_goal_detail_screen.dart';
 
+/// Screen that displays and manages user notifications, including goal updates,
+/// streaks, and achievements. Provides functionality to view, interact with,
+/// and dismiss notifications.
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
 
@@ -16,6 +21,11 @@ class NotificationScreen extends StatefulWidget {
   State<NotificationScreen> createState() => _NotificationScreenState();
 }
 
+/// State management for NotificationScreen
+/// Handles:
+/// - Notification list updates
+/// - Notification interaction callbacks
+/// - UI state management for notifications
 class _NotificationScreenState extends State<NotificationScreen> {
   final List<NotificationModel> _notifications = [];
   bool _isLoading = true;
@@ -204,7 +214,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
     );
   }
 
-  void _handleNotificationTap(NotificationModel notification) async {
+  /// Handles the tap event on a notification. Marks the notification as read
+  /// and navigates to the appropriate screen based on notification type.
+  Future<void> _handleNotificationTap(NotificationModel notification) async {
     // Mark the notification as read
     if (!notification.isRead) {
       final db = await DatabaseHelper.instance.database;
@@ -233,20 +245,21 @@ class _NotificationScreenState extends State<NotificationScreen> {
     _loadNotifications();
   }
 
-  void _navigateToGoalDetails(String message) {
+  /// Navigates to the goal details screen with the specified goal ID.
+  Future<void> _navigateToGoalDetails(String goalId) async {
     // Extract goal ID from message if possible
     final goalIdRegExp = RegExp(r'goal_(\d+)');
-    final match = goalIdRegExp.firstMatch(message);
+    final match = goalIdRegExp.firstMatch(goalId);
 
     if (match != null) {
       final goalId = int.parse(match.group(1)!);
 
       // First get the goal type to determine which screen to navigate to
-      _getGoalTypeAndNavigate(goalId);
+      await _getGoalTypeAndNavigate(goalId);
     }
   }
 
-  // Helper method to get goal type and navigate to appropriate screen
+  /// Retrieves goal type from the database and navigates to the appropriate screen.
   Future<void> _getGoalTypeAndNavigate(int goalId) async {
     try {
       final goal = await GoalService.instance.getGoalById(goalId);
@@ -280,6 +293,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     }
   }
 
+  /// Navigates to the calendar streak screen for streak-related notifications.
   void _navigateToCalendarStreak() {
     Navigator.push(
       context,
@@ -289,6 +303,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     );
   }
 
+  /// Navigates to the progress page for milestone-related notifications.
   void _navigateToProgressPage() {
     Navigator.push(
       context,
@@ -298,6 +313,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     );
   }
 
+  /// Removes a notification from the database and updates the UI.
   Future<void> _dismissNotification(NotificationModel notification) async {
     try {
       if (notification.notificationId == null) return;
@@ -317,6 +333,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
   }
 }
 
+/// Widget that represents a single notification card in the list.
+/// Displays notification content, timestamp, and handles user interactions.
 class NotificationCard extends StatelessWidget {
   final NotificationModel notification;
   final VoidCallback onTap;
@@ -437,6 +455,7 @@ class NotificationCard extends StatelessWidget {
     );
   }
 
+  /// Returns the appropriate icon based on the notification type.
   IconData _getNotificationIcon(String type) {
     switch (type) {
       case 'GoalProgress':
@@ -450,6 +469,7 @@ class NotificationCard extends StatelessWidget {
     }
   }
 
+  /// Returns the appropriate color scheme based on the notification type.
   Color _getNotificationColor(String type) {
     switch (type) {
       case 'GoalProgress':
@@ -463,6 +483,7 @@ class NotificationCard extends StatelessWidget {
     }
   }
 
+  /// Returns a user-friendly title based on the notification type.
   String _getNotificationTitle(String type) {
     switch (type) {
       case 'GoalProgress':
@@ -476,6 +497,8 @@ class NotificationCard extends StatelessWidget {
     }
   }
 
+  /// Formats the timestamp into a human-readable relative time string
+  /// (e.g., "2h ago", "3d ago", or the date for older notifications).
   String _formatTimestamp(DateTime timestamp) {
     final now = DateTime.now();
     final difference = now.difference(timestamp);

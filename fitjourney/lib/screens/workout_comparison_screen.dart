@@ -1,9 +1,18 @@
 // lib/screens/workout_comparison_screen.dart
+/// WorkoutComparisonScreen provides a detailed comparison between two workouts
+/// Features include:
+/// - Side-by-side workout comparison
+/// - Exercise matching and progress tracking
+/// - Volume and weight comparisons
+/// - Progress statistics and analysis
+/// - Visual representation of improvements
 import 'package:flutter/material.dart';
 import 'package:fitjourney/services/workout_service.dart';
 import 'package:fitjourney/database_models/workout.dart';
 import 'package:intl/intl.dart';
 
+/// Main screen widget for workout comparison
+/// Takes IDs of two workouts to compare their details
 class WorkoutComparisonScreen extends StatefulWidget {
   final int firstWorkoutId;
   final int secondWorkoutId;
@@ -19,6 +28,12 @@ class WorkoutComparisonScreen extends StatefulWidget {
       _WorkoutComparisonScreenState();
 }
 
+/// State management for WorkoutComparisonScreen
+/// Handles:
+/// - Loading workout data
+/// - Generating comparison metrics
+/// - UI state management
+/// - Error handling
 class _WorkoutComparisonScreenState extends State<WorkoutComparisonScreen> {
   final WorkoutService _workoutService = WorkoutService.instance;
 
@@ -39,6 +54,8 @@ class _WorkoutComparisonScreenState extends State<WorkoutComparisonScreen> {
     _loadWorkoutData();
   }
 
+  /// Loads workout data for both selected workouts
+  /// Retrieves details and generates comparison metrics
   Future<void> _loadWorkoutData() async {
     setState(() {
       _isLoading = true;
@@ -84,6 +101,12 @@ class _WorkoutComparisonScreenState extends State<WorkoutComparisonScreen> {
     }
   }
 
+  /// Generates comprehensive comparison data between two workouts
+  /// Calculates:
+  /// - Total volume differences
+  /// - Exercise matches and differences
+  /// - Weight and rep comparisons
+  /// - Progress indicators
   Map<String, dynamic> _generateComparisonData(
     Workout firstWorkout,
     Workout secondWorkout,
@@ -314,6 +337,8 @@ class _WorkoutComparisonScreenState extends State<WorkoutComparisonScreen> {
     );
   }
 
+  /// Builds the main comparison content layout
+  /// Includes summary card and exercise comparisons
   Widget _buildComparisonContent() {
     return SingleChildScrollView(
       child: Column(
@@ -351,6 +376,8 @@ class _WorkoutComparisonScreenState extends State<WorkoutComparisonScreen> {
     );
   }
 
+  /// Creates a section header with icon and count
+  /// Used to separate different comparison sections
   Widget _buildSectionHeader(
       String title, String count, IconData icon, Color color) {
     return Container(
@@ -396,427 +423,8 @@ class _WorkoutComparisonScreenState extends State<WorkoutComparisonScreen> {
     );
   }
 
-  Widget _buildSummaryCard() {
-    final firstDate = DateFormat('MMM d, yyyy').format(_firstWorkout!.date);
-    final secondDate = DateFormat('MMM d, yyyy').format(_secondWorkout!.date);
-
-    final firstVolume = _comparisonData['firstTotalVolume'] as double;
-    final secondVolume = _comparisonData['secondTotalVolume'] as double;
-    final volumeChange = _comparisonData['volumePercentChange'] as double;
-    final isImproved = _comparisonData['isImproved'] as bool;
-
-    final daysBetween = _comparisonData['daysBetween'] as int;
-    final summaryText = _comparisonData['summaryText'] as String?;
-    final hasInconsistentData =
-        _comparisonData['hasInconsistentData'] as bool? ?? false;
-
-    return Card(
-      margin: const EdgeInsets.all(16),
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Title with improvement indicator
-            Row(
-              children: [
-                Icon(
-                  isImproved ? Icons.trending_up : Icons.trending_down,
-                  color: isImproved ? Colors.green : Colors.red,
-                  size: 24,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  isImproved ? 'Overall Improvement' : 'Overall Decline',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-
-            // Summary text (if available)
-            if (summaryText != null) ...[
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.summarize,
-                      size: 18,
-                      color: Colors.blue.shade700,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        summaryText,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey.shade800,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-
-            // Data inconsistency warning
-            if (hasInconsistentData) ...[
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.orange.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.orange.shade200),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.warning_amber_rounded,
-                      size: 18,
-                      color: Colors.orange.shade800,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Some data shows unusual patterns (e.g., much higher volume despite lower weights). This could be due to different workout approaches or data entry differences.',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.orange.shade900,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-
-            const SizedBox(height: 16),
-
-            // Timeline visualization
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'First Workout',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade700,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        firstDate,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Container(
-                    height: 24,
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 12,
-                          height: 12,
-                          decoration: BoxDecoration(
-                            color: Colors.blue,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        Expanded(
-                          child: Container(
-                            height: 2,
-                            color: Colors.grey.shade300,
-                          ),
-                        ),
-                        Container(
-                          width: 12,
-                          height: 12,
-                          decoration: BoxDecoration(
-                            color: Colors.green,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        'Second Workout',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade700,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        secondDate,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-
-            // Days between indicator
-            Center(
-              child: Text(
-                daysBetween > 0
-                    ? '$daysBetween ${daysBetween == 1 ? 'day' : 'days'} between workouts'
-                    : 'Same day workouts',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey.shade600,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Workout details side by side
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: _buildWorkoutDetailColumn(
-                    'First Workout',
-                    _firstWorkout!.duration ?? 0,
-                    _comparisonData['firstExerciseCount'],
-                    Colors.blue,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildWorkoutDetailColumn(
-                    'Second Workout',
-                    _secondWorkout!.duration ?? 0,
-                    _comparisonData['secondExerciseCount'],
-                    Colors.green,
-                  ),
-                ),
-              ],
-            ),
-
-            const Divider(height: 24),
-
-            // Volume explanation
-            Row(
-              children: [
-                Text(
-                  'Total Volume Comparison',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Tooltip(
-                  message: 'Volume = Weight × Reps summed across all sets',
-                  child: Icon(
-                    Icons.info_outline,
-                    size: 16,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Volume represents the total weight lifted (weight × reps for all sets)',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade600,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Volume comparison
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'First Workout',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${firstVolume.toStringAsFixed(1)} kg',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Second Workout',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${secondVolume.toStringAsFixed(1)} kg',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Change',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(
-                            isImproved
-                                ? Icons.arrow_upward
-                                : Icons.arrow_downward,
-                            color: isImproved ? Colors.green : Colors.red,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${volumeChange.abs().toStringAsFixed(1)}%',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: isImproved ? Colors.green : Colors.red,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildWorkoutDetailColumn(
-      String title, int duration, int exerciseCount, Color color) {
-    return Card(
-      elevation: 0,
-      color: color.withOpacity(0.05),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: color.withOpacity(0.2)),
-              ),
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: color.withOpacity(0.8),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Icon(Icons.timer_outlined,
-                    size: 16, color: Colors.grey.shade700),
-                const SizedBox(width: 4),
-                Text(
-                  '$duration minutes',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Icon(Icons.fitness_center,
-                    size: 16, color: Colors.grey.shade700),
-                const SizedBox(width: 4),
-                Text(
-                  '$exerciseCount exercises',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
+  /// Builds cards for exercises that appear in both workouts
+  /// Shows detailed progress comparisons
   List<Widget> _buildMatchingExercisesCards() {
     final matchingExercises =
         _comparisonData['matchingExercises'] as List<Map<String, dynamic>>;
@@ -826,6 +434,8 @@ class _WorkoutComparisonScreenState extends State<WorkoutComparisonScreen> {
         .toList();
   }
 
+  /// Creates a detailed comparison card for a single exercise
+  /// Shows weight, volume, and rep comparisons
   Widget _buildExerciseComparisonCard(Map<String, dynamic> exercise) {
     final name = exercise['name'] as String;
     final muscleGroup = exercise['muscleGroup'] as String;
@@ -1397,6 +1007,8 @@ class _WorkoutComparisonScreenState extends State<WorkoutComparisonScreen> {
     );
   }
 
+  /// Displays exercises unique to each workout
+  /// Groups exercises by workout and shows basic details
   Widget _buildUniqueExercisesSection() {
     final uniqueToFirst = _comparisonData['uniqueToFirst'] as List;
     final uniqueToSecond = _comparisonData['uniqueToSecond'] as List;
@@ -1481,6 +1093,8 @@ class _WorkoutComparisonScreenState extends State<WorkoutComparisonScreen> {
     );
   }
 
+  /// Creates a list item for exercises found in only one workout
+  /// Shows exercise name, muscle group, and visual indicators
   Widget _buildUniqueExerciseItem(
       String name, String muscleGroup, bool isFirst) {
     final color = isFirst ? Colors.blue : Colors.green;
@@ -1540,6 +1154,8 @@ class _WorkoutComparisonScreenState extends State<WorkoutComparisonScreen> {
     );
   }
 
+  /// Builds the error state display
+  /// Shows error message and retry option
   Widget _buildErrorState() {
     return Center(
       child: Padding(
@@ -1581,6 +1197,431 @@ class _WorkoutComparisonScreenState extends State<WorkoutComparisonScreen> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Creates a summary card with overall workout comparison
+  /// Shows total volume, exercise counts, and duration comparisons
+  Widget _buildSummaryCard() {
+    final firstDate = DateFormat('MMM d, yyyy').format(_firstWorkout!.date);
+    final secondDate = DateFormat('MMM d, yyyy').format(_secondWorkout!.date);
+
+    final firstVolume = _comparisonData['firstTotalVolume'] as double;
+    final secondVolume = _comparisonData['secondTotalVolume'] as double;
+    final volumeChange = _comparisonData['volumePercentChange'] as double;
+    final isImproved = _comparisonData['isImproved'] as bool;
+
+    final daysBetween = _comparisonData['daysBetween'] as int;
+    final summaryText = _comparisonData['summaryText'] as String?;
+    final hasInconsistentData =
+        _comparisonData['hasInconsistentData'] as bool? ?? false;
+
+    return Card(
+      margin: const EdgeInsets.all(16),
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Title with improvement indicator
+            Row(
+              children: [
+                Icon(
+                  isImproved ? Icons.trending_up : Icons.trending_down,
+                  color: isImproved ? Colors.green : Colors.red,
+                  size: 24,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  isImproved ? 'Overall Improvement' : 'Overall Decline',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+
+            // Summary text (if available)
+            if (summaryText != null) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.summarize,
+                      size: 18,
+                      color: Colors.blue.shade700,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        summaryText,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade800,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
+            // Data inconsistency warning
+            if (hasInconsistentData) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.warning_amber_rounded,
+                      size: 18,
+                      color: Colors.orange.shade800,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Some data shows unusual patterns (e.g., much higher volume despite lower weights). This could be due to different workout approaches or data entry differences.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.orange.shade900,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
+            const SizedBox(height: 16),
+
+            // Timeline visualization
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'First Workout',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade700,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        firstDate,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Container(
+                    height: 24,
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: Colors.blue,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        Expanded(
+                          child: Container(
+                            height: 2,
+                            color: Colors.grey.shade300,
+                          ),
+                        ),
+                        Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: Colors.green,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        'Second Workout',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade700,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        secondDate,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+
+            // Days between indicator
+            Center(
+              child: Text(
+                daysBetween > 0
+                    ? '$daysBetween ${daysBetween == 1 ? 'day' : 'days'} between workouts'
+                    : 'Same day workouts',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade600,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Workout details side by side
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: _buildWorkoutDetailColumn(
+                    'First Workout',
+                    _firstWorkout!.duration ?? 0,
+                    _comparisonData['firstExerciseCount'],
+                    Colors.blue,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildWorkoutDetailColumn(
+                    'Second Workout',
+                    _secondWorkout!.duration ?? 0,
+                    _comparisonData['secondExerciseCount'],
+                    Colors.green,
+                  ),
+                ),
+              ],
+            ),
+
+            const Divider(height: 24),
+
+            // Volume explanation
+            Row(
+              children: [
+                Text(
+                  'Total Volume Comparison',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Tooltip(
+                  message: 'Volume = Weight × Reps summed across all sets',
+                  child: Icon(
+                    Icons.info_outline,
+                    size: 16,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Volume represents the total weight lifted (weight × reps for all sets)',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey.shade600,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Volume comparison
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'First Workout',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${firstVolume.toStringAsFixed(1)} kg',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Second Workout',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${secondVolume.toStringAsFixed(1)} kg',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Change',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(
+                            isImproved
+                                ? Icons.arrow_upward
+                                : Icons.arrow_downward,
+                            color: isImproved ? Colors.green : Colors.red,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${volumeChange.abs().toStringAsFixed(1)}%',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: isImproved ? Colors.green : Colors.red,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Builds a column showing workout details
+  /// Used in the summary card for each workout
+  Widget _buildWorkoutDetailColumn(
+      String label, int duration, int exerciseCount, Color color) {
+    return Card(
+      elevation: 0,
+      color: color.withOpacity(0.05),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: color.withOpacity(0.2)),
+              ),
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: color.withOpacity(0.8),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(Icons.timer_outlined,
+                    size: 16, color: Colors.grey.shade700),
+                const SizedBox(width: 4),
+                Text(
+                  '$duration minutes',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                Icon(Icons.fitness_center,
+                    size: 16, color: Colors.grey.shade700),
+                const SizedBox(width: 4),
+                Text(
+                  '$exerciseCount exercises',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
