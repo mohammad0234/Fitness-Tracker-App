@@ -111,8 +111,7 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
       appBar: AppBar(
         title: Text(_isLoading
             ? 'Workout Details'
-            : _workout?.notes ??
-                'Workout ${DateFormat('MM/dd').format(_workout!.date)}'),
+            : 'Workout ${DateFormat('MM/dd').format(_workout!.date)}'),
         actions: [
           // Edit button
           IconButton(

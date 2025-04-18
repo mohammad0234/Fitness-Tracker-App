@@ -10,6 +10,7 @@ import 'package:fitjourney/screens/calendar_streak_screen.dart';
 import 'package:fitjourney/screens/workout_detail_screen.dart';
 import 'log_workout_flow.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 
 // New goal-related imports
 import 'package:fitjourney/services/goal_service.dart';
@@ -716,7 +717,7 @@ class _HomePageState extends State<HomePage> {
                         ),
                         const SizedBox(width: 12),
                         Text(
-                          workout.notes ?? primaryType,
+                          'Workout ${DateFormat('MM/dd').format(workout.date)}',
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,

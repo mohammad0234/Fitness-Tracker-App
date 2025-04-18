@@ -571,8 +571,7 @@ class _WorkoutComparisonSelectionScreenState
           const SizedBox(width: 4),
           Expanded(
             child: Text(
-              workout.notes ??
-                  'Workout ${DateFormat('MM/dd').format(workout.date)}',
+              'Workout ${DateFormat('MM/dd').format(workout.date)}',
               style: const TextStyle(
                 fontSize: 12,
                 color: Colors.blue,
@@ -623,8 +622,7 @@ class _WorkoutComparisonSelectionScreenState
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        workout.notes ??
-                            'Workout ${DateFormat('MM/dd').format(workout.date)}',
+                        'Workout ${DateFormat('MM/dd').format(workout.date)}',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,

@@ -588,8 +588,7 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
                         ),
                         const SizedBox(width: 12),
                         Text(
-                          workout.notes ??
-                              'Workout ${DateFormat('MM/dd').format(workout.date)}',
+                          'Workout ${DateFormat('MM/dd').format(workout.date)}',
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
