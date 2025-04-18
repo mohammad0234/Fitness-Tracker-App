@@ -225,7 +225,7 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header
+              // Title and actions row
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -238,6 +238,7 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
                   ),
                   Row(
                     children: [
+                      // Compare button
                       OutlinedButton.icon(
                         onPressed: () {
                           Navigator.push(
@@ -319,41 +320,8 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
                 ],
               ),
 
-              // Filter chips
-              const SizedBox(height: 16),
-              SizedBox(
-                height: 40,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _filterOptions.length,
-                  itemBuilder: (context, index) {
-                    final filter = _filterOptions[index];
-                    final isSelected = filter == _selectedFilter;
-
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8.0),
-                      child: FilterChip(
-                        label: Text(filter),
-                        selected: isSelected,
-                        onSelected: (selected) {
-                          setState(() {
-                            _selectedFilter = filter;
-                          });
-                        },
-                        backgroundColor: Colors.grey.shade100,
-                        selectedColor: Colors.blue.shade100,
-                        checkmarkColor: Colors.blue,
-                        labelStyle: TextStyle(
-                          color: isSelected ? Colors.blue : Colors.black,
-                          fontWeight:
-                              isSelected ? FontWeight.bold : FontWeight.normal,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 24),
+              // Remove the filter chips section (the SizedBox and ListView.builder with FilterChips)
+              const SizedBox(height: 16), // Keep a smaller space instead
 
               // Workout history - grouped by date
               Expanded(
