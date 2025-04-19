@@ -48,19 +48,33 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    // Initialize all required data when the page loads
-    _fetchUserData();
-    _fetchStreakData();
-    _fetchRecentWorkout();
-    _fetchMostImportantGoal();
+    _initializeApp();
+  }
 
-    // Populate database with predefined exercises
-    _addNewExercises();
+  /// Initializes the app by fetching user data, checking workout status for today,
+  /// and loading all necessary data for the home screen
+  Future<void> _initializeApp() async {
+    // Initialize required data
+    await _getUserData();
+    await _fetchStreakData();
+
+    // Load exercises
+    await _addNewExercises();
+    await _addAdditionalExercises(); // Add the missing bicep exercises and additional exercises
+
+    // Load recent workout and active goals for display
+    await _fetchRecentWorkoutData();
+    await _fetchActiveGoals();
+
+    // Mark setup complete
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   /// Fetches and sets up user data from both Firebase and local database
   /// Handles synchronization between remote and local user data
-  Future<void> _fetchUserData() async {
+  Future<void> _getUserData() async {
     setState(() {
       _isLoading = true;
     });
@@ -153,7 +167,7 @@ class _HomePageState extends State<HomePage> {
 
   /// Loads and formats the most recent workout data for display
   /// Includes exercise details, timing information, and workout statistics
-  Future<void> _fetchRecentWorkout() async {
+  Future<void> _fetchRecentWorkoutData() async {
     setState(() {
       _isLoadingRecentWorkout = true;
     });
@@ -226,7 +240,7 @@ class _HomePageState extends State<HomePage> {
 
   /// Retrieves the most important active goal based on deadline proximity
   /// Formats goal data for display including progress and target information
-  Future<void> _fetchMostImportantGoal() async {
+  Future<void> _fetchActiveGoals() async {
     setState(() {
       _isLoadingGoal = true;
     });
@@ -395,6 +409,163 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  /// Adds additional exercises including bicep muscle group (which was missing),
+  /// and more exercises for legs, shoulders, and triceps.
+  Future<void> _addAdditionalExercises() async {
+    final db = await DatabaseHelper.instance.database;
+
+    // New exercises to add
+    final additionalExercises = [
+      // Biceps exercises
+      {
+        'name': 'Barbell Curl',
+        'muscle_group': 'Biceps',
+        'description':
+            'Standing with a barbell in hands, curl the weight up towards shoulders while keeping elbows stationary.'
+      },
+      {
+        'name': 'Dumbbell Curl',
+        'muscle_group': 'Biceps',
+        'description':
+            'Standing with dumbbells in hands, alternately curl each weight up towards the shoulder.'
+      },
+      {
+        'name': 'Hammer Curl',
+        'muscle_group': 'Biceps',
+        'description':
+            'Perform a dumbbell curl with palms facing each other throughout the movement.'
+      },
+      {
+        'name': 'Preacher Curl',
+        'muscle_group': 'Biceps',
+        'description':
+            'Perform curls with upper arms resting on a sloped bench to isolate the biceps.'
+      },
+      {
+        'name': 'Concentration Curl',
+        'muscle_group': 'Biceps',
+        'description':
+            'Seated with elbow against inner thigh, curl the weight up while keeping the upper arm stationary.'
+      },
+
+      // Additional leg exercises
+      {
+        'name': 'Squat',
+        'muscle_group': 'Legs',
+        'description':
+            'Stand with feet shoulder-width apart, bend knees and hips to lower your body, then return to standing position.'
+      },
+      {
+        'name': 'Leg Press',
+        'muscle_group': 'Legs',
+        'description':
+            'Push weight away using your legs while seated on a machine.'
+      },
+      {
+        'name': 'Hack Squat',
+        'muscle_group': 'Legs',
+        'description':
+            'Perform squats on a machine that keeps your back supported at an angle.'
+      },
+      {
+        'name': 'Leg Extension',
+        'muscle_group': 'Legs',
+        'description':
+            'Extend legs against resistance on a machine to target quadriceps.'
+      },
+      {
+        'name': 'Hamstring Curl',
+        'muscle_group': 'Legs',
+        'description':
+            'Curl legs towards buttocks against resistance to target hamstrings.'
+      },
+      {
+        'name': 'Romanian Deadlift',
+        'muscle_group': 'Legs',
+        'description':
+            'Bend forward at the hips while keeping legs mostly straight to target hamstrings.'
+      },
+
+      // Additional shoulder exercises
+      {
+        'name': 'Lateral Raise',
+        'muscle_group': 'Shoulders',
+        'description':
+            'Raise weights out to sides to shoulder height to target lateral deltoids.'
+      },
+      {
+        'name': 'Front Raise',
+        'muscle_group': 'Shoulders',
+        'description':
+            'Raise weights in front of you to shoulder height to target front deltoids.'
+      },
+      {
+        'name': 'Arnold Press',
+        'muscle_group': 'Shoulders',
+        'description':
+            'A dumbbell press that starts with palms facing you, then rotates as you press upward.'
+      },
+      {
+        'name': 'Upright Row',
+        'muscle_group': 'Shoulders',
+        'description':
+            'Pull weight up along the front of your body with elbows leading to shoulder height.'
+      },
+      {
+        'name': 'Face Pull',
+        'muscle_group': 'Shoulders',
+        'description':
+            'Pull cable attachment toward your face, targeting rear deltoids and upper back.'
+      },
+
+      // Additional tricep exercises
+      {
+        'name': 'Tricep Pushdown',
+        'muscle_group': 'Triceps',
+        'description':
+            'Push cable attachment downward against resistance to extend the arms fully.'
+      },
+      {
+        'name': 'Close-Grip Bench Press',
+        'muscle_group': 'Triceps',
+        'description':
+            'Perform bench press with hands placed closer together to emphasize triceps.'
+      },
+      {
+        'name': 'Dip',
+        'muscle_group': 'Triceps',
+        'description':
+            'Lower and raise body between parallel bars to work triceps and chest.'
+      },
+      {
+        'name': 'Diamond Push-Up',
+        'muscle_group': 'Triceps',
+        'description':
+            'Perform push-ups with hands close together forming a diamond shape.'
+      },
+      {
+        'name': 'Kickback',
+        'muscle_group': 'Triceps',
+        'description':
+            'Bend over with upper arm parallel to floor, then extend forearm backward.'
+      },
+    ];
+
+    // Insert each exercise if it doesn't already exist
+    for (final exercise in additionalExercises) {
+      // Check if exercise already exists
+      final exists = await db.rawQuery(
+          "SELECT 1 FROM exercise WHERE name = ? AND muscle_group = ?",
+          [exercise['name'], exercise['muscle_group']]);
+
+      // Only insert if it doesn't exist
+      if (exists.isEmpty) {
+        await db.insert('exercise', exercise);
+        print('Added new exercise: ${exercise['name']}');
+      }
+    }
+  }
+
   /// Builds the main layout of the home page
   /// Includes user info, streak data, recent workout, and active goal sections
   @override
@@ -545,8 +716,8 @@ class _HomePageState extends State<HomePage> {
                             builder: (context) => const LogWorkoutFlow()),
                       ).then((_) {
                         _fetchStreakData();
-                        _fetchRecentWorkout();
-                        _fetchMostImportantGoal(); // Refresh goal data as well
+                        _fetchRecentWorkoutData();
+                        _fetchActiveGoals(); // Refresh goal data as well
                       });
                     },
                     icon: const Icon(Icons.add),
@@ -654,7 +825,7 @@ class _HomePageState extends State<HomePage> {
           ),
         ).then((_) {
           // Refresh the data when returning from details
-          _fetchRecentWorkout();
+          _fetchRecentWorkoutData();
         });
       },
       child: Card(
@@ -893,7 +1064,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ).then((_) {
                   // Refresh goals when returning
-                  _fetchMostImportantGoal();
+                  _fetchActiveGoals();
                 });
               } else {
                 Navigator.push(
@@ -903,7 +1074,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ).then((_) {
                   // Refresh goals when returning
-                  _fetchMostImportantGoal();
+                  _fetchActiveGoals();
                 });
               }
             }

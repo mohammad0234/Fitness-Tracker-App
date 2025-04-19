@@ -498,68 +498,221 @@ class _StrengthGoalDetailsScreenState extends State<StrengthGoalDetailsScreen> {
   /// Shows bottom sheet for exercise selection
   /// Displays exercises grouped by muscle groups
   void _selectExercise() {
+    // Track search and filtering state
+    String searchQuery = '';
+    String selectedMuscleGroup = 'All';
+    List<String> muscleGroups = ['All'];
+    List<Exercise> filteredExercises = _exercises;
+
+    // Get unique muscle groups from exercises
+    final Set<String> uniqueMuscleGroups = _exercises
+        .map((e) => e.muscleGroup ?? 'Other')
+        .where((group) => group.isNotEmpty)
+        .toSet();
+    muscleGroups = ['All', ...uniqueMuscleGroups];
+
+    // Function to filter exercises based on search and muscle group
+    void filterExercises(String query, String muscleGroup) {
+      filteredExercises = _exercises.where((exercise) {
+        // Apply search filter
+        final matchesSearch = query.isEmpty ||
+            exercise.name.toLowerCase().contains(query.toLowerCase());
+
+        // Apply muscle group filter
+        final matchesMuscleGroup =
+            muscleGroup == 'All' || exercise.muscleGroup == muscleGroup;
+
+        return matchesSearch && matchesMuscleGroup;
+      }).toList();
+    }
+
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.7,
-          minChildSize: 0.5,
-          maxChildSize: 0.9,
-          expand: false,
-          builder: (context, scrollController) {
-            return Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Select Exercise',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+        return StatefulBuilder(builder: (context, setState) {
+          return DraggableScrollableSheet(
+            initialChildSize: 0.8,
+            minChildSize: 0.5,
+            maxChildSize: 0.9,
+            expand: false,
+            builder: (context, scrollController) {
+              return Column(
+                children: [
+                  // Header with close button
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Select Exercise',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ],
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: _isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : ListView.builder(
-                          controller: scrollController,
-                          itemCount: _exercises.length,
-                          itemBuilder: (context, index) {
-                            final exercise = _exercises[index];
-                            return ListTile(
-                              title: Text(exercise.name),
-                              subtitle: Text(exercise.muscleGroup ?? ''),
-                              onTap: () {
-                                setState(() {
-                                  _selectedExerciseId =
-                                      exercise.exerciseId.toString();
-                                  _selectedExerciseName = exercise.name;
-                                });
-                                Navigator.pop(context);
-                              },
-                            );
-                          },
+
+                  // Search bar
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: TextField(
+                      decoration: InputDecoration(
+                        hintText: 'Search exercises...',
+                        prefixIcon: const Icon(Icons.search),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                ),
-              ],
-            );
-          },
-        );
+                        contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          searchQuery = value;
+                          filterExercises(searchQuery, selectedMuscleGroup);
+                        });
+                      },
+                    ),
+                  ),
+
+                  // Muscle group filter
+                  SizedBox(
+                    height: 60,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      itemCount: muscleGroups.length,
+                      itemBuilder: (context, index) {
+                        final muscleGroup = muscleGroups[index];
+                        final isSelected = muscleGroup == selectedMuscleGroup;
+
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8.0),
+                          child: ChoiceChip(
+                            label: Text(muscleGroup),
+                            selected: isSelected,
+                            onSelected: (selected) {
+                              if (selected) {
+                                setState(() {
+                                  selectedMuscleGroup = muscleGroup;
+                                  filterExercises(
+                                      searchQuery, selectedMuscleGroup);
+                                });
+                              }
+                            },
+                            backgroundColor: Colors.grey.shade100,
+                            selectedColor: Colors.blue,
+                            labelStyle: TextStyle(
+                              color: isSelected ? Colors.white : Colors.black,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+
+                  // Exercise list
+                  Expanded(
+                    child: _isLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : filteredExercises.isEmpty
+                            ? Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.fitness_center_outlined,
+                                      size: 64,
+                                      color: Colors.grey.shade400,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'No exercises match your filters',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.grey.shade700,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Try adjusting your search or filters',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : ListView.builder(
+                                controller: scrollController,
+                                itemCount: filteredExercises.length,
+                                itemBuilder: (context, index) {
+                                  final exercise = filteredExercises[index];
+                                  return ListTile(
+                                    title: Text(exercise.name),
+                                    subtitle: Text(exercise.muscleGroup ?? ''),
+                                    leading: CircleAvatar(
+                                      backgroundColor: _getMuscleGroupColor(
+                                          exercise.muscleGroup ?? 'Other'),
+                                      child: const Icon(
+                                        Icons.fitness_center,
+                                        color: Colors.white,
+                                        size: 16,
+                                      ),
+                                    ),
+                                    onTap: () {
+                                      this.setState(() {
+                                        _selectedExerciseId =
+                                            exercise.exerciseId.toString();
+                                        _selectedExerciseName = exercise.name;
+                                      });
+                                      Navigator.pop(context);
+                                    },
+                                  );
+                                },
+                              ),
+                  ),
+                ],
+              );
+            },
+          );
+        });
       },
     );
+  }
+
+  /// Returns a color for the muscle group to make UI more visually engaging
+  Color _getMuscleGroupColor(String muscleGroup) {
+    switch (muscleGroup) {
+      case 'Chest':
+        return Colors.blue;
+      case 'Back':
+        return Colors.green;
+      case 'Shoulders':
+        return Colors.purple;
+      case 'Biceps':
+        return Colors.teal;
+      case 'Triceps':
+        return Colors.indigo;
+      case 'Legs':
+        return Colors.orange;
+      default:
+        return Colors.blueGrey;
+    }
   }
 
   @override
