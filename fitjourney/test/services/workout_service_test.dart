@@ -132,7 +132,6 @@ void main() {
   group('WorkoutService Tests', () {
     late MockDatabaseHelper mockDbHelper;
     late MockFirebaseAuth mockAuth;
-    late MockNotificationTriggerService mockNotificationService;
     late MockStreakService mockStreakService;
     late WorkoutService workoutService;
 
@@ -140,14 +139,13 @@ void main() {
       // Initialize mocks
       mockDbHelper = MockDatabaseHelper();
       mockAuth = MockFirebaseAuth();
-      mockNotificationService = MockNotificationTriggerService();
       mockStreakService = MockStreakService();
 
       // No need to configure mockUser.uid anymore since it's hardcoded
 
       // Create testable service instance
-      workoutService = WorkoutService(
-          mockDbHelper, mockNotificationService, mockAuth, mockStreakService);
+      workoutService =
+          WorkoutService(mockDbHelper, mockAuth, mockStreakService);
     });
 
     test('createWorkout calls methods with correct parameters', () async {

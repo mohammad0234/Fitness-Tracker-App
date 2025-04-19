@@ -72,8 +72,6 @@ class GoalTrackingService {
     if (goal.goalId == null) return;
 
     // Get previous progress for comparison
-    final previousGoal = await _dbHelper.getGoalById(goal.goalId!);
-    final double previousProgress = previousGoal?.currentProgress ?? 0.0;
 
     // Count workouts in date range
     final workoutCount = await _dbHelper.countWorkoutsInDateRange(
@@ -85,21 +83,6 @@ class GoalTrackingService {
 
     // Update the goal
     await _dbHelper.updateGoalProgress(goal.goalId!, progress);
-
-    // Send notification for progress update
-    await _notificationTriggerService.onGoalProgressUpdated(
-      Goal(
-        goalId: goal.goalId,
-        userId: goal.userId,
-        type: goal.type,
-        targetValue: goal.targetValue,
-        startDate: goal.startDate,
-        endDate: goal.endDate,
-        achieved: goal.achieved,
-        currentProgress: progress,
-      ),
-      previousProgress,
-    );
 
     // Check if goal is achieved
     if (progress >= targetValue && !goal.achieved) {
@@ -126,8 +109,6 @@ class GoalTrackingService {
     if (goal.goalId == null) return;
 
     // Get previous progress for comparison
-    final previousGoal = await _dbHelper.getGoalById(goal.goalId!);
-    final double previousProgress = previousGoal?.currentProgress ?? 0.0;
 
     // Update the goal progress
     await _dbHelper.updateGoalProgress(goal.goalId!, currentWeight);
@@ -138,23 +119,6 @@ class GoalTrackingService {
       final exercise = await _dbHelper.getExerciseById(goal.exerciseId!);
       exerciseName = exercise?.name;
     }
-
-    // Send notification for progress update
-    await _notificationTriggerService.onGoalProgressUpdated(
-      Goal(
-        goalId: goal.goalId,
-        userId: goal.userId,
-        type: goal.type,
-        exerciseId: goal.exerciseId,
-        targetValue: goal.targetValue,
-        startDate: goal.startDate,
-        endDate: goal.endDate,
-        achieved: goal.achieved,
-        currentProgress: currentWeight,
-      ),
-      previousProgress,
-      exerciseName: exerciseName,
-    );
 
     // Check if goal is achieved
     final double targetValue = goal.targetValue ?? 0.0;
@@ -197,24 +161,6 @@ class GoalTrackingService {
     return await _dbHelper.getExpiringGoals(userId);
   }
 
-  // Add this method to check for expiring goals and send notifications
-  Future<void> checkAndNotifyExpiringGoals() async {
-    final userId = _getCurrentUserId();
-    final expiringGoals = await _dbHelper.getExpiringGoals(userId);
-
-    for (final goal in expiringGoals) {
-      // Get exercise name for strength goals
-      String? exerciseName;
-      if (goal.type == 'ExerciseTarget' && goal.exerciseId != null) {
-        final exercise = await _dbHelper.getExerciseById(goal.exerciseId!);
-        exerciseName = exercise?.name;
-      }
-
-      await _notificationTriggerService.onGoalNearingExpiration(goal,
-          exerciseName: exerciseName);
-    }
-  }
-
   Future<void> performDailyGoalUpdate() async {
     try {
       final userId = _getCurrentUserId();
@@ -234,9 +180,6 @@ class GoalTrackingService {
           await _goalService.calculateFrequencyGoalProgress(goal.goalId!);
         }
       }
-
-      // Check for goals that are about to expire and send notifications
-      await checkAndNotifyExpiringGoals();
 
       debugPrint('Daily goal update completed');
     } catch (e) {

@@ -5,7 +5,6 @@ import 'package:fitjourney/database/database_helper.dart';
 import 'package:fitjourney/database_models/goal.dart';
 //import 'package:fitjourney/database_models/exercise.dart';
 import 'package:fitjourney/services/workout_service.dart';
-import 'package:fitjourney/services/notification_trigger_service.dart';
 
 /// Service for managing user fitness goals including creation, tracking and progress updates
 class GoalService {
@@ -16,7 +15,6 @@ class GoalService {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
 
   // Notification service instance for triggering notifications
-  final _notificationService = NotificationTriggerService.instance;
 
   // Private constructor
   GoalService._internal();
@@ -491,71 +489,10 @@ class GoalService {
 
     for (final goal in activeGoals) {
       if (goal.goalId != null && goal.type == 'WeightTarget') {
-        // Get previous progress and goal details to determine if we need to trigger notifications
-        final previousProgress = goal.currentProgress;
-
         // Update the goal's progress
-        final newProgress = await calculateWeightGoalProgress(goal.goalId!);
-
-        // Check for significant weight changes
-        if (previousProgress > 0) {
-          final weightChange = newProgress - previousProgress;
-          final isWeightLoss = isWeightLossGoal(goal);
-
-          // If the change is significant (more than 0.5kg)
-          if (weightChange.abs() > 0.5) {
-            // Trigger milestone notification if the direction is positive
-            final isPositiveChange = (isWeightLoss && weightChange < 0) ||
-                (!isWeightLoss && weightChange > 0);
-
-            if (isPositiveChange) {
-              // If cumulative change is significant, send a milestone notification
-              final totalChange = newProgress - goal.currentProgress;
-
-              if (totalChange.abs() >= 2.5) {
-                await _notificationService.onWeightMilestone(
-                    goal, totalChange, isWeightLoss);
-              }
-            }
-
-            // Check if user is on track to meet their goal
-            final daysElapsed =
-                DateTime.now().difference(goal.startDate).inDays;
-            final totalDays = goal.endDate.difference(goal.startDate).inDays;
-            final progressPercentage = calculateWeightGoalPercentage(
-                goal.currentProgress, // Starting weight
-                newProgress, // Current weight
-                goal.targetValue! // Target weight
-                );
-
-            // Time percentage elapsed
-            final timePercentage = daysElapsed / totalDays;
-
-            // On track if progress percentage >= time percentage
-            final onTrack = progressPercentage >= timePercentage;
-
-            // Notify about pace occasionally (not every log)
-            if (timePercentage > 0.2 && weight % 3 < 0.1) {
-              // roughly every 3rd entry
-              await _notificationService.onWeightGoalPaceUpdate(
-                  goal, onTrack, isWeightLoss);
-            }
-          }
-        }
+        await calculateWeightGoalProgress(goal.goalId!);
       }
     }
-  }
-
-  /// Gets goals that are close to completion
-  Future<List<Goal>> getNearCompletionGoals() async {
-    final userId = _getCurrentUserId();
-    return await _dbHelper.getNearCompletionGoals(userId);
-  }
-
-  /// Gets goals that will expire soon
-  Future<List<Goal>> getExpiringGoals() async {
-    final userId = _getCurrentUserId();
-    return await _dbHelper.getExpiringGoals(userId);
   }
 
   /// Updates an existing goal

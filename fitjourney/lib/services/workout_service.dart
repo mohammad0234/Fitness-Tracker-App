@@ -7,7 +7,6 @@ import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:fitjourney/services/goal_tracking_service.dart';
 import 'package:fitjourney/services/streak_service.dart';
 import 'package:fitjourney/utils/date_utils.dart';
-import 'package:fitjourney/services/notification_trigger_service.dart';
 
 /// Service for managing workouts, exercises, and fitness activity tracking
 /// Provides methods for creating, retrieving, and analyzing workout data
@@ -15,21 +14,18 @@ class WorkoutService {
   // Singleton instance - now uses the constructor with dependencies
   static final WorkoutService instance = WorkoutService._internal(
     DatabaseHelper.instance,
-    NotificationTriggerService.instance,
     firebase_auth.FirebaseAuth.instance,
     StreakService.instance,
   );
 
   // Dependencies as properties
   final DatabaseHelper _dbHelper;
-  final NotificationTriggerService _notificationTriggerService;
   final firebase_auth.FirebaseAuth _auth;
   final StreakService _streakService;
 
   // Public constructor for dependency injection (for testing)
   WorkoutService(
     this._dbHelper,
-    this._notificationTriggerService,
     this._auth,
     this._streakService,
   );
@@ -37,7 +33,6 @@ class WorkoutService {
   // Private constructor used by the singleton
   WorkoutService._internal(
     this._dbHelper,
-    this._notificationTriggerService,
     this._auth,
     this._streakService,
   );
@@ -273,7 +268,7 @@ class WorkoutService {
   }
 
   /// Checks if a weight is a new personal best and updates records accordingly
-  /// Triggers notifications and goal updates when personal bests are achieved
+  /// Records milestones and updates related strength goals when personal bests are achieved
   Future<bool> checkAndUpdatePersonalBest(int exerciseId, double weight) async {
     final userId = _getCurrentUserId();
 
@@ -311,9 +306,6 @@ class WorkoutService {
       // Update any related goals
       await GoalTrackingService.instance
           .updateGoalsAfterPersonalBest(exerciseId, weight);
-
-      // Schedule notification for personal best
-      await _notificationTriggerService.onPersonalBest(exerciseId, weight);
     }
 
     return isNewPersonalBest;
