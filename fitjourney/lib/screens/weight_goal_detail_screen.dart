@@ -84,9 +84,21 @@ class _WeightGoalDetailScreenState extends State<WeightGoalDetailScreen> {
       });
 
       try {
-        final history = await _goalService.getWeightProgressHistory(
-            goal.userId, goal.startDate);
+        // Debug print to track goal info
+        print(
+            'Loading weight history for userId: ${goal.userId}, from date: ${goal.startDate}');
 
+        // Modify this to load ALL weight history regardless of date
+        final history =
+            await _goalService.getWeightProgressHistory(goal.userId);
+
+        print('Weight history loaded: ${history.length} entries');
+        // Print first few entries if available
+        if (history.isNotEmpty) {
+          print('First weight entry: ${history[0]}');
+        }
+
+        // Update UI with data
         setState(() {
           _weightHistory = history;
           _isLoadingChart = false;
@@ -267,12 +279,14 @@ class _WeightGoalDetailScreenState extends State<WeightGoalDetailScreen> {
 
                           try {
                             // Log the weight
+                            print('Logging weight: $weight on $_selectedDate');
                             await _goalService.logUserWeight(
                                 weight, _selectedDate);
 
                             if (!mounted) return;
                             Navigator.of(context).pop();
 
+                            print('Weight logged successfully, reloading data');
                             // Reload goal details to reflect new weight
                             await _loadGoalDetails();
 
@@ -281,6 +295,7 @@ class _WeightGoalDetailScreenState extends State<WeightGoalDetailScreen> {
                                   content: Text('Weight logged successfully')),
                             );
                           } catch (e) {
+                            print('Error logging weight: $e');
                             if (!mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
@@ -712,8 +727,51 @@ class _WeightGoalDetailScreenState extends State<WeightGoalDetailScreen> {
   /// - Touch tooltips with detailed information
   Widget _buildWeightChart(
       bool isWeightLoss, Color primaryColor, Color secondaryColor) {
+    // Add more comprehensive debug info
+    print('Building weight chart with ${_weightHistory.length} data points');
+
     if (_weightHistory.isEmpty) {
-      return const Center(child: Text('No weight data available'));
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.timeline_outlined,
+              size: 48,
+              color: Colors.grey.shade400,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No weight data available yet',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Use the "Log Weight" button to add data',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey.shade500,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // If we have only one data point, duplicate it to show at least a line
+    if (_weightHistory.length == 1) {
+      print('Only one weight entry found, duplicating for chart display');
+      final entry = _weightHistory.first;
+      // Create a second entry one day later with the same weight
+      final secondEntry = {
+        'date': (entry['date'] as DateTime).add(const Duration(days: 1)),
+        'weight': entry['weight'],
+        'formattedDate': 'Today',
+      };
+      _weightHistory.add(secondEntry);
     }
 
     // Define min and max values for the chart
@@ -726,17 +784,25 @@ class _WeightGoalDetailScreenState extends State<WeightGoalDetailScreen> {
       if (weight < minY) minY = weight;
     }
 
-    // Add padding to the min/max
-    final yPadding = (maxY - minY) * 0.1;
-    minY = (minY - yPadding).clamp(0, double.infinity);
-    maxY = maxY + yPadding;
+    // Add padding to the min/max and handle edge cases
+    if (minY == maxY) {
+      // If all weights are the same, create a range
+      minY = minY * 0.95;
+      maxY = maxY * 1.05;
+    } else {
+      final yPadding = (maxY - minY) * 0.1;
+      minY = (minY - yPadding).clamp(0, double.infinity);
+      maxY = maxY + yPadding;
+    }
 
     // Make sure target weight is within the visible range
     final targetValue = _goal?.targetValue ?? 0;
     if ((targetValue < minY) || (targetValue > maxY)) {
-      minY = min(minY, targetValue - yPadding);
-      maxY = max(maxY, targetValue + yPadding);
+      minY = min(minY, targetValue - (maxY - minY) * 0.1);
+      maxY = max(maxY, targetValue + (maxY - minY) * 0.1);
     }
+
+    print('Chart Y-axis range: $minY to $maxY');
 
     return LineChart(
       LineChartData(
