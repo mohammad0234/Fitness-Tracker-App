@@ -9,6 +9,7 @@ class Goal {
   final bool achieved;
   final double currentProgress;
   final double? startingWeight; // Added for weight goals
+  final DateTime? achievedDate; // Date when the goal was actually achieved
 
   Goal({
     this.goalId,
@@ -21,6 +22,7 @@ class Goal {
     this.achieved = false,
     this.currentProgress = 0,
     this.startingWeight,
+    this.achievedDate,
   });
 
   factory Goal.fromMap(Map<String, dynamic> map) {
@@ -41,6 +43,9 @@ class Goal {
       startingWeight: map['starting_weight'] != null
           ? (map['starting_weight'] as num).toDouble()
           : null,
+      achievedDate: map['achieved_date'] != null
+          ? DateTime.parse(map['achieved_date'])
+          : null,
     );
   }
 
@@ -56,6 +61,7 @@ class Goal {
       'achieved': achieved ? 1 : 0,
       'current_progress': currentProgress,
       'starting_weight': startingWeight,
+      'achieved_date': achievedDate?.toIso8601String(),
     };
   }
 }

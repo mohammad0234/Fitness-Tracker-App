@@ -156,6 +156,7 @@ class DatabaseHelper {
         end_date         DATE NOT NULL,
         achieved         BOOLEAN DEFAULT FALSE,
         current_progress REAL DEFAULT 0,
+        achieved_date    DATE,
         FOREIGN KEY (user_id) REFERENCES users(user_id),
         FOREIGN KEY (exercise_id) REFERENCES exercise(exercise_id),
         CHECK (
@@ -944,7 +945,7 @@ class DatabaseHelper {
       'goal',
       where: 'user_id = ? AND achieved = 1',
       whereArgs: [userId],
-      orderBy: 'end_date DESC',
+      orderBy: 'achieved_date DESC, end_date DESC',
     );
 
     return result.map((map) => Goal.fromMap(map)).toList();
@@ -973,6 +974,7 @@ class DatabaseHelper {
   /// @param goalId The ID of the goal to mark as achieved
   Future<void> markGoalAchieved(int goalId) async {
     final db = await database;
+    final now = DateTime.now();
 
     // Start a transaction to update the goal and create milestone/notification
     // This ensures database consistency if the operation is interrupted
@@ -980,7 +982,11 @@ class DatabaseHelper {
       // Update goal
       await txn.update(
         'goal',
-        {'achieved': 1},
+        {
+          'achieved': 1,
+          'achieved_date':
+              now.toIso8601String(), // Add the current date as achieved_date
+        },
         where: 'goal_id = ?',
         whereArgs: [goalId],
       );
@@ -1003,7 +1009,7 @@ class DatabaseHelper {
             'type': 'GoalAchieved',
             'exercise_id': goal.exerciseId,
             'value': goal.targetValue,
-            'date': DateTime.now().toIso8601String(),
+            'date': now.toIso8601String(),
           },
         );
 
@@ -1015,7 +1021,7 @@ class DatabaseHelper {
             'user_id': goal.userId,
             'type': 'GoalProgress',
             'message': 'Congratulations! You\'ve achieved your goal.',
-            'timestamp': DateTime.now().toIso8601String(),
+            'timestamp': now.toIso8601String(),
             'is_read': 0,
           },
         );
@@ -1343,6 +1349,7 @@ class DatabaseHelper {
               end_date         DATE NOT NULL,
               achieved         BOOLEAN DEFAULT FALSE,
               current_progress REAL DEFAULT 0,
+              achieved_date    DATE,
               FOREIGN KEY (user_id) REFERENCES users(user_id),
               FOREIGN KEY (exercise_id) REFERENCES exercise(exercise_id),
               CHECK (
@@ -1389,6 +1396,22 @@ class DatabaseHelper {
         ''');
 
         print('Added starting_weight column to goal table');
+      }
+
+      // Add achieved_date column to goal table for tracking when goals are completed
+      if (!goalColumnNames.contains('achieved_date')) {
+        print('Adding achieved_date column to goal table');
+        await db.execute('ALTER TABLE goal ADD COLUMN achieved_date TEXT');
+
+        // For already achieved goals, set achieved_date to the current date
+        // This ensures backward compatibility for existing data
+        await db.execute('''
+          UPDATE goal 
+          SET achieved_date = ? 
+          WHERE achieved = 1 AND achieved_date IS NULL
+        ''', [DateTime.now().toIso8601String()]);
+
+        print('Added achieved_date column to goal table');
       }
 
       // Future migrations would be added here as the app evolves

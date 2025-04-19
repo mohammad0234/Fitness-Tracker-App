@@ -61,7 +61,8 @@ class _GoalsPageState extends State<GoalsPage> {
         final goalInfo = await GoalService.instance.getGoalDisplayInfo(goal);
         formattedCompletedGoals.add({
           'title': goalInfo['title'],
-          'completedOn': DateFormat('MMM d, yyyy').format(goal.endDate),
+          'completedOn': DateFormat('MMM d, yyyy')
+              .format(goal.achievedDate ?? goal.endDate),
         });
       }
 
