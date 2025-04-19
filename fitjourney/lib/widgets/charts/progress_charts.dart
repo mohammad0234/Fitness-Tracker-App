@@ -6,49 +6,17 @@
  * - Consistent error state presentation
  * - Automated data fetching from ProgressService
  * - Support for multiple chart types:
- *   - Workout volume trends
  *   - Muscle group distribution
  *   - Exercise-specific progress
  */
 
 import 'package:flutter/material.dart';
 import 'package:fitjourney/services/progress_service.dart';
-import 'package:fitjourney/widgets/charts/workout_volume_chart.dart';
 import 'package:fitjourney/widgets/charts/muscle_group_pie_chart.dart';
 import 'package:fitjourney/widgets/charts/exercise_progress_chart.dart';
 
 class ProgressCharts {
   static final ProgressService _progressService = ProgressService.instance;
-
-  /**
-   * Creates a workout volume chart for a specified time period.
-   * Handles data fetching and error states automatically.
-   * 
-   * @param timeRange The time period to display (e.g., 'Weekly', 'Monthly')
-   * @returns A Widget containing either the chart or an error state
-   */
-  static Future<Widget> buildWorkoutVolumeChart({
-    required String timeRange,
-  }) async {
-    try {
-      // Get date range for the selected period
-      final dateRange = _progressService.getDateRangeForPeriod(timeRange);
-
-      // Fetch data
-      final volumeData = await _progressService.getWorkoutVolumeData(
-        startDate: dateRange['startDate']!,
-        endDate: dateRange['endDate']!,
-      );
-
-      // Return chart widget
-      return WorkoutVolumeChart(
-        volumeData: volumeData,
-        timeRange: timeRange,
-      );
-    } catch (e) {
-      return _buildErrorWidget('Error loading workout volume data: $e');
-    }
-  }
 
   /**
    * Creates a pie chart showing the distribution of exercises across muscle groups.

@@ -7,7 +7,6 @@ import 'package:fitjourney/screens/exercise_progress_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:fitjourney/services/progress_service.dart';
 import 'package:fitjourney/database_models/progress_data.dart';
-import 'package:fitjourney/widgets/charts/workout_volume_chart.dart';
 import 'package:fitjourney/widgets/charts/muscle_group_pie_chart.dart';
 import 'package:fitjourney/screens/calendar_streak_screen.dart';
 import 'package:fitjourney/services/workout_service.dart';
@@ -350,13 +349,6 @@ class _InsightsTabState extends State<InsightsTab> {
                               children: [
                                 // Add extra spacing at the top
                                 const SizedBox(height: 12),
-
-                                // Workout Volume Chart
-                                WorkoutVolumeChart(
-                                  volumeData: data.volumeData,
-                                  timeRange: _timeFilter,
-                                ),
-                                const SizedBox(height: 24),
 
                                 // Muscle Group Distribution Chart
                                 MuscleGroupPieChart(
