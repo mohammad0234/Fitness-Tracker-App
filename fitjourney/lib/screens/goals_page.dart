@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'log_goal_flow.dart';
 import 'package:fitjourney/screens/goal_detail_screen.dart';
 import 'package:fitjourney/screens/weight_goal_detail_screen.dart';
+import 'package:fitjourney/screens/completed_goal_screen.dart';
 
 /// Screen for displaying and managing a user's fitness goals
 /// Shows active goals, completed goals, and provides options to create new goals
@@ -63,6 +64,8 @@ class _GoalsPageState extends State<GoalsPage> {
           'title': goalInfo['title'],
           'completedOn': DateFormat('MMM d, yyyy')
               .format(goal.achievedDate ?? goal.endDate),
+          'goalId': goal.goalId,
+          'type': goal.type,
         });
       }
 
@@ -585,47 +588,66 @@ class _GoalsPageState extends State<GoalsPage> {
 
   /// Builds a list item for displaying completed goal information
   Widget _buildCompletedGoalItem(Map<String, dynamic> goal) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: Row(
-        children: [
-          Container(
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-              color: Colors.green.shade100,
-              shape: BoxShape.circle,
+    return InkWell(
+      onTap: () {
+        // Navigate to the completed goal detail screen when tapped
+        final goalId = goal['goalId'];
+        if (goalId != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => CompletedGoalScreen(goalId: goalId),
             ),
-            child: const Center(
-              child: Icon(
-                Icons.check,
-                size: 16,
-                color: Colors.green,
+          ).then((_) => _loadGoalData()); // Refresh on return
+        }
+      },
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 12.0),
+        child: Row(
+          children: [
+            Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color: Colors.green.shade100,
+                shape: BoxShape.circle,
+              ),
+              child: const Center(
+                child: Icon(
+                  Icons.check,
+                  size: 16,
+                  color: Colors.green,
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  goal['title'] ?? 'Completed Goal',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w500,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    goal['title'] ?? 'Completed Goal',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                ),
-                Text(
-                  'Completed on ${goal['completedOn']}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
+                  Text(
+                    'Completed on ${goal['completedOn']}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+            Icon(
+              Icons.chevron_right,
+              color: Colors.grey.shade400,
+              size: 18,
+            ),
+          ],
+        ),
       ),
     );
   }
