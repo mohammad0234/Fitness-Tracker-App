@@ -189,10 +189,6 @@ class _InsightsTabState extends State<InsightsTab> {
     try {
       // Fetch all data in parallel for better performance
       final results = await Future.wait([
-        _progressService.getWorkoutVolumeData(
-          startDate: dateRange['startDate']!,
-          endDate: dateRange['endDate']!,
-        ),
         _progressService.getMuscleGroupDistribution(
           startDate: dateRange['startDate']!,
           endDate: dateRange['endDate']!,
@@ -206,11 +202,10 @@ class _InsightsTabState extends State<InsightsTab> {
       ]);
 
       return ProgressData(
-        volumeData: results[0] as List<Map<String, dynamic>>,
-        muscleGroupData: results[1] as List<Map<String, dynamic>>,
-        progressSummary: results[2] as Map<String, dynamic>,
-        personalBests: results[3] as List<Map<String, dynamic>>,
-        exerciseVolumeData: results[4] as List<Map<String, dynamic>>,
+        muscleGroupData: results[0] as List<Map<String, dynamic>>,
+        progressSummary: results[1] as Map<String, dynamic>,
+        personalBests: results[2] as List<Map<String, dynamic>>,
+        exerciseVolumeData: results[3] as List<Map<String, dynamic>>,
       );
     } catch (e) {
       // Forward the error to be handled by the FutureBuilder
@@ -335,8 +330,8 @@ class _InsightsTabState extends State<InsightsTab> {
                           final data = snapshot.data ?? ProgressData.empty();
 
                           // Check if we have any data to display
-                          final bool hasNoData = data.volumeData.isEmpty &&
-                              data.muscleGroupData.isEmpty;
+                          final bool hasNoData = data.muscleGroupData.isEmpty &&
+                              data.exerciseVolumeData.isEmpty;
 
                           if (hasNoData) {
                             return _buildEmptyState();

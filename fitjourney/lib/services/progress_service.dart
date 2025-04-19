@@ -11,14 +11,12 @@ import 'package:fitjourney/utils/date_utils.dart';
 /// Service for tracking and analyzing user fitness progress
 /// Provides methods for generating progress reports, charts and statistics
 class ProgressService {
-  // Singleton instance
-  static final ProgressService instance = ProgressService._internal();
+  static final ProgressService _instance = ProgressService._internal();
+  static ProgressService get instance => _instance;
 
-  // Database helper instance
-  final DatabaseHelper _dbHelper = DatabaseHelper.instance;
-
-  // Private constructor
   ProgressService._internal();
+
+  final DatabaseHelper _databaseHelper = DatabaseHelper.instance;
 
   /// Returns current user ID or throws exception if not logged in
   String _getCurrentUserId() {
@@ -38,7 +36,7 @@ class ProgressService {
     required DateTime endDate,
   }) async {
     final String userId = _getCurrentUserId();
-    final db = await _dbHelper.database;
+    final db = await _databaseHelper.database;
 
     // Format date for SQLite query
     final String formattedStartDate = startDate.toIso8601String();
@@ -75,7 +73,7 @@ class ProgressService {
   /// Calculates total volume for a single workout
   /// Volume is the sum of (weight × reps) across all sets in the workout
   Future<double> _calculateWorkoutVolume(int workoutId) async {
-    final db = await _dbHelper.database;
+    final db = await _databaseHelper.database;
 
     // Get all sets for this workout with their weights and reps
     final List<Map<String, dynamic>> sets = await db.rawQuery('''
@@ -109,7 +107,7 @@ class ProgressService {
     required DateTime endDate,
   }) async {
     final String userId = _getCurrentUserId();
-    final db = await _dbHelper.database;
+    final db = await _databaseHelper.database;
 
     // Format date for SQLite query
     final String formattedStartDate = startDate.toIso8601String();
@@ -156,7 +154,7 @@ class ProgressService {
   /// Returns detailed information including personal bests and improvement percentages
   Future<Map<String, dynamic>> getExerciseProgressData(int exerciseId) async {
     final String userId = _getCurrentUserId();
-    final db = await _dbHelper.database;
+    final db = await _databaseHelper.database;
 
     // Get exercise details
     final List<Map<String, dynamic>> exerciseDetails = await db.query(
@@ -265,7 +263,7 @@ class ProgressService {
     required DateTime endDate,
   }) async {
     final String userId = _getCurrentUserId();
-    final db = await _dbHelper.database;
+    final db = await _databaseHelper.database;
 
     // Get all workout dates in the range
     final List<Map<String, dynamic>> workoutDates = await db.rawQuery('''
@@ -369,7 +367,7 @@ class ProgressService {
   /// Combines workout counts, streaks, and training balance information
   Future<Map<String, dynamic>> getProgressSummary() async {
     final String userId = _getCurrentUserId();
-    final db = await _dbHelper.database;
+    final db = await _databaseHelper.database;
 
     // Get date ranges
     final DateTime now = DateTime.now();
@@ -462,7 +460,7 @@ class ProgressService {
   /// Returns comprehensive list of the user's highest achievements
   Future<List<Map<String, dynamic>>> getAllPersonalBests() async {
     final String userId = _getCurrentUserId();
-    final db = await _dbHelper.database;
+    final db = await _databaseHelper.database;
 
     // Get all exercises performed by the user
     final List<Map<String, dynamic>> exercises = await db.rawQuery('''
@@ -516,46 +514,31 @@ class ProgressService {
 
   // Helper methods for date ranges
 
-  /// Gets date range based on a specified time period
-  /// Supports Week, Month, 3 Months, 6 Months, Year, and All Time periods
+  /// Gets the date range for a given time period filter
   Map<String, DateTime> getDateRangeForPeriod(String period) {
-    final DateTime now = DateTime.now();
+    final now = DateTime.now();
     DateTime startDate;
-    DateTime endDate = DateTime(now.year, now.month, now.day, 23, 59, 59);
 
     switch (period) {
-      case 'Week':
-        // Start from beginning of current week (Monday)
-        final int weekdayOffset =
-            now.weekday - 1; // 0 = Monday in DateTime.weekday
-        startDate = DateTime(now.year, now.month, now.day - weekdayOffset);
+      case 'Weekly':
+        startDate = now.subtract(const Duration(days: 7));
         break;
-      case 'Month':
-        // Start from beginning of current month
-        startDate = DateTime(now.year, now.month, 1);
+      case 'Monthly':
+        startDate = DateTime(now.year, now.month - 1, now.day);
         break;
       case '3 Months':
-        // Start from 3 months ago
-        startDate = DateTime(now.year, now.month - 3, 1);
-        break;
-      case '6 Months':
-        // Start from 6 months ago
-        startDate = DateTime(now.year, now.month - 6, 1);
-        break;
-      case 'Year':
-        // Start from beginning of current year
-        startDate = DateTime(now.year, 1, 1);
+        startDate = DateTime(now.year, now.month - 3, now.day);
         break;
       case 'All Time':
-      default:
-        // Use a far past date for all time
-        startDate = DateTime(2020, 1, 1);
+        startDate = DateTime(2000); // A date far in the past
         break;
+      default:
+        startDate = now.subtract(const Duration(days: 7));
     }
 
     return {
       'startDate': startDate,
-      'endDate': endDate,
+      'endDate': now,
     };
   }
 
@@ -586,7 +569,7 @@ class ProgressService {
   }) async {
     try {
       final String userId = _getCurrentUserId();
-      final db = await _dbHelper.database;
+      final db = await _databaseHelper.database;
 
       // Format date for SQLite query
       final String formattedStartDate = startDate.toIso8601String();

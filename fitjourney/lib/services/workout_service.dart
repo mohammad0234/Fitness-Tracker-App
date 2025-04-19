@@ -224,23 +224,6 @@ class WorkoutService {
     };
   }
 
-  /// Calculates total volume for a workout (sum of weight × reps)
-  /// Provides a single metric to measure workout intensity
-  Future<double> calculateWorkoutVolume(int workoutId) async {
-    final details = await getWorkoutDetails(workoutId);
-    double totalVolume = 0;
-
-    for (var exercise in details['exercises']) {
-      for (var set in exercise['sets']) {
-        final reps = set.reps ?? 0;
-        final weight = set.weight ?? 0;
-        totalVolume += reps * weight;
-      }
-    }
-
-    return totalVolume;
-  }
-
   /// Gets the highest weight ever lifted for a specific exercise
   /// Used for personal best tracking and progress visualization
   Future<double?> getPersonalBestWeight(int exerciseId) async {
