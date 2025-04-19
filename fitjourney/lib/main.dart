@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fitjourney/services/workout_service.dart';
 import 'package:fitjourney/services/goal_tracking_service.dart';
 import 'package:fitjourney/services/notification_service.dart';
@@ -12,7 +11,6 @@ import 'package:flutter/foundation.dart';
 import 'dart:io'; // Add this for Platform checks
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
-import 'screens/onboarding_screen.dart';
 import 'screens/signup_page.dart';
 import 'screens/login_page.dart';
 import 'screens/main_scaffold.dart';
@@ -60,10 +58,6 @@ Future<void> main() async {
     // Continue with app startup even if sync service fails
   }
 
-  // Check if onboarding has been seen
-  final prefs = await SharedPreferences.getInstance();
-  final seenOnboarding = prefs.getBool('seenOnboarding') ?? false;
-
   try {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
@@ -88,7 +82,7 @@ Future<void> main() async {
     // Continue with app startup even if this fails
   }
 
-  runApp(MyApp(seenOnboarding: seenOnboarding));
+  runApp(const MyApp());
 }
 
 // Add this function to request notification permissions
@@ -113,9 +107,7 @@ Future<void> requestNotificationPermissions() async {
 }
 
 class MyApp extends StatelessWidget {
-  final bool seenOnboarding;
-
-  const MyApp({super.key, required this.seenOnboarding});
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -127,9 +119,8 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      initialRoute: seenOnboarding ? '/login' : '/',
+      initialRoute: '/signup',
       routes: {
-        '/': (context) => const OnboardingScreen(),
         '/signup': (context) => const SignUpPage(),
         '/login': (context) => const LoginPage(),
         '/home': (context) => const MainScaffold(),
