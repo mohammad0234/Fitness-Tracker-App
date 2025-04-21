@@ -2,7 +2,7 @@ One drive link for product package submission - https://cityuni-my.sharepoint.co
 
 The project provided is in a top-level folder named:
 
-**Fitness-Tracker-App/**
+**Fitness-Tracker-App**
 
 Inside this folder, the following items are included:
 
@@ -59,7 +59,7 @@ For detailed instructions, refer to the official Android documentation: https://
 
 Once everything is installed, launch VS Studio COde and select option **"Open Folder"**. Or you can go to **"File" > "Open Folder"**.
 
-![Open Folder Screenshot](fitjourney/installation/Open_Folder.png)
+![Open Folder Screenshot](fitjourney/installation/open_folder.png)
 
 
 4. **Open the project folder provided via OneDrive (link available at the top of this README).**
@@ -112,7 +112,7 @@ This command will build the app and launch it on your Android device. The proces
 If everything is set up correctly, the app will automatically open on your phone and you will be directed to the app's signup page.
 
 
-**Potential TroubleShooting:**
+**Potential Troubleshooting:**
 
 If you encounter issues during setup or when trying to run the project, here are a few common problems and how to resolve them:
 
