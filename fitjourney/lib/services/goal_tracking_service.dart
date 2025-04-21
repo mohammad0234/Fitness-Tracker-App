@@ -143,6 +143,9 @@ class GoalTrackingService {
     }
   }
 
+  /// Updates all goal statuses and recalculates progress for active goals.
+  /// Handles both strength goals (ExerciseTarget) and frequency goals (WorkoutFrequency).
+  /// Designed to run once daily to keep goal tracking data current.
   Future<void> performDailyGoalUpdate() async {
     try {
       final userId = _getCurrentUserId();

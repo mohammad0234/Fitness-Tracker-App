@@ -4,7 +4,6 @@ import 'package:fitjourney/database_models/workout.dart';
 import 'package:fitjourney/database_models/workout_exercise.dart';
 import 'package:fitjourney/database_models/workout_set.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
-import 'package:fitjourney/services/goal_tracking_service.dart';
 import 'package:fitjourney/services/streak_service.dart';
 import 'package:fitjourney/utils/date_utils.dart';
 
@@ -169,25 +168,6 @@ class WorkoutService {
     return await _dbHelper.insertWorkoutSet(workoutSet);
   }
 
-  /// Creates a complete workout with all exercises and sets in one operation
-  /// More efficient than adding individual components separately
-  Future<int> logCompleteWorkout({
-    required DateTime date,
-    int? duration,
-    String? notes,
-    required List<Map<String, dynamic>> exercises,
-  }) async {
-    final userId = _getCurrentUserId();
-
-    return await _dbHelper.saveCompleteWorkout(
-      userId: userId,
-      date: date,
-      duration: duration,
-      notes: notes,
-      exercises: exercises,
-    );
-  }
-
   /// Retrieves all workouts for the current user
   Future<List<Workout>> getUserWorkouts() async {
     final userId = _getCurrentUserId();
@@ -222,27 +202,6 @@ class WorkoutService {
       'workout': workout,
       'exercises': exercisesWithSets,
     };
-  }
-
-  /// Gets the highest weight ever lifted for a specific exercise
-  /// Used for personal best tracking and progress visualization
-  Future<double?> getPersonalBestWeight(int exerciseId) async {
-    final userId = _getCurrentUserId();
-    final db = await _dbHelper.database;
-
-    final result = await db.rawQuery('''
-      SELECT MAX(ws.weight) as max_weight
-      FROM workout_set ws
-      JOIN workout_exercise we ON ws.workout_exercise_id = we.workout_exercise_id
-      JOIN workout w ON we.workout_id = w.workout_id
-      WHERE w.user_id = ? AND we.exercise_id = ?
-    ''', [userId, exerciseId]);
-
-    if (result.isNotEmpty && result.first['max_weight'] != null) {
-      return result.first['max_weight'] as double;
-    }
-
-    return null;
   }
 
   /// Deletes a workout and all associated exercises and sets

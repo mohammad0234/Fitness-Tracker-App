@@ -123,7 +123,6 @@ void main() {
 
       expect(channelIds, contains(NotificationService.goalCategory));
       expect(channelIds, contains(NotificationService.streakCategory));
-      expect(channelIds, contains(NotificationService.performanceCategory));
       expect(channelIds, contains(NotificationService.engagementCategory));
     });
 
@@ -237,10 +236,6 @@ void main() {
           equals('Streak Notifications'));
       expect(
           notificationService
-              .getCategoryName(NotificationService.performanceCategory),
-          equals('Performance Notifications'));
-      expect(
-          notificationService
               .getCategoryName(NotificationService.engagementCategory),
           equals('Engagement Notifications'));
       expect(notificationService.getCategoryName('unknown'),
@@ -279,14 +274,6 @@ class TestNotificationChannels {
       importance: Importance.high,
     );
 
-    AndroidNotificationChannel performanceChannel =
-        const AndroidNotificationChannel(
-      NotificationService.performanceCategory,
-      'Performance Notifications',
-      description: 'Notifications about your fitness performance',
-      importance: Importance.defaultImportance,
-    );
-
     AndroidNotificationChannel engagementChannel =
         const AndroidNotificationChannel(
       NotificationService.engagementCategory,
@@ -300,7 +287,6 @@ class TestNotificationChannels {
 
     await androidPlatform?.createNotificationChannel(goalChannel);
     await androidPlatform?.createNotificationChannel(streakChannel);
-    await androidPlatform?.createNotificationChannel(performanceChannel);
     await androidPlatform?.createNotificationChannel(engagementChannel);
   }
 }

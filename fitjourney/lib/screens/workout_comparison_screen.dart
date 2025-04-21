@@ -1594,20 +1594,6 @@ class _WorkoutComparisonScreenState extends State<WorkoutComparisonScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            Row(
-              children: [
-                Icon(Icons.timer_outlined,
-                    size: 16, color: Colors.grey.shade700),
-                const SizedBox(width: 4),
-                Text(
-                  '$duration minutes',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
             const SizedBox(height: 4),
             Row(
               children: [
@@ -1615,7 +1601,7 @@ class _WorkoutComparisonScreenState extends State<WorkoutComparisonScreen> {
                     size: 16, color: Colors.grey.shade700),
                 const SizedBox(width: 4),
                 Text(
-                  '$exerciseCount exercises',
+                  '$exerciseCount exercise',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,

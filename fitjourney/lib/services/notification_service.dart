@@ -4,9 +4,6 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:rxdart/rxdart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:android_intent_plus/android_intent.dart';
-import 'package:android_intent_plus/flag.dart';
-import 'dart:io' show Platform;
 
 /// Service for handling system notifications including scheduling, categorizing, and managing app notifications
 class NotificationService {
@@ -27,7 +24,6 @@ class NotificationService {
   // Notification categories
   static const String goalCategory = 'goal_notifications';
   static const String streakCategory = 'streak_notifications';
-  static const String performanceCategory = 'performance_notifications';
   static const String engagementCategory = 'engagement_notifications';
 
   /// Initializes the notification service and creates notification channels
@@ -71,14 +67,6 @@ class NotificationService {
       importance: Importance.high,
     );
 
-    AndroidNotificationChannel performanceChannel =
-        const AndroidNotificationChannel(
-      performanceCategory,
-      'Performance Notifications',
-      description: 'Notifications about your fitness performance',
-      importance: Importance.defaultImportance,
-    );
-
     AndroidNotificationChannel engagementChannel =
         const AndroidNotificationChannel(
       engagementCategory,
@@ -93,7 +81,6 @@ class NotificationService {
 
     await androidPlatform?.createNotificationChannel(goalChannel);
     await androidPlatform?.createNotificationChannel(streakChannel);
-    await androidPlatform?.createNotificationChannel(performanceChannel);
     await androidPlatform?.createNotificationChannel(engagementChannel);
   }
 
@@ -164,16 +151,6 @@ class NotificationService {
     }
   }
 
-  /// Cancels a specific notification by ID
-  Future<void> cancelNotification(int id) async {
-    await flutterLocalNotificationsPlugin.cancel(id);
-  }
-
-  /// Cancels all pending notifications
-  Future<void> cancelAllNotifications() async {
-    await flutterLocalNotificationsPlugin.cancelAll();
-  }
-
   /// Returns a readable name for a notification category
   String getCategoryName(String category) {
     switch (category) {
@@ -181,8 +158,6 @@ class NotificationService {
         return 'Goal Notifications';
       case streakCategory:
         return 'Streak Notifications';
-      case performanceCategory:
-        return 'Performance Notifications';
       case engagementCategory:
         return 'Engagement Notifications';
       default:
@@ -193,21 +168,5 @@ class NotificationService {
   /// Generates a unique notification ID based on current timestamp
   int generateUniqueId() {
     return DateTime.now().millisecondsSinceEpoch.remainder(100000);
-  }
-
-  /// Opens system settings for exact alarm permissions
-  Future<void> openExactAlarmSettings() async {
-    if (Platform.isAndroid) {
-      final intent = AndroidIntent(
-        action: 'android.settings.REQUEST_SCHEDULE_EXACT_ALARM',
-        flags: <int>[Flag.FLAG_ACTIVITY_NEW_TASK],
-      );
-      await intent.launch();
-    }
-  }
-
-  /// Disposes resources used by the notification service
-  void dispose() {
-    selectNotificationSubject.close();
   }
 }

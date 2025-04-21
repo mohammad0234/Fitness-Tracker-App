@@ -6,7 +6,6 @@ import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 //import 'package:fitjourney/database_models/workout_set.dart';
 import 'package:intl/intl.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:fitjourney/utils/date_utils.dart';
 
 /// Service for tracking and analyzing user fitness progress
 /// Provides methods for generating progress reports, charts and statistics
