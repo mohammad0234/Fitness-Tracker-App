@@ -250,50 +250,6 @@ class WorkoutService {
     await _dbHelper.deleteWorkout(workoutId);
   }
 
-  /// Checks if a weight is a new personal best and updates records accordingly
-  /// Records milestones and updates related strength goals when personal bests are achieved
-  Future<bool> checkAndUpdatePersonalBest(int exerciseId, double weight) async {
-    final userId = _getCurrentUserId();
-
-    // Get current max weight from workout data
-    final db = await _dbHelper.database;
-    final maxWeightResult = await db.rawQuery('''
-    SELECT MAX(ws.weight) as max_weight
-    FROM workout_set ws
-    JOIN workout_exercise we ON ws.workout_exercise_id = we.workout_exercise_id
-    JOIN workout w ON we.workout_id = w.workout_id
-    WHERE we.exercise_id = ? AND w.user_id = ? AND ws.weight IS NOT NULL
-  ''', [exerciseId, userId]);
-
-    final double? currentMax = maxWeightResult.isNotEmpty &&
-            maxWeightResult.first['max_weight'] != null
-        ? (maxWeightResult.first['max_weight'] as num).toDouble()
-        : null;
-
-    // Check if this is a new personal best
-    bool isNewPersonalBest = currentMax == null || weight > currentMax;
-
-    if (isNewPersonalBest) {
-      // Create milestone for the new personal best
-      await db.insert(
-        'milestone',
-        {
-          'user_id': userId,
-          'type': 'PersonalBest',
-          'exercise_id': exerciseId,
-          'value': weight,
-          'date': DateTime.now().toIso8601String(),
-        },
-      );
-
-      // Update any related goals
-      await GoalTrackingService.instance
-          .updateGoalsAfterPersonalBest(exerciseId, weight);
-    }
-
-    return isNewPersonalBest;
-  }
-
   /// Gets all workouts for a specific date
   /// Used for daily view and tracking daily activity
   Future<List<Workout>> getWorkoutsForDate(DateTime date) async {

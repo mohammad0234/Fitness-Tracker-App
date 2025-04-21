@@ -143,24 +143,6 @@ class GoalTrackingService {
     }
   }
 
-  // Daily check for expired goals
-  Future<void> checkExpiredGoals() async {
-    final userId = _getCurrentUserId();
-    await _dbHelper.updateAllGoalStatuses(userId);
-  }
-
-  // Check for goals that are near completion (for notifications)
-  Future<List<Goal>> getNearCompletionGoals() async {
-    final userId = _getCurrentUserId();
-    return await _dbHelper.getNearCompletionGoals(userId);
-  }
-
-  // Check for goals that are about to expire (for notifications)
-  Future<List<Goal>> getExpiringGoals() async {
-    final userId = _getCurrentUserId();
-    return await _dbHelper.getExpiringGoals(userId);
-  }
-
   Future<void> performDailyGoalUpdate() async {
     try {
       final userId = _getCurrentUserId();

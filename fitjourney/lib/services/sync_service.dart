@@ -1510,36 +1510,6 @@ class SyncService {
   }
 
   /**
-   * Updates streak information in Firestore.
-   * - Uploads current streak status
-   * - Updates longest streak if necessary
-   * - Maintains last activity timestamps
-   * 
-   * @param streak Current streak object to update
-   */
-  Future<void> _updateStreakInFirestore(Streak streak) async {
-    try {
-      await _firestore
-          .collection('users')
-          .doc(streak.userId)
-          .collection('streak')
-          .doc(streak.userId)
-          .set(
-        {
-          'current_streak': streak.currentStreak,
-          'longest_streak': streak.longestStreak,
-          'last_activity_date': streak.lastActivityDate?.toIso8601String(),
-          'last_workout_date': streak.lastWorkoutDate?.toIso8601String(),
-          'last_updated': FieldValue.serverTimestamp(),
-        },
-        SetOptions(merge: true),
-      );
-    } catch (e) {
-      print('Error updating streak in Firestore: $e');
-    }
-  }
-
-  /**
    * Generates daily logs from local workout data.
    * - Creates missing log entries
    * - Handles data consistency

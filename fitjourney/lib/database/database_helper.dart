@@ -1065,51 +1065,6 @@ class DatabaseHelper {
     return Sqflite.firstIntValue(result) ?? 0;
   }
 
-  /// Identifies goals that are near completion (90% or more progress).
-  /// Powers the notifications for goals nearing completion, encouraging
-  /// users to finish what they started.
-  ///
-  /// @param userId The ID of the user whose goals to check
-  /// @return List of Goal objects that are at least 90% complete
-  Future<List<Goal>> getNearCompletionGoals(String userId) async {
-    final db = await database;
-    // Using a raw query with a calculation for the completion percentage
-    // This is more efficient than filtering in Dart code
-    final result = await db.rawQuery('''
-      SELECT * FROM goal
-      WHERE user_id = ? AND achieved = 0 
-      AND (current_progress / target_value) >= 0.9
-      ORDER BY end_date ASC
-    ''', [userId]);
-
-    return result.map((map) => Goal.fromMap(map)).toList();
-  }
-
-  /// Identifies goals that are about to expire within 3 days.
-  /// Used for the "goals expiring soon" notifications that create
-  /// urgency and motivate users to complete their goals.
-  ///
-  /// @param userId The ID of the user whose goals to check
-  /// @return List of Goal objects expiring within 3 days
-  Future<List<Goal>> getExpiringGoals(String userId) async {
-    final now = DateTime.now();
-    final threeDaysLater = now.add(const Duration(days: 3));
-
-    final db = await database;
-    final result = await db.query(
-      'goal',
-      where: 'user_id = ? AND achieved = 0 AND end_date BETWEEN ? AND ?',
-      whereArgs: [
-        userId,
-        now.toIso8601String(),
-        threeDaysLater.toIso8601String()
-      ],
-      orderBy: 'end_date ASC',
-    );
-
-    return result.map((map) => Goal.fromMap(map)).toList();
-  }
-
   /// Updates an existing goal with new parameters.
   /// This enables users to modify goal targets, timeframes, or other attributes.
   ///

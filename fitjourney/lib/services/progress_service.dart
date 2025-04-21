@@ -27,78 +27,7 @@ class ProgressService {
     return user.uid;
   }
 
-  // 1. WORKOUT VOLUME DATA PROCESSING
-
-  /// Retrieves workout volume data for visualization
-  /// Returns date-volume pairs for charting workout intensity over time
-  Future<List<Map<String, dynamic>>> getWorkoutVolumeData({
-    required DateTime startDate,
-    required DateTime endDate,
-  }) async {
-    final String userId = _getCurrentUserId();
-    final db = await _databaseHelper.database;
-
-    // Format date for SQLite query
-    final String formattedStartDate = startDate.toIso8601String();
-    final String formattedEndDate = endDate.toIso8601String();
-
-    // Get all workouts in the date range
-    final List<Map<String, dynamic>> workouts = await db.rawQuery('''
-      SELECT workout_id, date FROM workout 
-      WHERE user_id = ? AND date BETWEEN ? AND ?
-      ORDER BY date ASC
-    ''', [userId, formattedStartDate, formattedEndDate]);
-
-    List<Map<String, dynamic>> volumeData = [];
-
-    // For each workout, calculate total volume
-    for (var workout in workouts) {
-      final int workoutId = workout['workout_id'];
-      final DateTime workoutDate = DateTime.parse(workout['date']);
-
-      // Get all sets for this workout
-      final double totalVolume = await _calculateWorkoutVolume(workoutId);
-
-      // Add to volume data list
-      volumeData.add({
-        'date': workoutDate,
-        'volume': totalVolume,
-        'formattedDate': DateFormat('MMM d').format(workoutDate),
-      });
-    }
-
-    return volumeData;
-  }
-
-  /// Calculates total volume for a single workout
-  /// Volume is the sum of (weight × reps) across all sets in the workout
-  Future<double> _calculateWorkoutVolume(int workoutId) async {
-    final db = await _databaseHelper.database;
-
-    // Get all sets for this workout with their weights and reps
-    final List<Map<String, dynamic>> sets = await db.rawQuery('''
-      SELECT ws.weight, ws.reps 
-      FROM workout_set ws
-      JOIN workout_exercise we ON ws.workout_exercise_id = we.workout_exercise_id
-      WHERE we.workout_id = ?
-    ''', [workoutId]);
-
-    double totalVolume = 0;
-
-    for (var set in sets) {
-      final double? weight =
-          set['weight'] != null ? (set['weight'] as num).toDouble() : null;
-      final int? reps = set['reps'];
-
-      if (weight != null && reps != null) {
-        totalVolume += weight * reps;
-      }
-    }
-
-    return totalVolume;
-  }
-
-  // 2. MUSCLE GROUP DISTRIBUTION PROCESSING
+  // 1. MUSCLE GROUP DISTRIBUTION PROCESSING
 
   /// Analyzes muscle group distribution for balanced training assessment
   /// Returns pie chart data showing relative focus on different muscle groups
@@ -148,7 +77,7 @@ class ProgressService {
     return pieData;
   }
 
-  // 3. EXERCISE PROGRESS PROCESSING
+  // 2. EXERCISE PROGRESS PROCESSING
 
   /// Tracks strength progression for a specific exercise over time
   /// Returns detailed information including personal bests and improvement percentages
@@ -254,114 +183,7 @@ class ProgressService {
     };
   }
 
-  // 4. WORKOUT FREQUENCY PROCESSING (continued)
-
-  /// Analyzes workout frequency patterns and consistency
-  /// Returns calendar data with workout/rest days and statistics on workout habits
-  Future<Map<String, dynamic>> getWorkoutFrequencyData({
-    required DateTime startDate,
-    required DateTime endDate,
-  }) async {
-    final String userId = _getCurrentUserId();
-    final db = await _databaseHelper.database;
-
-    // Get all workout dates in the range
-    final List<Map<String, dynamic>> workoutDates = await db.rawQuery('''
-    SELECT date FROM workout 
-    WHERE user_id = ? AND date BETWEEN ? AND ?
-    ORDER BY date ASC
-  ''', [userId, normaliseDate(startDate), normaliseDate(endDate)]);
-
-    // Get all rest days in the range
-    final List<Map<String, dynamic>> restDayResults = await db.rawQuery('''
-    SELECT date FROM daily_log 
-    WHERE user_id = ? AND date BETWEEN ? AND ? AND activity_type = 'rest'
-    ORDER BY date ASC
-  ''', [userId, normaliseDate(startDate), normaliseDate(endDate)]);
-
-    // Convert to DateTime objects
-    List<DateTime> workoutDaysList = workoutDates
-        .map((row) => DateTime.parse(row['date'] as String))
-        .toList();
-
-    List<DateTime> restDaysList = restDayResults
-        .map((row) => DateTime.parse(row['date'] as String))
-        .toList();
-
-    // Create sets of activity days (using date only, no time)
-    Set<String> workoutDays =
-        workoutDaysList.map((date) => normaliseDate(date)).toSet();
-
-    Set<String> restDays =
-        restDaysList.map((date) => normaliseDate(date)).toSet();
-
-    // Create a map of all days in the range with activity status
-    List<Map<String, dynamic>> calendarData = [];
-    Map<String, int> workoutsByWeekday = {
-      'Monday': 0,
-      'Tuesday': 0,
-      'Wednesday': 0,
-      'Thursday': 0,
-      'Friday': 0,
-      'Saturday': 0,
-      'Sunday': 0,
-    };
-
-    // Fill in all dates in the range
-    for (DateTime date = startDate;
-        date.isBefore(endDate) || date.isAtSameMomentAs(endDate);
-        date = date.add(const Duration(days: 1))) {
-      final String dateStr = DateFormat('yyyy-MM-dd').format(date);
-      final bool hasWorkout = workoutDays.contains(dateStr);
-      final bool hasRestDay = restDays.contains(dateStr);
-
-      calendarData.add({
-        'date': date,
-        'hasWorkout': hasWorkout,
-        'hasRestDay': hasRestDay,
-        'hasActivity': hasWorkout || hasRestDay,
-        'formattedDate': DateFormat('MMM d').format(date),
-      });
-
-      // Count workouts by weekday
-      if (hasWorkout) {
-        final String weekday = DateFormat('EEEE').format(date);
-        workoutsByWeekday[weekday] = (workoutsByWeekday[weekday] ?? 0) + 1;
-      }
-    }
-
-    // Calculate overall stats
-    int totalWorkouts = workoutDays.length;
-    int totalDays = calendarData.length;
-    double workoutFrequency =
-        totalDays > 0 ? totalWorkouts / totalDays * 100 : 0;
-
-    // Get streak information directly from streak table instead of calculating
-    int currentStreak = 0;
-    int longestStreak = 0;
-    final streakQuery = await db.query(
-      'streak',
-      where: 'user_id = ?',
-      whereArgs: [userId],
-    );
-
-    if (streakQuery.isNotEmpty) {
-      currentStreak = streakQuery.first['current_streak'] as int;
-      longestStreak = streakQuery.first['longest_streak'] as int;
-    }
-
-    return {
-      'calendarData': calendarData,
-      'workoutsByWeekday': workoutsByWeekday,
-      'totalWorkouts': totalWorkouts,
-      'workoutFrequency': workoutFrequency,
-      'formattedFrequency': '${workoutFrequency.toStringAsFixed(1)}%',
-      'longestStreak': longestStreak,
-      'currentStreak': currentStreak,
-    };
-  }
-
-  // 5. COMBINED PROGRESS SUMMARY
+  // 3. COMBINED PROGRESS SUMMARY
 
   /// Generates comprehensive fitness progress summary with key metrics
   /// Combines workout counts, streaks, and training balance information
@@ -454,7 +276,7 @@ class ProgressService {
     };
   }
 
-  // 6. PERSONAL BESTS COLLECTION
+  // 4. PERSONAL BESTS COLLECTION
 
   /// Retrieves personal bests across all exercises performed by the user
   /// Returns comprehensive list of the user's highest achievements
@@ -540,23 +362,6 @@ class ProgressService {
       'startDate': startDate,
       'endDate': now,
     };
-  }
-
-  /// Determines appropriate date format based on the range duration
-  /// For short ranges shows more detail, for longer ranges shows less detail
-  String getDateFormatForRange(DateTime startDate, DateTime endDate) {
-    final Duration difference = endDate.difference(startDate);
-
-    if (difference.inDays <= 14) {
-      // For short periods (up to 2 weeks), show day of week
-      return 'EEE, MMM d'; // e.g., "Mon, Jan 15"
-    } else if (difference.inDays <= 90) {
-      // For medium periods (up to 3 months), show date
-      return 'MMM d'; // e.g., "Jan 15"
-    } else {
-      // For long periods, show month only
-      return 'MMM yyyy'; // e.g., "Jan 2025"
-    }
   }
 
   // 6. EXERCISE VOLUME DATA PROCESSING

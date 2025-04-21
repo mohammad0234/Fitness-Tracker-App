@@ -203,37 +203,6 @@ class NotificationTriggerService {
     }
   }
 
-  /// Reminds user to log their weight for active weight goals
-  /// Scheduled for the next morning to encourage consistent tracking
-  Future<void> scheduleWeightLogReminder() async {
-    // This would ideally be run by a periodic task,
-    // here we'll just define the logic for when it's called
-
-    final title = 'Action Needed';
-    final body = NotificationMessages.weightLogReminder();
-
-    // Schedule for a reasonable time (morning)
-    final scheduledDate = DateTime(
-      DateTime.now().year,
-      DateTime.now().month,
-      DateTime.now().day,
-      9,
-      0,
-      0,
-    ).add(const Duration(days: 1)); // Schedule for tomorrow morning
-
-    // System notification
-    await _notificationService.scheduleNotification(
-      id: _notificationService.generateUniqueId(),
-      title: title,
-      body: body,
-      scheduledDate: scheduledDate,
-      category: NotificationService.goalCategory,
-    );
-
-    debugPrint('Scheduled weight log reminder');
-  }
-
   /// Returns the current user ID or throws exception if not logged in
   String _getCurrentUserId() {
     final user = firebase_auth.FirebaseAuth.instance.currentUser;
