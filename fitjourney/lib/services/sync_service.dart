@@ -15,6 +15,7 @@
  */
 
 import 'dart:async';
+import 'dart:math';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -268,9 +269,65 @@ class SyncService {
 
       final streak = await _dbHelper.getStreakForUser(user.uid);
       if (streak != null) {
-        print(
-            'Adding current streak to sync queue: ${streak.currentStreak} days');
-        await queueForSync('streak', user.uid, 'UPDATE');
+        // Get the cloud streak data to compare with local streak
+        bool shouldSync = true;
+
+        // ADDED BY AI: Check if local streak is empty (0) before syncing
+        if (streak.currentStreak == 0) {
+          try {
+            // ADDED BY AI: Query Firestore to check for existing streak before syncing
+            final docSnapshot = await _firestore
+                .collection('users')
+                .doc(user.uid)
+                .collection('streak')
+                .doc(user.uid)
+                .get();
+
+            // ADDED BY AI: Compare cloud and local streak values
+            if (docSnapshot.exists && docSnapshot.data() != null) {
+              final cloudData = docSnapshot.data()!;
+              final cloudStreak = cloudData['current_streak'] as int? ?? 0;
+
+              // ADDED BY AI: Skip sync if cloud streak is higher than local
+              if (cloudStreak > 0) {
+                print(
+                    'Skipping streak sync: Cloud streak (${cloudStreak} days) is higher than local (0 days)');
+                shouldSync = false;
+
+                // ADDED BY AI: Import cloud streak data to local device instead
+                if (streak.currentStreak < cloudStreak) {
+                  // ADDED BY AI: Create updated streak with cloud data
+                  final updatedStreak = Streak(
+                    userId: user.uid,
+                    currentStreak: cloudStreak,
+                    longestStreak: max(cloudData['longest_streak'] as int? ?? 0,
+                        streak.longestStreak),
+                    lastActivityDate: cloudData['last_activity_date'] != null
+                        ? DateTime.parse(cloudData['last_activity_date'])
+                        : streak.lastActivityDate,
+                    lastWorkoutDate: cloudData['last_workout_date'] != null
+                        ? DateTime.parse(cloudData['last_workout_date'])
+                        : streak.lastWorkoutDate,
+                  );
+
+                  // ADDED BY AI: Update local database with cloud streak
+                  await _dbHelper.updateUserStreak(updatedStreak);
+                  print(
+                      'Updated local streak from cloud data: ${cloudStreak} days');
+                }
+              }
+            }
+          } catch (e) {
+            print('Error checking cloud streak: $e');
+            // Continue with sync if we can't check cloud streak
+          }
+        }
+
+        if (shouldSync) {
+          print(
+              'Adding current streak to sync queue: ${streak.currentStreak} days');
+          await queueForSync('streak', user.uid, 'UPDATE');
+        }
       }
     } catch (e) {
       print('Error adding streak to sync queue: $e');
@@ -1104,6 +1161,20 @@ class SyncService {
         return true; // Not an error
       }
 
+      // ADDED BY AI: Extract cloud streak values for cleaner comparison
+      final remoteCurrentStreak = streakData['current_streak'] as int? ?? 0;
+      final remoteLongestStreak = streakData['longest_streak'] as int? ?? 0;
+      final remoteLastActivity = streakData['last_activity_date'] != null
+          ? DateTime.parse(streakData['last_activity_date'])
+          : null;
+      final remoteLastWorkout = streakData['last_workout_date'] != null
+          ? DateTime.parse(streakData['last_workout_date'])
+          : null;
+
+      // ADDED BY AI: Enhanced logging for streak sync diagnosis
+      print(
+          'Cloud streak: $remoteCurrentStreak days, longest: $remoteLongestStreak days');
+
       // Always use Firestore streak data on a new device if it's available
       final db = await _dbHelper.database;
       final hasLocalStreak = Sqflite.firstIntValue(await db
@@ -1113,14 +1184,10 @@ class SyncService {
         print('No local streak data found, using Firestore data');
         final streak = Streak(
           userId: userId,
-          currentStreak: streakData['current_streak'] as int? ?? 0,
-          longestStreak: streakData['longest_streak'] as int? ?? 0,
-          lastActivityDate: streakData['last_activity_date'] != null
-              ? DateTime.parse(streakData['last_activity_date'])
-              : null,
-          lastWorkoutDate: streakData['last_workout_date'] != null
-              ? DateTime.parse(streakData['last_workout_date'])
-              : null,
+          currentStreak: remoteCurrentStreak,
+          longestStreak: remoteLongestStreak,
+          lastActivityDate: remoteLastActivity,
+          lastWorkoutDate: remoteLastWorkout,
         );
 
         // Insert streak record
@@ -1128,59 +1195,84 @@ class SyncService {
             conflictAlgorithm: ConflictAlgorithm.replace);
 
         print(
-            'Inserted Firestore streak data locally: ${streak.currentStreak} days');
+            'Inserted Firestore streak data locally: $remoteCurrentStreak days');
       } else {
         // Check if streak exists locally
         final localStreak = await _dbHelper.getStreakForUser(userId);
 
         // Compare which streak is more up-to-date or has higher values
         if (localStreak != null) {
-          final remoteLastActivity = streakData['last_activity_date'] != null
-              ? DateTime.parse(streakData['last_activity_date'])
-              : null;
+          // ADDED BY AI: Enhanced logging for streak comparison
+          print(
+              'Local streak: ${localStreak.currentStreak} days, longest: ${localStreak.longestStreak} days');
 
-          final localLastActivity = localStreak.lastActivityDate;
+          // ADDED BY AI: Core "highest wins" strategy implementation
+          // Always take highest streak values between local and cloud
+          final highestCurrentStreak =
+              max(localStreak.currentStreak, remoteCurrentStreak);
+          final highestLongestStreak =
+              max(localStreak.longestStreak, remoteLongestStreak);
 
-          if (remoteLastActivity != null && localLastActivity != null) {
-            // If local data is more recent, keep it (do nothing)
-            if (localLastActivity.isAfter(remoteLastActivity)) {
-              print('Local streak data is more recent, keeping it');
-
-              // But also update Firestore to match local
-              await _updateStreakInFirestore(localStreak);
-              return true;
-            }
+          // ADDED BY AI: Select most recent activity dates between devices
+          DateTime? mostRecentActivity = localStreak.lastActivityDate;
+          if (remoteLastActivity != null &&
+              (mostRecentActivity == null ||
+                  remoteLastActivity.isAfter(mostRecentActivity))) {
+            mostRecentActivity = remoteLastActivity;
           }
 
-          // If local streak is longer, keep it (save back to Firestore)
-          final remoteCurrentStreak = streakData['current_streak'] as int? ?? 0;
-          final remoteLongestStreak = streakData['longest_streak'] as int? ?? 0;
-
-          if (localStreak.currentStreak > remoteCurrentStreak ||
-              localStreak.longestStreak > remoteLongestStreak) {
-            print('Local streak values are higher, keeping them');
-
-            // Update Firestore with local streak
-            await _updateStreakInFirestore(localStreak);
-            return true;
+          // ADDED BY AI: Select most recent workout dates between devices
+          DateTime? mostRecentWorkout = localStreak.lastWorkoutDate;
+          if (remoteLastWorkout != null &&
+              (mostRecentWorkout == null ||
+                  remoteLastWorkout.isAfter(mostRecentWorkout))) {
+            mostRecentWorkout = remoteLastWorkout;
           }
 
-          // If we got here, we should use the Firestore streak data
-          print('Using Firestore streak data');
-          final streak = Streak(
-            userId: userId,
-            currentStreak: streakData['current_streak'] as int? ?? 0,
-            longestStreak: streakData['longest_streak'] as int? ?? 0,
-            lastActivityDate: streakData['last_activity_date'] != null
-                ? DateTime.parse(streakData['last_activity_date'])
-                : null,
-            lastWorkoutDate: streakData['last_workout_date'] != null
-                ? DateTime.parse(streakData['last_workout_date'])
-                : null,
-          );
+          // ADDED BY AI: Update local streak with highest values if needed
+          if (highestCurrentStreak != localStreak.currentStreak ||
+              highestLongestStreak != localStreak.longestStreak ||
+              mostRecentActivity != localStreak.lastActivityDate ||
+              mostRecentWorkout != localStreak.lastWorkoutDate) {
+            print(
+                'Updating local streak with highest values: current=$highestCurrentStreak, longest=$highestLongestStreak');
 
-          // Update local streak
-          await _dbHelper.updateUserStreak(streak);
+            // ADDED BY AI: Create updated streak object with highest values
+            final updatedStreak = Streak(
+              userId: userId,
+              currentStreak: highestCurrentStreak,
+              longestStreak: highestLongestStreak,
+              lastActivityDate: mostRecentActivity,
+              lastWorkoutDate: mostRecentWorkout,
+            );
+
+            // ADDED BY AI: Update local database with highest values
+            await _dbHelper.updateUserStreak(updatedStreak);
+          }
+
+          // ADDED BY AI: Update cloud with highest values if needed
+          if (highestCurrentStreak != remoteCurrentStreak ||
+              highestLongestStreak != remoteLongestStreak) {
+            print(
+                'Updating cloud streak with highest values: current=$highestCurrentStreak, longest=$highestLongestStreak');
+
+            // ADDED BY AI: Write highest values back to Firestore
+            await _firestore
+                .collection('users')
+                .doc(userId)
+                .collection('streak')
+                .doc(userId)
+                .set(
+              {
+                'current_streak': highestCurrentStreak,
+                'longest_streak': highestLongestStreak,
+                'last_activity_date': mostRecentActivity?.toIso8601String(),
+                'last_workout_date': mostRecentWorkout?.toIso8601String(),
+                'last_updated': FieldValue.serverTimestamp(),
+              },
+              SetOptions(merge: true),
+            );
+          }
         }
       }
 

@@ -8,6 +8,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:fitjourney/utils/date_utils.dart';
 import 'package:fitjourney/services/notification_trigger_service.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// Service for managing user workout streaks and daily activity tracking
 /// Handles streak calculation, maintenance, and milestone achievements
@@ -48,6 +49,41 @@ class StreakService {
     );
 
     if (streakRecords.isEmpty) {
+      // Check if we have a streak in Firebase before creating a new one with 0
+      try {
+        final firestore = FirebaseFirestore.instance;
+
+        final streakDoc = await firestore
+            .collection('users')
+            .doc(userId)
+            .collection('streak')
+            .doc(userId)
+            .get();
+
+        if (streakDoc.exists && streakDoc.data() != null) {
+          final data = streakDoc.data()!;
+          final cloudStreak = Streak(
+            userId: userId,
+            currentStreak: data['current_streak'] as int? ?? 0,
+            longestStreak: data['longest_streak'] as int? ?? 0,
+            lastActivityDate: data['last_activity_date'] != null
+                ? DateTime.parse(data['last_activity_date'])
+                : null,
+            lastWorkoutDate: data['last_workout_date'] != null
+                ? DateTime.parse(data['last_workout_date'])
+                : null,
+          );
+
+          await db.insert('streak', cloudStreak.toMap());
+          debugPrint(
+              'Created local streak from cloud data: ${cloudStreak.currentStreak} days');
+          return cloudStreak;
+        }
+      } catch (e) {
+        debugPrint('Error checking cloud streak: $e');
+        // Continue with creating a new streak
+      }
+
       // Create a new streak record if none exists
       final newStreak = Streak(
         userId: userId,
