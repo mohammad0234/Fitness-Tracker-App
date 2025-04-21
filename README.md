@@ -148,6 +148,13 @@ Follow the link or instructions to install or update the required SDK packages
 
 Make sure your Android SDK and build tools are properly installed (Step 1)
 
+To double-check your environment setup, run:
+
+**flutter doctor**
+
+This command will highlight any missing dependencies or configuration issues. Ignore the Visual Studio warning - it’s only needed for Windows desktop apps, not Android.
+
+
 **Guide on how to run test cases as well provided below:**
 
 Once project is open and configured, on the left-hand sidebar, click the Testing icon (flask symbol) as shown below:
@@ -163,6 +170,6 @@ FitJourney is a mobile application designed to help users log workouts, track pr
 
 Tech Stack
 Frontend: Flutter (Dart)
-Backend: Firebase Authentication
+Backend: Firebase Authentication, Firestore
 Database: SQLite (for local workout storage)
-Data Visualization: fl_chart
+Data Visualisation: fl_chart
