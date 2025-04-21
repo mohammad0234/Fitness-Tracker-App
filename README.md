@@ -1,4 +1,4 @@
-The project is provided in a top-level folder named:
+The project provided is in a top-level folder named:
 
 **Fitness-Tracker-App/**
 
@@ -10,15 +10,15 @@ Inside this folder, the following items are included:
 
 Key subfolders include:
 
-**lib/** - main Dart source files where the app is developed.
+**fitjourney/lib/** - main Dart source files where the app is developed.
 
-**android/** - platform-specific configuration code.
+**fitjourney/android/** - platform specific configuration code.
 
-**assets/** - image and resource files.
+**fitjourney/assets/** - image and resource files.
 
-**test/** - Dart test files used for unit testing.
+**fitjourney/test/** - Dart test files used for unit testing.
 
-**pubspec.yaml** - defines app dependencies and assets.
+**fitjourney/pubspec.yaml** - defines app dependencies and assets.
 
 **Instructions on how to run and install the product below:**
 
@@ -41,14 +41,17 @@ To run the app on an Android device:
 - **Enable Developer Options**
   - On your phone, go to `Settings > About phone`
   - Tap "**Build number**" 7 times until you see a message saying you're a developer.
+  - On some devices, you might need to go to Software information to find the Build number.
 
 - **Enable USB Debugging**
   - Go to `Settings > Developer options (May have to search for developer options once on settings)`
-  - Enable **USB Debugging**
+  - Scroll down to find and enable **USB Debugging**
 
 - **Connect Your Device via USB**
-  - Plug in your device using a USB cable
-  - Approve the "Allow USB debugging?" prompt (check "Always allow from this computer")
+  - Use a USB cable to connect your Android device to your computer.
+  - Approve the "Allow USB debugging?" prompt (check "Always allow from this computer").
+
+For detailed instructions, refer to the official Android documentation: https://developer.android.com/studio/debug/dev-options
 
 3. **Launch VS Code Studio**
 
@@ -66,7 +69,7 @@ Once everything is installed, launch VS Code Studio and select option **"Open Fo
 
 5. **Navigate to the `fitjourney` folder in the terminal**
 
-Once project is configured open the integrated terminal in VS Code to run the project commands.
+Once project is configured, open the integrated terminal in VS Code to run the project commands.
 
 You can do this by:
 - Clicking the **three dots** in the top menu bar
@@ -91,7 +94,7 @@ Then run the following:
 
 ![flutter pub get screenshot](fitjourney/installation/pub_get.png)
 
-This reads the pubspec.yaml file and to make sure it fetches right version of dependencies listed for app to run.
+This reads the pubspec.yaml file and to make sure it fetches right version of dependencies listed for app to run (May take upto a minute to run).
 
 6. **Run the Flutter project on the connected Android device**
 
@@ -102,7 +105,7 @@ Once you're inside the `fitjourney` folder in the terminal, and your Android dev
 ![flutter run screenshot](fitjourney/installation/run_project.png)
 
 This command will build the app and launch it on your Android device. The process may take a few minutes the first time. You may be asked to select a device to run on if more than 1 is connected, just make sure to select device for the android being used and then app will build.
-If everything is set up correctly, the app will automatically open on your phone.
+If everything is set up correctly, the app will automatically open on your phone and you will be directed to the app's signup page.
 
 
 **Potential TroubleShooting:**
@@ -124,7 +127,7 @@ You’ve approved the USB debugging prompt on your phone (if asked)
 
 If needed, go back to Step 2 and follow the instructions again.
 
-You can also check if your device is recognized by running the following command in the terminal, inside the 'fitjourney' folder:
+You can also check if your device is recognised by running the following command in the terminal, inside the 'fitjourney' folder:
 
 **flutter devices**
 
@@ -139,13 +142,13 @@ or
 "Failed to install the following Android SDK packages..."
 Try the following:
 
-Read the Gradle error message — it usually includes a helpful link or hint about what SDK component is missing
+Read the Gradle error message - it usually includes a helpful link or hint about what SDK component is missing
 
 Follow the link or instructions to install or update the required SDK packages
 
 Make sure your Android SDK and build tools are properly installed (Step 1)
 
-**How to run test cases**
+**Guide on how to run test cases as well provided below:**
 
 Once project is open and configured, on the left-hand sidebar, click the Testing icon (flask symbol) as shown below:
 
