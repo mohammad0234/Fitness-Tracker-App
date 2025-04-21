@@ -60,12 +60,14 @@ class _LoginPageState extends State<LoginPage> {
       // Retrieve the Firebase UID
       String firebaseUID = userCredential.user!.uid;
 
-      // Update the last login timestamp in the local SQLite database
+      // Update the last login timestamp in the local SQLite database implemented by author
       await DatabaseHelper.instance.updateUserLastLogin(firebaseUID);
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Login successful!")),
       );
+
+      //Error handling implemented by author
       Navigator.pushReplacementNamed(context, '/home');
     } on firebase_auth.FirebaseAuthException catch (e) {
       if (e.code == 'user-not-found') {
@@ -86,7 +88,7 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  /// Sends a password reset email.
+  /// Sends a password reset email
   void _resetPassword() async {
     final String email = _emailController.text.trim();
     if (email.isEmpty) {

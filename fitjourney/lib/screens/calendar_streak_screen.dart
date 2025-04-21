@@ -997,18 +997,6 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          // Add a Deep Refresh button
-          TextButton.icon(
-            icon: const Icon(Icons.sync, size: 16),
-            label: const Text('Force Calendar Refresh'),
-            onPressed: _deepRefreshData,
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              minimumSize: const Size(0, 0),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              foregroundColor: Colors.blue.shade700,
-            ),
-          ),
           const Text(
             'Days with a star indicate milestone streaks (7 and 30 days)',
             style: TextStyle(
@@ -1179,44 +1167,6 @@ class _CalendarStreakScreenState extends State<CalendarStreakScreen> {
     final elapsedDays = min(now.day, daysInMonth);
 
     return '$activeCount/$elapsedDays';
-  }
-
-  /// Forces a complete refresh of all calendar data
-  /// Regenerates daily logs and triggers data sync
-  Future<void> _deepRefreshData() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      // Force a sync first to ensure we have the latest data
-      await SyncService.instance.triggerManualSync();
-
-      // Calculate date range for past 6 months
-      final today = DateTime.now();
-      final sixMonthsAgo = DateTime(today.year, today.month - 6, today.day);
-
-      // Regenerate daily logs from workouts
-      await _streakService.regenerateDailyLogs(sixMonthsAgo, today);
-
-      // Now reload data normally
-      await _loadData();
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Calendar data refreshed')),
-      );
-    } catch (e) {
-      print('Error in deep refresh: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error refreshing: $e')),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
   }
 }
 

@@ -64,7 +64,7 @@ class _SignUpPageState extends State<SignUpPage> {
       return;
     }
 
-    // Check if user has viewed both documents
+    // Check if user has viewed both documents Ai assited with
     if (!_hasViewedPrivacyPolicy || !_hasViewedTerms) {
       _showDialog("Please Review Documents",
           "You must review both the Privacy Policy and Terms of Use before continuing.");
@@ -95,12 +95,11 @@ class _SignUpPageState extends State<SignUpPage> {
       // Retrieve the Firebase UID
       String firebaseUID = userCredential.user!.uid;
 
-      // Create a new AppUser object for local storage
+      // Create a new AppUser object for local storage which i handled
       final newUser = AppUser(
         userId: firebaseUID,
         firstName: firstName,
         lastName: lastName,
-        heightCm: null, // Set if available
         registrationDate: DateTime.now(),
         lastLogin: DateTime.now(),
       );
@@ -121,7 +120,7 @@ class _SignUpPageState extends State<SignUpPage> {
                 "Account created successfully! Please verify your email.")),
       );
 
-      // Navigate to verification pending screen
+      // Navigate to verification pending screen adopted from
       Navigator.pushReplacementNamed(context, '/verification-pending',
           arguments: email);
     } on firebase_auth.FirebaseAuthException catch (e) {
@@ -143,7 +142,7 @@ class _SignUpPageState extends State<SignUpPage> {
   }
 
   /// Navigates to Privacy Policy page and tracks user review
-  /// Updates state to reflect policy review status
+  /// Updates state to reflect policy review status, assisted by AI
   void _navigateToPrivacyPolicy() async {
     final result = await Navigator.push(context,
         MaterialPageRoute(builder: (context) => const PrivacyPolicyPage()));
@@ -157,7 +156,7 @@ class _SignUpPageState extends State<SignUpPage> {
   }
 
   /// Navigates to Terms of Use page and tracks user review
-  /// Updates state to reflect terms review status
+  /// Updates state to reflect terms review status, Assist
   void _navigateToTermsOfUse() async {
     final result = await Navigator.push(context,
         MaterialPageRoute(builder: (context) => const TermsOfUsePage()));
@@ -238,7 +237,6 @@ class _SignUpPageState extends State<SignUpPage> {
                     prefixIcon:
                         Icon(Icons.person_outline, color: Colors.grey.shade600),
                     hintText: 'First Name',
-                    hintStyle: TextStyle(color: Colors.grey.shade500),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(vertical: 15),
                   ),
@@ -259,7 +257,6 @@ class _SignUpPageState extends State<SignUpPage> {
                     prefixIcon:
                         Icon(Icons.person_outline, color: Colors.grey.shade600),
                     hintText: 'Last Name',
-                    hintStyle: TextStyle(color: Colors.grey.shade500),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(vertical: 15),
                   ),
@@ -281,7 +278,6 @@ class _SignUpPageState extends State<SignUpPage> {
                     prefixIcon:
                         Icon(Icons.email_outlined, color: Colors.grey.shade600),
                     hintText: 'Email',
-                    hintStyle: TextStyle(color: Colors.grey.shade500),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(vertical: 15),
                   ),
@@ -302,7 +298,6 @@ class _SignUpPageState extends State<SignUpPage> {
                     prefixIcon:
                         Icon(Icons.lock_outline, color: Colors.grey.shade600),
                     hintText: 'Password',
-                    hintStyle: TextStyle(color: Colors.grey.shade500),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(vertical: 15),
                     suffixIcon: IconButton(
