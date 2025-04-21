@@ -170,15 +170,11 @@ In the testing panel that appears, click the "Run Tests" button to run all avail
 
 **Testing FitJourney App**
 
-**Important Note Before Testing:**
-
 When first launching FitJourney, the app will have no workout data or goals in your local database. To fully experience and test the app's capabilities, you'll need to:
 •	Log several workouts over different days
 •	Create various types of goals
 •	Use the app consistently to build streak data
 This initial data population is essential to see the app's visualisation features, progress tracking, and statistical analysis in action.
-
-**Getting Started:**
 
 **Signup Process:**
 •	On the signup page, enter your email, first name, last name, and password
@@ -217,7 +213,7 @@ Contains three tabs:
 1.	Insights Tab:
 •	View workout volume over time
 •	See muscle group distribution chart
-•	Check personal bests for various exercises
+•	Check personal bests
 2.	Exercise Tab:
 •	Select any exercise to view strength progression
 •	View weight progression chart over time
@@ -225,16 +221,10 @@ Contains three tabs:
 3.	Calendar Tab:
 •	View your workout calendar with streak information
 •	Tap on dates to see what exercises were performed
-•	Green indicates workout days, blue for rest days
 
 **Profile Page**
-•	View personal information
 •	Manually sync data to cloud
 •	Log out from the app and delete account
-
-
-# FitJourney
-FitJourney is a mobile application designed to help users log workouts, track progress, and stay motivated with interactive data visualizations, goal tracking, and streak monitoring. Built using Flutter, it ensures a smooth and intuitive experience while leveraging Firebase for authentication and SQLite for local data storage and firestore for cloud syncing.
 
 Tech Stack
 Frontend: Flutter (Dart)
