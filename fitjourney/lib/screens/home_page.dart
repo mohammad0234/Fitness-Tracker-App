@@ -102,7 +102,6 @@ class _HomePageState extends State<HomePage> {
                 userId: uid,
                 firstName: userData['first_name'] ?? userData['firstName'],
                 lastName: userData['last_name'] ?? userData['lastName'],
-                heightCm: userData['height_cm'] ?? userData['heightCm'],
                 registrationDate: userData['registration_date'] != null
                     ? DateTime.parse(userData['registration_date'])
                     : (userData['registrationDate'] != null
@@ -530,24 +529,6 @@ class _HomePageState extends State<HomePage> {
         'muscle_group': 'Triceps',
         'description':
             'Perform bench press with hands placed closer together to emphasize triceps.'
-      },
-      {
-        'name': 'Dip',
-        'muscle_group': 'Triceps',
-        'description':
-            'Lower and raise body between parallel bars to work triceps and chest.'
-      },
-      {
-        'name': 'Diamond Push-Up',
-        'muscle_group': 'Triceps',
-        'description':
-            'Perform push-ups with hands close together forming a diamond shape.'
-      },
-      {
-        'name': 'Kickback',
-        'muscle_group': 'Triceps',
-        'description':
-            'Bend over with upper arm parallel to floor, then extend forearm backward.'
       },
     ];
 
