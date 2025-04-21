@@ -132,24 +132,6 @@ class _SyncStatusWidgetState extends State<SyncStatusWidget> {
                   syncStatus.lastError!,
                   Colors.red,
                 ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: syncStatus.isInProgress
-                      ? null
-                      : () => SyncService.instance.triggerManualSync(),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.sync, size: 16),
-                      SizedBox(width: 8),
-                      Text('Sync Now'),
-                    ],
-                  ),
-                ),
-              ),
             ] else
               const Text('Sync service not initialized'),
           ],

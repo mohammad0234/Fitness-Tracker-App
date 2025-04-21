@@ -19,7 +19,6 @@ import 'package:fitjourney/services/notification_trigger_service.dart';
 import 'package:fitjourney/services/progress_service.dart';
 import 'package:fitjourney/screens/notification_screen.dart';
 import 'package:fitjourney/services/sync_service.dart';
-import 'package:fitjourney/screens/sync_management_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -126,7 +125,6 @@ class MyApp extends StatelessWidget {
         '/home': (context) => const MainScaffold(),
         '/verification-pending': (context) => const VerificationPendingPage(),
         '/notifications': (context) => const NotificationScreen(),
-        '/sync-management': (context) => const SyncManagementScreen(),
       },
     );
   }

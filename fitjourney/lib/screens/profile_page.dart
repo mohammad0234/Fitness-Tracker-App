@@ -12,6 +12,7 @@ import 'package:fitjourney/screens/signup_page.dart'; // For privacy and terms p
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fitjourney/widgets/sync_status_widget.dart';
 import 'package:fitjourney/services/account_service.dart';
+import 'package:fitjourney/services/sync_service.dart';
 
 /// Main profile screen widget that displays user information and account settings
 class ProfilePage extends StatefulWidget {
@@ -368,13 +369,18 @@ class _ProfilePageState extends State<ProfilePage> {
             const SizedBox(height: 8),
             const SyncStatusWidget(showDetailedStatus: true),
             const SizedBox(height: 8),
-            OutlinedButton.icon(
-              icon: const Icon(Icons.settings),
-              label: const Text('Manage Data Sync'),
-              onPressed: () => Navigator.pushNamed(context, '/sync-management'),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.sync),
+              label: const Text('Sync Now'),
+              onPressed: () => SyncService.instance.triggerManualSync(),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                minimumSize: const Size(double.infinity, 0),
+              ),
             ),
 
             // Settings section
+            const SizedBox(height: 16),
             const Text(
               'Settings',
               style: TextStyle(
