@@ -166,7 +166,7 @@ In the testing panel that appears, click the "Run Tests" button to run all avail
 ![run test files screenshot](fitjourney/installation/run_tests.png)
 
 # FitJourney
-FitJourney is a mobile application designed to help users log workouts, track progress, and stay motivated with interactive data visualizations, goal tracking, and streak monitoring. Built using Flutter, it ensures a smooth and intuitive experience while leveraging Firebase for authentication and SQLite for local data storage.
+FitJourney is a mobile application designed to help users log workouts, track progress, and stay motivated with interactive data visualizations, goal tracking, and streak monitoring. Built using Flutter, it ensures a smooth and intuitive experience while leveraging Firebase for authentication and SQLite for local data storage and firestore for cloud syncing.
 
 Tech Stack
 Frontend: Flutter (Dart)
