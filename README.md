@@ -1,3 +1,5 @@
+One drive link for product package submission - https://cityuni-my.sharepoint.com/:f:/g/personal/mohammad_shaha_city_ac_uk/EuTFglSzVrtBtbY566eQgS8BV_2fdXENlnaInDziVJgJNQ?e=MfvaPA
+
 The project provided is in a top-level folder named:
 
 **Fitness-Tracker-App/**
@@ -55,14 +57,16 @@ For detailed instructions, refer to the official Android documentation: https://
 
 3. **Launch VS Code Studio**
 
-Once everything is installed, launch VS Code Studio and select option **"Open Folder"**. Or you can go to **"File" > "Open Folder"**
+Once everything is installed, launch VS Studio COde and select option **"Open Folder"**. Or you can go to **"File" > "Open Folder"**.
 
 ![Open Folder Screenshot](fitjourney/installation/Open_Folder.png)
 
 
-4. **Locate project provided (ZIP file submitted on Moodle and extract)**
+4. **Open the project folder provided via OneDrive (link available at the top of this README).**
 
-![Locate Folder](fitjourney/installation/Folder_name.png)
+Make sure to open the project from the top-level folder named **Fitness-Tracker-App.**
+
+![Locate Folder](fitjourney/installation/folder_name.png)
 
 **Note:** When you open the project for the first time, VS Code and Flutter may take a few moments to configure everything. This includes indexing files, fetching dependencies, and syncing the Android build system (e.g., Gradle). Please be patient during this process, it may take upto 5-10 minutes first time.
 
@@ -75,7 +79,7 @@ You can do this by:
 - Clicking the **three dots** in the top menu bar
 - Navigating to **Terminal > New Terminal**
 
-![Open Terminal Screenshot](fitjourney/installation/open_termninal.png)
+![Open Terminal Screenshot](fitjourney/installation/open_terminal.png)
 
 When the terminal opens, it will default to the root project folder (`Fitness-Tracker-App`).
 
