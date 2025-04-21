@@ -436,42 +436,28 @@ class GoalService {
     return info;
   }
 
-  /// Retrieves weight history for a user
-  Future<List<Map<String, dynamic>>> getWeightProgressHistory(String userId,
-      [DateTime? startDate, DateTime? endDate]) async {
+  /// Gets weight history for visualization and analysis
+  Future<List<Map<String, dynamic>>> getWeightProgressHistory(
+      String userId) async {
     final db = await _dbHelper.database;
 
-    String query = '''
-      SELECT weight_kg, measured_at
-      FROM user_metrics
+    final result = await db.rawQuery('''
+      SELECT weight_kg, measured_at FROM user_metrics
       WHERE user_id = ?
-    ''';
+      ORDER BY measured_at ASC
+    ''', [userId]);
 
-    List<dynamic> params = [userId];
+    print('Retrieved ${result.length} weight records from database');
 
-    if (startDate != null) {
-      query += ' AND measured_at >= ?';
-      params.add(startDate.toIso8601String());
-    }
-
-    if (endDate != null) {
-      query += ' AND measured_at <= ?';
-      params.add(endDate.toIso8601String());
-    }
-
-    query += ' ORDER BY measured_at ASC';
-
-    final results = await db.rawQuery(query, params);
-
-    // Convert to usable data points
-    return results.map((record) {
-      final weight = (record['weight_kg'] as num).toDouble();
-      final date = DateTime.parse(record['measured_at'] as String);
+    // Map database result to a structure suitable for chart visualization
+    return result.map((row) {
+      final DateTime date = DateTime.parse(row['measured_at'] as String);
+      final double weight = (row['weight_kg'] as num).toDouble();
 
       return {
         'date': date,
         'weight': weight,
-        'formattedDate': '${date.day}/${date.month}',
+        'formattedDate': date.day.toString() + '/' + date.month.toString(),
       };
     }).toList();
   }

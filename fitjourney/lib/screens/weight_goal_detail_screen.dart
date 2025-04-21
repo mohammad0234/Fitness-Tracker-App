@@ -98,8 +98,9 @@ class _WeightGoalDetailScreenState extends State<WeightGoalDetailScreen> {
           print('First weight entry: ${history[0]}');
         }
 
-        // Update UI with data
+        // Update UI with properly converted data
         setState(() {
+          // Properly convert to avoid type errors
           _weightHistory = history;
           _isLoadingChart = false;
         });
@@ -768,7 +769,7 @@ class _WeightGoalDetailScreenState extends State<WeightGoalDetailScreen> {
       // Create a second entry one day later with the same weight
       final secondEntry = {
         'date': (entry['date'] as DateTime).add(const Duration(days: 1)),
-        'weight': entry['weight'],
+        'weight': entry['weight'] as double,
         'formattedDate': 'Today',
       };
       _weightHistory.add(secondEntry);
@@ -887,7 +888,7 @@ class _WeightGoalDetailScreenState extends State<WeightGoalDetailScreen> {
                 final point = _weightHistory[barSpot.x.toInt()];
                 final date =
                     DateFormat('MMM d, yyyy').format(point['date'] as DateTime);
-                final weight = point['weight'].toStringAsFixed(1);
+                final weight = (point['weight'] as double).toStringAsFixed(1);
 
                 return LineTooltipItem(
                   '$date',
@@ -897,115 +898,36 @@ class _WeightGoalDetailScreenState extends State<WeightGoalDetailScreen> {
                     fontSize: 14,
                   ),
                   children: [
-                    const TextSpan(text: '\n'),
                     TextSpan(
-                      text: '$weight kg',
+                      text: '\n$weight kg',
                       style: const TextStyle(
                         color: Colors.white,
-                        fontWeight: FontWeight.normal,
-                        fontSize: 16,
+                        fontSize: 12,
                       ),
                     ),
                   ],
                 );
               }).toList();
             },
-            fitInsideHorizontally: true,
-            fitInsideVertically: true,
           ),
         ),
-        extraLinesData: ExtraLinesData(
-          horizontalLines: [
-            // Starting weight line
-            HorizontalLine(
-              y: _goalDetails?['startingWeight'] ?? 0,
-              color: secondaryColor,
-              strokeWidth: 1.5,
-              dashArray: [3, 3],
-              label: HorizontalLineLabel(
-                show: true,
-                style: TextStyle(
-                  backgroundColor: Colors.white.withOpacity(0.8),
-                  color: secondaryColor,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 11,
-                ),
-                labelResolver: (line) =>
-                    ' STARTING: ${(_goalDetails?['startingWeight'] ?? 0).toStringAsFixed(1)}kg ',
-                alignment: Alignment.topLeft,
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-              ),
-            ),
-            // Target weight line
-            HorizontalLine(
-              y: targetValue,
-              color: Colors.green,
-              strokeWidth: 2.5,
-              dashArray: [5, 5],
-              label: HorizontalLineLabel(
-                show: true,
-                style: TextStyle(
-                  backgroundColor: Colors.white.withOpacity(0.8),
-                  color: Colors.green,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
-                labelResolver: (line) =>
-                    ' TARGET: ${targetValue.toStringAsFixed(1)}kg ',
-                alignment: Alignment.topRight,
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-              ),
-            ),
-          ],
-        ),
         lineBarsData: [
+          // Main data line
           LineChartBarData(
-            spots: List.generate(
-              _weightHistory.length,
-              (index) => FlSpot(
-                index.toDouble(),
-                _weightHistory[index]['weight'],
-              ),
-            ),
-            isCurved: _weightHistory.length > 2,
-            curveSmoothness: 0.2,
+            spots: List.generate(_weightHistory.length, (index) {
+              return FlSpot(index.toDouble(),
+                  (_weightHistory[index]['weight'] as double));
+            }),
+            isCurved: true,
             color: primaryColor,
             barWidth: 3,
             isStrokeCapRound: true,
             dotData: FlDotData(
               show: true,
               getDotPainter: (spot, percent, barData, index) {
-                // Check if there's a previous point to compare direction
-                bool isPositiveChange = false;
-                if (index > 0) {
-                  final current = _weightHistory[index]['weight'] as double;
-                  final previous =
-                      _weightHistory[index - 1]['weight'] as double;
-
-                  // For weight loss goals, lower is better
-                  if (isWeightLoss) {
-                    isPositiveChange = current < previous;
-                  } else {
-                    // For weight gain goals, higher is better
-                    isPositiveChange = current > previous;
-                  }
-                }
-
-                // Find max weight point
-                double maxWeight = 0;
-                for (var point in _weightHistory) {
-                  if (point['weight'] > maxWeight) {
-                    maxWeight = point['weight'];
-                  }
-                }
-
-                final isLatestPoint = index == _weightHistory.length - 1;
-
                 return FlDotCirclePainter(
-                  radius: isLatestPoint ? 6 : 4,
-                  color: isLatestPoint
-                      ? Colors.purple
-                      : (isPositiveChange ? Colors.green : Colors.redAccent),
+                  radius: 4,
+                  color: primaryColor,
                   strokeWidth: 1,
                   strokeColor: Colors.white,
                 );
@@ -1013,9 +935,23 @@ class _WeightGoalDetailScreenState extends State<WeightGoalDetailScreen> {
             ),
             belowBarData: BarAreaData(
               show: true,
-              color: primaryColor.withOpacity(0.2),
+              color: secondaryColor.withOpacity(0.3),
             ),
           ),
+          // Target weight line (horizontal)
+          if (_goal?.targetValue != null)
+            LineChartBarData(
+              spots: [
+                FlSpot(0, _goal!.targetValue!),
+                FlSpot(_weightHistory.length - 1.0, _goal!.targetValue!),
+              ],
+              isCurved: false,
+              color: Colors.red.shade400,
+              barWidth: 1,
+              isStrokeCapRound: true,
+              dotData: FlDotData(show: false),
+              dashArray: [5, 5], // Dashed line
+            ),
         ],
       ),
     );
