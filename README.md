@@ -169,14 +169,16 @@ In the testing panel that appears, click the "Run Tests" button to run all avail
 
 
 **Testing FitJourney App**
-**Important Note Before Testing**
+
+**Important Note Before Testing:**
+
 When first launching FitJourney, the app will have no workout data or goals in your local database. To fully experience and test the app's capabilities, you'll need to:
 •	Log several workouts over different days
 •	Create various types of goals
 •	Use the app consistently to build streak data
 This initial data population is essential to see the app's visualisation features, progress tracking, and statistical analysis in action.
 
-Getting Started:
+**Getting Started:**
 
 **Signup Process:**
 •	On the signup page, enter your email, first name, last name, and password
