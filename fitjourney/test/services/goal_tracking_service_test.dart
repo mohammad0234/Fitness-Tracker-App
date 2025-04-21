@@ -7,14 +7,21 @@ import 'package:fitjourney/database/database_helper.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:fitjourney/services/notification_trigger_service.dart';
 
-// Mock classes
+// This file tests the GoalTrackingService which monitors goal progress, updates goals after workouts,
+// and triggers notifications for goals nearing completion or expiration
+
+// Mock classes for dependency injection and isolated testing
+/// Mocks the database helper to avoid real database operations in tests
 class MockDatabaseHelper extends Mock implements DatabaseHelper {}
 
+/// Mocks the goal service to control goal-related operations in tests
 class MockGoalService extends Mock implements GoalService {}
 
+/// Mocks notification service for testing goal notification triggers
 class MockNotificationTriggerService extends Mock
     implements NotificationTriggerService {}
 
+/// Mocks Firebase Auth with a test user for authentication testing
 class MockFirebaseAuth extends Mock implements firebase_auth.FirebaseAuth {
   @override
   firebase_auth.User? get currentUser => _mockUser;
@@ -22,6 +29,7 @@ class MockFirebaseAuth extends Mock implements firebase_auth.FirebaseAuth {
   final MockUser _mockUser = MockUser();
 }
 
+/// Mocks a Firebase user with a consistent test user ID
 class MockUser implements firebase_auth.User {
   @override
   String get uid => 'test-user-123';
@@ -31,6 +39,8 @@ class MockUser implements firebase_auth.User {
 }
 
 // TestableGoalTrackingService to mimic the real service but with injected dependencies
+/// A testable version of the GoalTrackingService that accepts mock dependencies
+/// for controlled testing of goal tracking functionality
 class TestableGoalTrackingService {
   final DatabaseHelper dbHelper;
   final GoalService goalService;
@@ -40,7 +50,8 @@ class TestableGoalTrackingService {
   TestableGoalTrackingService(
       this.dbHelper, this.goalService, this.notificationService, this.auth);
 
-  // Get the current user ID or throw an error if not logged in
+  /// Gets the current user ID or throws an exception if no user is logged in
+  /// Critical for all goal tracking operations that require user context
   String _getCurrentUserId() {
     final user = auth.currentUser;
     if (user == null) {
@@ -49,14 +60,16 @@ class TestableGoalTrackingService {
     return user.uid;
   }
 
-  // Update goals after a workout is logged
+  /// Updates relevant goals after a user completes a workout
+  /// Used to track progress for frequency and activity-based goals
   Future<void> updateGoalsAfterWorkout(Workout workout) async {
     // For testing purposes, we'll just record that this was called
     print(
         'updateGoalsAfterWorkout called with workoutId: ${workout.workoutId}');
   }
 
-  // Update goals after a personal best is recorded
+  /// Updates exercise-specific goals when a new personal best is achieved
+  /// Used for strength goals that track weight/resistance improvements
   Future<void> updateGoalsAfterPersonalBest(
       int exerciseId, double weight) async {
     // For testing purposes, we'll just record that this was called
@@ -64,7 +77,8 @@ class TestableGoalTrackingService {
         'updateGoalsAfterPersonalBest called with exerciseId: $exerciseId, weight: $weight');
   }
 
-  // Check for goals that are near completion (for notifications)
+  /// Retrieves goals that are close to completion (80%+ progress)
+  /// Used to notify users about their approaching achievements
   Future<List<Goal>> getNearCompletionGoals() async {
     final userId = _getCurrentUserId();
 
@@ -94,7 +108,8 @@ class TestableGoalTrackingService {
     ];
   }
 
-  // Check for goals that are about to expire (for notifications)
+  /// Retrieves goals that will expire soon (within next 3 days)
+  /// Used to notify users about goals they may want to focus on
   Future<List<Goal>> getExpiringGoals() async {
     final userId = _getCurrentUserId();
 
@@ -114,7 +129,8 @@ class TestableGoalTrackingService {
     ];
   }
 
-  // Daily check for expired goals
+  /// Performs daily maintenance on all user goals
+  /// Includes updating progress, checking completion status, and marking expired goals
   Future<void> performDailyGoalUpdate() async {
     final userId = _getCurrentUserId();
 
@@ -124,6 +140,7 @@ class TestableGoalTrackingService {
 }
 
 void main() {
+  /// Main test group for the GoalTracking Service functionality
   group('GoalTracking Service Tests', () {
     late MockDatabaseHelper mockDbHelper;
     late MockGoalService mockGoalService;
@@ -131,6 +148,7 @@ void main() {
     late MockFirebaseAuth mockAuth;
     late TestableGoalTrackingService goalTrackingService;
 
+    /// Setup method runs before each test to initialize fresh mock objects
     setUp(() {
       // Initialize mocks
       mockDbHelper = MockDatabaseHelper();
@@ -143,6 +161,7 @@ void main() {
           mockDbHelper, mockGoalService, mockNotificationService, mockAuth);
     });
 
+    /// Tests that goals are properly updated after a workout is logged
     test('updateGoalsAfterWorkout processes new workout data', () async {
       // Arrange
       final workout = Workout(
@@ -159,6 +178,7 @@ void main() {
       expect(true, isTrue);
     });
 
+    /// Tests that strength goals are updated when a new personal best is recorded
     test('updateGoalsAfterPersonalBest processes strength improvements',
         () async {
       // Arrange
@@ -174,6 +194,7 @@ void main() {
       expect(true, isTrue);
     });
 
+    /// Tests the retrieval of goals that are close to completion for notifications
     test('getNearCompletionGoals returns goals close to completion', () async {
       // Act
       final goals = await goalTrackingService.getNearCompletionGoals();
@@ -197,6 +218,7 @@ void main() {
           greaterThanOrEqualTo(0.8));
     });
 
+    /// Tests the retrieval of goals that are about to expire for notifications
     test('getExpiringGoals returns goals about to expire', () async {
       // Act
       final goals = await goalTrackingService.getExpiringGoals();
@@ -211,6 +233,7 @@ void main() {
           lessThanOrEqualTo(3));
     });
 
+    /// Tests that daily goal maintenance operations run without errors
     test('performDailyGoalUpdate runs daily maintenance', () async {
       // Act
       await goalTrackingService.performDailyGoalUpdate();

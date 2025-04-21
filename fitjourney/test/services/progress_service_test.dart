@@ -1,3 +1,6 @@
+// This file contains tests for the ProgressService class, which is responsible for
+// retrieving and calculating user progress data related to workouts, exercises,
+// and fitness goals.
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:fitjourney/database/database_helper.dart';
@@ -6,7 +9,9 @@ import 'package:sqflite/sqflite.dart' as sqflite;
 import 'package:firebase_auth/firebase_auth.dart';
 
 // Mock classes
+// MockDatabaseHelper simulates the database operations without requiring an actual database
 class MockDatabaseHelper extends Mock implements DatabaseHelper {
+  // Simulates retrieving workout data for a date range
   Future<List<Map<String, dynamic>>> getWorkoutsByDateRange(
       DateTime startDate, DateTime endDate) async {
     return [
@@ -23,6 +28,7 @@ class MockDatabaseHelper extends Mock implements DatabaseHelper {
     ];
   }
 
+  // Simulates retrieving muscle group volume distribution data
   Future<List<Map<String, dynamic>>> getMuscleGroupVolumeDistribution(
       DateTime startDate, DateTime endDate) async {
     return [
@@ -32,8 +38,10 @@ class MockDatabaseHelper extends Mock implements DatabaseHelper {
   }
 }
 
+// Mock for SQLite database
 class MockDatabase extends Mock implements sqflite.Database {}
 
+// Mock for Firebase Authentication
 class MockFirebaseAuth extends Mock implements firebase_auth.FirebaseAuth {
   @override
   firebase_auth.User? get currentUser => _mockUser;
@@ -41,6 +49,7 @@ class MockFirebaseAuth extends Mock implements firebase_auth.FirebaseAuth {
   final MockUser _mockUser = MockUser();
 }
 
+// Mock for Firebase User
 class MockUser implements firebase_auth.User {
   @override
   String get uid => 'test-user-123';
@@ -49,6 +58,7 @@ class MockUser implements firebase_auth.User {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+// Data model class to hold various progress metrics
 class ProgressData {
   final List<Map<String, dynamic>> workoutData;
   final List<Map<String, dynamic>> muscleGroupData;
@@ -64,6 +74,7 @@ class ProgressData {
     required this.personalBests,
   });
 
+  // Factory method to create an empty ProgressData object
   factory ProgressData.empty() {
     return ProgressData(
       workoutData: [],
@@ -75,6 +86,7 @@ class ProgressData {
   }
 }
 
+// Stub for the actual ProgressService class
 class ProgressService {
   final DatabaseHelper dbHelper;
   final FirebaseAuth auth;
@@ -82,12 +94,15 @@ class ProgressService {
   ProgressService(this.dbHelper, this.auth);
 }
 
+// Test implementation of ProgressService with predefined return values
+// Used to test the behavior of the service without actual database interactions
 class TestableProgressService {
   final MockDatabaseHelper mockDbHelper;
   final MockFirebaseAuth mockAuth;
 
   TestableProgressService(this.mockDbHelper, this.mockAuth);
 
+  // Returns workout volume data for a specified date range
   Future<List<Map<String, dynamic>>> getWorkoutVolumeData({
     required DateTime startDate,
     required DateTime endDate,
@@ -106,6 +121,7 @@ class TestableProgressService {
     ];
   }
 
+  // Returns muscle group distribution data for analysis
   Future<List<Map<String, dynamic>>> getMuscleGroupDistribution({
     required DateTime startDate,
     required DateTime endDate,
@@ -126,6 +142,7 @@ class TestableProgressService {
     ];
   }
 
+  // Returns workout frequency metrics
   Future<Map<String, dynamic>?> getWorkoutFrequency({
     required DateTime startDate,
     required DateTime endDate,
@@ -133,6 +150,7 @@ class TestableProgressService {
     return {'weekly': 3};
   }
 
+  // Returns overall progress summary statistics
   Future<Map<String, dynamic>> getProgressSummary({
     required DateTime startDate,
     required DateTime endDate,
@@ -144,6 +162,7 @@ class TestableProgressService {
     };
   }
 
+  // Returns personal best records for various exercises
   Future<List<Map<String, dynamic>>> getPersonalBests() async {
     return [
       {'exercise': 'Bench Press', 'weight': 100.0},
@@ -151,6 +170,7 @@ class TestableProgressService {
     ];
   }
 
+  // Aggregates all progress data into a single ProgressData object
   Future<ProgressData> getProgressData({
     required DateTime startDate,
     required DateTime endDate,
@@ -169,7 +189,9 @@ class TestableProgressService {
 }
 
 void main() {
+  // Tests for the ProgressData model
   group('ProgressData Model Tests', () {
+    // Test that ProgressData.empty() creates an empty object with default values
     test('ProgressData.empty creates an empty progress data object', () {
       // Act
       final progressData = ProgressData.empty();
@@ -182,6 +204,7 @@ void main() {
       expect(progressData.personalBests, isEmpty);
     });
 
+    // Test that ProgressData constructor correctly initializes all fields
     test('ProgressData constructor creates valid object with data', () {
       // Arrange
       final workoutData = [
@@ -214,6 +237,7 @@ void main() {
     });
   });
 
+  // Tests for the ProgressService implementation
   group('ProgressService Tests', () {
     late MockDatabaseHelper mockDbHelper;
     late MockFirebaseAuth mockAuth;
@@ -221,6 +245,7 @@ void main() {
     late DateTime startDate;
     late DateTime endDate;
 
+    // Set up test environment before each test
     setUp(() {
       mockDbHelper = MockDatabaseHelper();
       mockAuth = MockFirebaseAuth();
@@ -229,6 +254,7 @@ void main() {
       endDate = DateTime(2023, 5, 31);
     });
 
+    // Test workout volume data retrieval
     test('getWorkoutVolumeData returns correct data', () async {
       final result = await progressService.getWorkoutVolumeData(
         startDate: startDate,
@@ -237,6 +263,7 @@ void main() {
       expect(result, isNotEmpty);
     });
 
+    // Test muscle group distribution data retrieval
     test('getMuscleGroupDistribution returns correct data', () async {
       final result = await progressService.getMuscleGroupDistribution(
         startDate: startDate,
@@ -245,6 +272,7 @@ void main() {
       expect(result, isNotEmpty);
     });
 
+    // Test workout frequency data retrieval
     test('getWorkoutFrequency returns correct data', () async {
       final result = await progressService.getWorkoutFrequency(
         startDate: startDate,
@@ -253,10 +281,12 @@ void main() {
       expect(result, isNotNull);
     });
 
+    // Basic test to ensure testing framework is working
     test('basic test functionality', () {
       expect(true, isTrue);
     });
 
+    // Test progress summary data retrieval
     test('getProgressSummary returns correct data', () async {
       final result = await progressService.getProgressSummary(
         startDate: startDate,
@@ -265,7 +295,7 @@ void main() {
       expect(result, isNotNull);
     });
 
-    // Test for UC9: Exercise-specific progress
+    // Test for UC9: Exercise-specific progress tracking
     test('getExerciseProgressHistory returns correct data series', () async {
       // Arrange
       final exerciseId = 1;
@@ -314,7 +344,7 @@ void main() {
       expect(result[1]['weight'], lessThan(result[2]['weight']));
     });
 
-    // Test for UC10: Goal achievement verification
+    // Test for UC10: Goal achievement verification functionality
     test('checkGoalAchievement correctly identifies completed goals', () async {
       // Arrange
       // Create a mock goal checking function
@@ -352,7 +382,7 @@ void main() {
       expect(isGoalAchieved(justCompletedGoal), isTrue);
     });
 
-    // Test for UC2/UC9: Workout volume calculation
+    // Test for UC2/UC9: Workout volume calculation algorithm
     test('calculateWorkoutVolume returns correct total volume', () async {
       // Arrange
       // Create mock workout sets with reps and weights
@@ -379,7 +409,7 @@ void main() {
       expect(totalVolume, equals(2020.0));
     });
 
-    // Test for UC18: Streak calculation edge cases
+    // Test for UC18: Streak calculation with rest days
     test('streak handles rest days without breaking', () async {
       // Arrange
       // Create a function to calculate streak with rest days
@@ -439,6 +469,7 @@ void main() {
           equals(1)); // Streak is broken by gap
     });
 
+    // Test aggregation of all progress data into a single object
     test('getProgressData returns ProgressData with all fields', () async {
       final result = await progressService.getProgressData(
         startDate: startDate,

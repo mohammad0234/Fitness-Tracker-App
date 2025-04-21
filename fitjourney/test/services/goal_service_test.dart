@@ -6,11 +6,16 @@ import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:fitjourney/services/notification_trigger_service.dart';
 import 'package:sqflite/sqflite.dart' as sqflite;
 
+// This file tests the GoalService which manages fitness goals creation, tracking, and completion
+
 // Mock classes
+/// Mocks the database helper to avoid real database operations during testing
 class MockDatabaseHelper extends Mock implements DatabaseHelper {}
 
+/// Mocks a database instance for testing database interactions
 class MockDatabase extends Mock implements sqflite.Database {}
 
+/// Mocks Firebase Auth with a test user
 class MockFirebaseAuth extends Mock implements firebase_auth.FirebaseAuth {
   @override
   firebase_auth.User? get currentUser => _mockUser;
@@ -18,6 +23,7 @@ class MockFirebaseAuth extends Mock implements firebase_auth.FirebaseAuth {
   final MockUser _mockUser = MockUser();
 }
 
+/// Mocks a Firebase user with a test ID
 class MockUser implements firebase_auth.User {
   @override
   String get uid => 'test-user-123';
@@ -26,10 +32,11 @@ class MockUser implements firebase_auth.User {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+/// Mocks the notification service for testing goal-related notifications
 class MockNotificationTriggerService extends Mock
     implements NotificationTriggerService {}
 
-// TestableGoalService to mimic the real service but with injected dependencies
+/// Testable version of GoalService for dependency injection and isolated testing
 class TestableGoalService {
   final DatabaseHelper dbHelper;
   final NotificationTriggerService notificationService;
@@ -115,7 +122,9 @@ class TestableGoalService {
 }
 
 void main() {
+  // Tests for the Goal data model
   group('Goal Model Tests', () {
+    // Tests that a Goal object can be correctly created from a database map
     test('Goal.fromMap should create a valid Goal object', () {
       // Arrange
       final now = DateTime.now();
@@ -136,7 +145,7 @@ void main() {
       // Act
       final goal = Goal.fromMap(map);
 
-      // Assert
+      // Assert - Verify all properties were correctly mapped
       expect(goal.goalId, equals(1));
       expect(goal.userId, equals('test-user-123'));
       expect(goal.type, equals('ExerciseTarget'));
@@ -149,6 +158,7 @@ void main() {
       expect(goal.startingWeight, isNull);
     });
 
+    // Tests that a Goal object can be correctly converted to a database map
     test('Goal.toMap should convert a Goal to valid map', () {
       // Arrange
       final now = DateTime.now();
@@ -168,7 +178,7 @@ void main() {
       // Act
       final map = goal.toMap();
 
-      // Assert
+      // Assert - Verify all properties were correctly serialized
       expect(map['goal_id'], equals(1));
       expect(map['user_id'], equals('test-user-123'));
       expect(map['type'], equals('WeightTarget'));
@@ -182,6 +192,7 @@ void main() {
     });
   });
 
+  // Tests for the GoalService functionality
   group('GoalService Tests', () {
     late MockDatabaseHelper mockDbHelper;
     late MockFirebaseAuth mockAuth;
@@ -199,6 +210,7 @@ void main() {
           TestableGoalService(mockDbHelper, mockNotificationService, mockAuth);
     });
 
+    // Tests that a strength-based exercise goal can be created successfully
     test('createStrengthGoal returns a valid goal ID', () async {
       // Act
       final result = await goalService.createStrengthGoal(
@@ -208,10 +220,11 @@ void main() {
         targetDate: DateTime.now().add(const Duration(days: 30)),
       );
 
-      // Assert
+      // Assert - Verify a valid ID is returned
       expect(result, equals(1));
     });
 
+    // Tests that a body weight goal can be created successfully
     test('createWeightGoal returns a valid goal ID', () async {
       // Act
       final result = await goalService.createWeightGoal(
@@ -220,10 +233,11 @@ void main() {
         targetDate: DateTime.now().add(const Duration(days: 60)),
       );
 
-      // Assert
+      // Assert - Verify a valid ID is returned
       expect(result, equals(2));
     });
 
+    // Tests that a workout frequency goal can be created successfully
     test('createFrequencyGoal returns a valid goal ID', () async {
       // Act
       final result = await goalService.createFrequencyGoal(
@@ -231,15 +245,16 @@ void main() {
         endDate: DateTime.now().add(const Duration(days: 30)),
       );
 
-      // Assert
+      // Assert - Verify a valid ID is returned
       expect(result, equals(3));
     });
 
+    // Tests that all goals for a user can be retrieved
     test('getAllGoals returns a list of goals', () async {
       // Act
       final result = await goalService.getAllGoals();
 
-      // Assert
+      // Assert - Verify result structure and content
       expect(result, isNotNull);
       expect(result.length, equals(2));
       expect(result[0].type, equals('ExerciseTarget'));

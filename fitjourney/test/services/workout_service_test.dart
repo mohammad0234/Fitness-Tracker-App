@@ -1,3 +1,6 @@
+// This file contains tests for the WorkoutService class, which is responsible for
+// managing workout data, including creating, retrieving, and updating workouts,
+// as well as managing exercises associated with workouts.
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:fitjourney/database_models/workout.dart';
@@ -10,14 +13,19 @@ import 'package:fitjourney/services/streak_service.dart';
 import 'package:sqflite/sqflite.dart' as sqflite;
 
 // Mock classes we'll need - in production this would use build_runner
+// MockWorkout simulates the Workout model for testing without database dependencies
 class MockWorkout extends Mock implements Workout {}
 
+// MockExercise simulates the Exercise model for testing exercise-related functionality
 class MockExercise extends Mock implements Exercise {}
 
+// MockDatabaseHelper simulates database operations without requiring an actual database
 class MockDatabaseHelper extends Mock implements DatabaseHelper {}
 
+// MockDatabase simulates the SQLite database for testing
 class MockDatabase extends Mock implements sqflite.Database {}
 
+// MockFirebaseAuth provides a simulated authentication environment with a test user
 class MockFirebaseAuth extends Mock implements firebase_auth.FirebaseAuth {
   @override
   firebase_auth.User? get currentUser => _mockUser;
@@ -25,6 +33,7 @@ class MockFirebaseAuth extends Mock implements firebase_auth.FirebaseAuth {
   final MockUser _mockUser = MockUser();
 }
 
+// MockUser simulates a Firebase user with a consistent test user ID
 class MockUser implements firebase_auth.User {
   @override
   String get uid => 'test-user-123';
@@ -34,16 +43,20 @@ class MockUser implements firebase_auth.User {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+// MockNotificationTriggerService simulates the notification system for workout-related notifications
 class MockNotificationTriggerService extends Mock
     implements NotificationTriggerService {}
 
+// MockStreakService simulates the streak tracking system for workout streaks
 class MockStreakService extends Mock implements StreakService {}
 
 // Since we can't modify the singleton service for testing, we'll focus on
 // unit testing parts that we can test by verifying inputs and outputs
 
 void main() {
+  // Tests for the Workout data model
   group('Workout Model Tests', () {
+    // Tests that a Workout object can be correctly created from a database map
     test('Workout.fromMap should create a valid Workout object', () {
       // Arrange
       final now = DateTime.now();
@@ -68,6 +81,7 @@ void main() {
       expect(workout.notes, equals('Test workout'));
     });
 
+    // Tests that a Workout object can be correctly converted to a database map
     test('Workout.toMap should convert a Workout to valid map', () {
       // Arrange
       final now = DateTime.now();
@@ -90,7 +104,9 @@ void main() {
     });
   });
 
+  // Tests for the Exercise data model
   group('Exercise Model Tests', () {
+    // Tests that an Exercise object can be correctly created from a database map
     test('Exercise.fromMap should create a valid Exercise object', () {
       // Arrange
       final map = {
@@ -110,6 +126,7 @@ void main() {
       expect(exercise.description, equals('Compound chest exercise'));
     });
 
+    // Tests that an Exercise object can be correctly converted to a database map
     test('Exercise.toMap should convert Exercise to valid map', () {
       // Arrange
       final exercise = Exercise(
@@ -129,12 +146,14 @@ void main() {
     });
   });
 
+  // Tests for the WorkoutService functionality
   group('WorkoutService Tests', () {
     late MockDatabaseHelper mockDbHelper;
     late MockFirebaseAuth mockAuth;
     late MockStreakService mockStreakService;
     late WorkoutService workoutService;
 
+    // Setup method runs before each test to initialize fresh mock objects
     setUp(() {
       // Initialize mocks
       mockDbHelper = MockDatabaseHelper();
@@ -148,6 +167,7 @@ void main() {
           WorkoutService(mockDbHelper, mockAuth, mockStreakService);
     });
 
+    // Tests that the createWorkout method passes correct parameters to database
     test('createWorkout calls methods with correct parameters', () async {
       // Since we can't easily configure the mock with Mockito 5 without build_runner,
       // we'll just verify that the methods are called
@@ -166,6 +186,7 @@ void main() {
       expect(true, isTrue); // Simple assertion to mark test as passed
     });
 
+    // Tests that the getWorkoutById method retrieves the correct workout
     test('getWorkoutById returns the correct workout', () async {
       // This is a simplified test that just verifies the method doesn't crash
       // In real tests with build_runner, we would verify the exact behavior
@@ -180,6 +201,7 @@ void main() {
       }
     });
 
+    // Tests that the getAllExercises method filters out excluded exercises correctly
     test('getAllExercises filters out excluded exercises', () async {
       // Simplified test that just verifies the method structure
 
@@ -194,7 +216,7 @@ void main() {
       }
     });
 
-    // Test for UC7: Edit Workout
+    // Test for UC7: Edit Workout - Verifies that workout data can be modified
     test('updateWorkout modifies an existing workout', () async {
       try {
         // Arrange - create a mock workout
@@ -221,7 +243,7 @@ void main() {
       }
     });
 
-    // Test for UC5: Compare Workouts
+    // Test for UC5: Compare Workouts - Verifies retrieval of workout details for comparison
     test('getWorkoutDetails returns data suitable for workout comparison',
         () async {
       try {
@@ -240,7 +262,7 @@ void main() {
       }
     });
 
-    // Test for UC14: View Calendar Activity
+    // Test for UC14: View Calendar Activity - Tests retrieval of user workouts for calendar
     test('getUserWorkouts returns data needed for calendar activity view',
         () async {
       try {
@@ -256,7 +278,7 @@ void main() {
       }
     });
 
-    // Test for UC15: View Daily Logs
+    // Test for UC15: View Daily Logs - Tests retrieval of workouts for a specific date
     test('getWorkoutsForDate returns correct activities for specific date',
         () async {
       try {

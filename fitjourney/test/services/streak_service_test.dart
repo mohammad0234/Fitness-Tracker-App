@@ -1,3 +1,5 @@
+// This file contains tests for the StreakService class which is responsible for tracking
+// user workout streaks, including current and longest streaks, and managing activity dates.
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:fitjourney/database_models/streak.dart';
@@ -7,10 +9,13 @@ import 'package:fitjourney/services/notification_trigger_service.dart';
 import 'package:sqflite/sqflite.dart' as sqflite;
 
 // Mock classes
+// MockDatabaseHelper simulates database operations without requiring an actual database connection
 class MockDatabaseHelper extends Mock implements DatabaseHelper {}
 
+// MockDatabase simulates SQLite database functionality for testing
 class MockDatabase extends Mock implements sqflite.Database {}
 
+// MockFirebaseAuth provides a simulated authentication environment with a test user
 class MockFirebaseAuth extends Mock implements firebase_auth.FirebaseAuth {
   @override
   firebase_auth.User? get currentUser => _mockUser;
@@ -18,6 +23,7 @@ class MockFirebaseAuth extends Mock implements firebase_auth.FirebaseAuth {
   final MockUser _mockUser = MockUser();
 }
 
+// MockUser simulates a Firebase user with a consistent test user ID
 class MockUser implements firebase_auth.User {
   @override
   String get uid => 'test-user-123';
@@ -26,13 +32,15 @@ class MockUser implements firebase_auth.User {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+// MockNotificationTriggerService simulates the notification system for streak achievements
 class MockNotificationTriggerService extends Mock
     implements NotificationTriggerService {}
 
+// MockTransaction simulates database transactions for testing
 class MockTransaction extends Mock implements sqflite.Transaction {}
 
-// First we need to modify StreakService to accept dependencies
-// Let's create a testable version that mirrors the original but accepts injected dependencies
+// TestableStreakService is a test-friendly version of the actual StreakService
+// It accepts dependency injection for easier testing and mocking
 class TestableStreakService {
   final DatabaseHelper dbHelper;
   final NotificationTriggerService notificationService;
@@ -40,7 +48,8 @@ class TestableStreakService {
 
   TestableStreakService(this.dbHelper, this.notificationService, this.auth);
 
-  // Get the current user ID or throw an error if not logged in
+  // Helper method to get the current user ID or throw an error if not logged in
+  // Critical for all streak operations that require user context
   String _getCurrentUserId() {
     final user = auth.currentUser;
     if (user == null) {
@@ -49,7 +58,8 @@ class TestableStreakService {
     return user.uid;
   }
 
-  // Get the user's current streak
+  // Retrieves the user's current streak information
+  // In a real implementation, this would query the database
   Future<Streak> getUserStreak() async {
     final userId = _getCurrentUserId();
 
@@ -63,14 +73,17 @@ class TestableStreakService {
     );
   }
 
-  // Simplified version of logWorkout for testing
+  // Records a workout for streak calculation purposes
+  // In production, this would update streak information in the database
   Future<void> logWorkout(DateTime date) async {
     // For testing, this is enough to verify the method runs
   }
 }
 
 void main() {
+  // Tests for the Streak data model functionality
   group('Streak Model Tests', () {
+    // Tests that a Streak object can be correctly created from a database map
     test('Streak.fromMap should create a valid Streak object', () {
       // Arrange
       final now = DateTime.now();
@@ -94,6 +107,7 @@ void main() {
       expect(streak.lastWorkoutDate?.day, equals(yesterday.day));
     });
 
+    // Tests that a Streak object can be correctly converted to a database map
     test('Streak.toMap should convert a Streak to valid map', () {
       // Arrange
       final now = DateTime.now();
@@ -117,12 +131,14 @@ void main() {
     });
   });
 
+  // Tests for the StreakService functionality
   group('StreakService Tests', () {
     late MockDatabaseHelper mockDbHelper;
     late MockFirebaseAuth mockAuth;
     late MockNotificationTriggerService mockNotificationService;
     late TestableStreakService streakService;
 
+    // Setup method runs before each test to initialize fresh mock objects
     setUp(() {
       // Initialize mocks
       mockDbHelper = MockDatabaseHelper();
@@ -134,6 +150,7 @@ void main() {
           mockDbHelper, mockNotificationService, mockAuth);
     });
 
+    // Tests that the getUserStreak method returns the expected streak data
     test('getUserStreak returns streak data', () async {
       // Act
       final result = await streakService.getUserStreak();
@@ -147,6 +164,8 @@ void main() {
       expect(result.lastWorkoutDate, isNotNull);
     });
 
+    // Tests that the logWorkout method can be called with a date parameter
+    // and doesn't throw any exceptions
     test('logWorkout can be called with a date', () async {
       // Arrange
       final testDate = DateTime.now();

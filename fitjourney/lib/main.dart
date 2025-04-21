@@ -3,13 +3,9 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fitjourney/services/workout_service.dart';
 import 'package:fitjourney/services/goal_tracking_service.dart';
-import 'package:fitjourney/services/notification_service.dart';
 import 'firebase_options.dart';
 import 'package:fitjourney/services/streak_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
-import 'dart:io'; // Add this for Platform checks
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import 'screens/signup_page.dart';
 import 'screens/login_page.dart';
@@ -29,12 +25,6 @@ Future<void> main() async {
   // Initialize Firestore settings
   FirebaseFirestore.instance.settings = const Settings(
       persistenceEnabled: true, cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED);
-
-  // Initialize notification service
-  await NotificationService.instance.init();
-
-  // Request notification permissions
-  await requestNotificationPermissions();
 
   // Initialize exercise database
   await WorkoutService.instance.initializeExercises();
@@ -62,7 +52,7 @@ Future<void> main() async {
     if (user != null) {
       await StreakService.instance.performDailyStreakCheck();
 
-      // Schedule daily streak maintenance notifications
+      // Create streak maintenance notifications if needed
       await NotificationTriggerService.instance.scheduleDailyStreakCheck();
 
       // Check for inactivity
@@ -82,27 +72,6 @@ Future<void> main() async {
   }
 
   runApp(const MyApp());
-}
-
-// Add this function to request notification permissions
-Future<void> requestNotificationPermissions() async {
-  // Only needed for Android 13+ (SDK 33+)
-  if (Platform.isAndroid) {
-    try {
-      final androidImplementation = NotificationService
-          .instance.flutterLocalNotificationsPlugin
-          .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>();
-
-      if (androidImplementation != null) {
-        final bool? granted =
-            await androidImplementation.requestNotificationsPermission();
-        debugPrint('Notification permission granted: $granted');
-      }
-    } catch (e) {
-      debugPrint('Error requesting notification permissions: $e');
-    }
-  }
 }
 
 class MyApp extends StatelessWidget {
