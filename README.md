@@ -1,5 +1,3 @@
-One drive link for product package submission - https://cityuni-my.sharepoint.com/:f:/g/personal/mohammad_shaha_city_ac_uk/EuTFglSzVrtBtbY566eQgS8BV_2fdXENlnaInDziVJgJNQ?e=MfvaPA
-
 The project provided is in a top-level folder named:
 
 **Fitness-Tracker-App**
@@ -62,7 +60,7 @@ Once everything is installed, launch VS Studio COde and select option **"Open Fo
 ![Open Folder Screenshot](fitjourney/installation/open_folder.png)
 
 
-4. **Open the project folder provided via OneDrive (link available at the top of this README).**
+4. **Open the provided project (extract the ZIP folder submitted on Moodle).**
 
 Make sure to open the project from the top-level folder named **Fitness-Tracker-App.**
 
@@ -168,6 +166,70 @@ Once project is open and configured, on the left-hand sidebar, click the Testing
 In the testing panel that appears, click the "Run Tests" button to run all available test files as shown below:
 
 ![run test files screenshot](fitjourney/installation/run_tests.png)
+
+
+**Testing FitJourney App**
+**Important Note Before Testing**
+When first launching FitJourney, the app will have no workout data or goals in your local database. To fully experience and test the app's capabilities, you'll need to:
+•	Log several workouts over different days
+•	Create various types of goals
+•	Use the app consistently to build streak data
+This initial data population is essential to see the app's visualisation features, progress tracking, and statistical analysis in action.
+
+Getting Started:
+
+**Signup Process:**
+•	On the signup page, enter your email, first name, last name, and password
+•	Tap "Sign Up" to create your account
+•	Check your email and follow the verification link
+•	Return to the app and click "I've verified my email"
+•	Log in with your credentials
+
+**Home Page**
+•	View your current workout streak
+•	Check today's activity status
+•	See your most recent workout summary
+•	Use the "Log Workout" button to record today's exercise
+•	Alternatively, log a rest day to maintain your streak
+•	Tap on your active goal to view detailed progress
+
+**Workouts Page**
+•	View your workout history organised by date
+•	Filter workouts by body part (All, Upper Body, Lower Body)
+•	Filter by time period (All Time, This Week, This Month, Last 3 Months)
+•	Tap any workout to see detailed exercise and set information
+•	Use the "+" button to log a new workout
+•	Try the "Compare" button to analyse progress between two workouts
+
+**Goals Page**
+•	View your active fitness goals with progress indicators
+•	See completed goals in a separate section
+•	Tap "Create New Goal" to set up:
+•	Weight goals
+•	Strength goals for specific exercises
+•	Workout frequency goals
+•	Tap on any goal to see detailed progress information and history
+
+**Progress Page**
+Contains three tabs:
+1.	Insights Tab:
+•	View workout volume over time
+•	See muscle group distribution chart
+•	Check personal bests for various exercises
+2.	Exercise Tab:
+•	Select any exercise to view strength progression
+•	View weight progression chart over time
+•	Check exercise history
+3.	Calendar Tab:
+•	View your workout calendar with streak information
+•	Tap on dates to see what exercises were performed
+•	Green indicates workout days, blue for rest days
+
+**Profile Page**
+•	View personal information
+•	Manually sync data to cloud
+•	Log out from the app and delete account
+
 
 # FitJourney
 FitJourney is a mobile application designed to help users log workouts, track progress, and stay motivated with interactive data visualizations, goal tracking, and streak monitoring. Built using Flutter, it ensures a smooth and intuitive experience while leveraging Firebase for authentication and SQLite for local data storage and firestore for cloud syncing.
