@@ -1228,37 +1228,11 @@ class DatabaseHelper {
     return result.map((log) => DailyLog.fromMap(log)).toList();
   }
 
-// Additional CRUD methods for other tables as needed.
-
-  /// ----- User Metrics Methods -----
-  /// These methods track physical measurements like weight over time.
-
-  /// Records a user weight measurement and marks it for synchronization.
-  /// This enables weight tracking over time and powers weight-related goals.
-  ///
-  /// @param userId The ID of the user whose weight to record
-  /// @param weightKg The weight measurement in kilograms
-  /// @return The ID of the newly created metric record
-  Future<int> insertUserMetric(String userId, double weightKg) async {
-    final db = await database;
-
-    final metricId = await db.insert(
-      'user_metrics',
-      {
-        'user_id': userId,
-        'weight_kg': weightKg,
-        'measured_at': DateTime.now().toIso8601String(),
-      },
-    );
-
-    await markForSync('user_metrics', metricId.toString(), 'INSERT');
-    return metricId;
-  }
-
   /// Runs database migrations to update schema when necessary.
-  /// This is a critical part of app updates that require database changes.
-  /// I've designed it to handle migrations smoothly without data loss.
-  ///
+  /// This method is critical for app sustainability and user data retention:
+  /// 1. Enables seamless app updates without data loss or corruption
+  /// 2. Preserves user workout history and progress when updating
+  /// 3. Essential for production mobile apps with an evolving feature set
   /// @param db The database instance to run migrations on
   Future<void> _runMigrations(Database db) async {
     try {

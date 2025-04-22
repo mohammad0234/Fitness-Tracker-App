@@ -4,6 +4,7 @@
 /// - Data synchronization management
 /// - Privacy policy and terms access
 /// - Account management (sign out and deletion)
+/// UI assisted by AI and the privacy policy and terms access
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:fitjourney/database/database_helper.dart';

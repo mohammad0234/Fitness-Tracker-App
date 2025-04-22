@@ -5,15 +5,10 @@ import 'package:fitjourney/database_models/notification.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fitjourney/database/database_helper.dart';
 import 'package:intl/intl.dart';
-import 'package:fitjourney/screens/goal_detail_screen.dart';
 import 'package:fitjourney/screens/calendar_streak_screen.dart';
-import 'package:fitjourney/screens/progress_page.dart';
-import 'package:fitjourney/services/goal_service.dart';
-import 'package:fitjourney/screens/weight_goal_detail_screen.dart';
 
-/// Screen that displays and manages user notifications, including goal updates,
-/// streaks, and achievements. Provides functionality to view, interact with,
-/// and dismiss notifications.
+/// Screen that displays and manages user notifications, including goal updates
+/// and streaks. Provides functionality to view, interact with, and dismiss notifications.
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
 
@@ -30,7 +25,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
   final List<NotificationModel> _notifications = [];
   bool _isLoading = true;
   String _filterType = 'All';
-  final List<String> _filterOptions = ['All', 'Goal', 'Streak', 'Milestone'];
+  final List<String> _filterOptions = ['All', 'Goal', 'Streak'];
 
   @override
   void initState() {
@@ -104,8 +99,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
           return notification.type == 'GoalProgress';
         case 'Streak':
           return notification.type == 'NewStreak';
-        case 'Milestone':
-          return notification.type == 'Milestone';
         default:
           return true;
       }
@@ -215,7 +208,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
   }
 
   /// Handles the tap event on a notification. Marks the notification as read
-  /// and navigates to the appropriate screen based on notification type.
+  /// and updates UI accordingly.
   Future<void> _handleNotificationTap(NotificationModel notification) async {
     // Mark the notification as read
     if (!notification.isRead) {
@@ -230,67 +223,13 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
     if (!mounted) return;
 
-    // Handle navigation based on notification type and payload
-    final payload = notification.message;
-
-    if (notification.type == 'GoalProgress') {
-      _navigateToGoalDetails(payload);
-    } else if (notification.type == 'NewStreak') {
+    // Only handle streak notifications for navigation
+    if (notification.type == 'NewStreak') {
       _navigateToCalendarStreak();
-    } else if (notification.type == 'Milestone') {
-      _navigateToProgressPage();
     }
 
     // Refresh the notifications list
     _loadNotifications();
-  }
-
-  /// Navigates to the goal details screen with the specified goal ID.
-  Future<void> _navigateToGoalDetails(String goalId) async {
-    // Extract goal ID from message if possible
-    final goalIdRegExp = RegExp(r'goal_(\d+)');
-    final match = goalIdRegExp.firstMatch(goalId);
-
-    if (match != null) {
-      final goalId = int.parse(match.group(1)!);
-
-      // First get the goal type to determine which screen to navigate to
-      await _getGoalTypeAndNavigate(goalId);
-    }
-  }
-
-  /// Retrieves goal type from the database and navigates to the appropriate screen.
-  Future<void> _getGoalTypeAndNavigate(int goalId) async {
-    try {
-      final goal = await GoalService.instance.getGoalById(goalId);
-      if (goal == null || !mounted) return;
-
-      if (goal.type == 'WeightTarget') {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => WeightGoalDetailScreen(goalId: goalId),
-          ),
-        );
-      } else {
-        // Default to regular goal detail screen for other goal types
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => GoalDetailScreen(goalId: goalId),
-          ),
-        );
-      }
-    } catch (e) {
-      print('Error navigating to goal: $e');
-      // Fall back to regular goal screen on error
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => GoalDetailScreen(goalId: goalId),
-        ),
-      );
-    }
   }
 
   /// Navigates to the calendar streak screen for streak-related notifications.
@@ -299,16 +238,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => const CalendarStreakScreen(),
-      ),
-    );
-  }
-
-  /// Navigates to the progress page for milestone-related notifications.
-  void _navigateToProgressPage() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const ProgressPage(),
       ),
     );
   }
@@ -462,8 +391,6 @@ class NotificationCard extends StatelessWidget {
         return Icons.flag_outlined;
       case 'NewStreak':
         return Icons.local_fire_department;
-      case 'Milestone':
-        return Icons.emoji_events_outlined;
       default:
         return Icons.notifications_outlined;
     }
@@ -476,8 +403,6 @@ class NotificationCard extends StatelessWidget {
         return Colors.green;
       case 'NewStreak':
         return Colors.orange;
-      case 'Milestone':
-        return Colors.purple;
       default:
         return Colors.blue;
     }
@@ -490,8 +415,6 @@ class NotificationCard extends StatelessWidget {
         return 'Goal Update';
       case 'NewStreak':
         return 'Streak News';
-      case 'Milestone':
-        return 'Achievement Unlocked';
       default:
         return 'Notification';
     }

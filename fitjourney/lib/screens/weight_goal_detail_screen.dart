@@ -671,17 +671,6 @@ class _WeightGoalDetailScreenState extends State<WeightGoalDetailScreen> {
                                 ),
                                 const SizedBox(height: 16),
 
-                                // Weekly rate of change
-                                _buildStatisticRow(
-                                  'Weekly rate:',
-                                  '${_calculateWeeklyChangeRate().abs().toStringAsFixed(1)} kg/week',
-                                  icon: Icons.trending_up,
-                                  isPositive: (isWeightLoss &&
-                                          _calculateWeeklyChangeRate() < 0) ||
-                                      (!isWeightLoss &&
-                                          _calculateWeeklyChangeRate() > 0),
-                                ),
-
                                 // Total change
                                 _buildStatisticRow(
                                   'Total change:',
@@ -993,35 +982,6 @@ class _WeightGoalDetailScreenState extends State<WeightGoalDetailScreen> {
     );
   }
 
-  /// Calculates the weekly rate of weight change
-  /// Based on the first and last weight entries
-  double _calculateWeeklyChangeRate() {
-    if (_weightHistory.length < 2) return 0;
-
-    // Get earliest and latest weight entries
-    final firstEntry = _weightHistory.first;
-    final lastEntry = _weightHistory.last;
-
-    final firstWeight = firstEntry['weight'] as double;
-    final lastWeight = lastEntry['weight'] as double;
-
-    // Calculate weight change
-    final weightChange = lastWeight - firstWeight;
-
-    // Calculate time difference in weeks
-    final firstDate = firstEntry['date'] as DateTime;
-    final lastDate = lastEntry['date'] as DateTime;
-    final daysDifference = lastDate.difference(firstDate).inDays;
-
-    // Avoid division by zero
-    if (daysDifference == 0) return 0;
-
-    // Calculate weekly rate
-    final weeklyRate = (weightChange / daysDifference) * 7;
-
-    return weeklyRate;
-  }
-
   /// Calculates total weight change from start
   /// Compares first and last weight entries
   double _calculateTotalChange() {
@@ -1040,28 +1000,45 @@ class _WeightGoalDetailScreenState extends State<WeightGoalDetailScreen> {
         _goal == null ||
         _goal!.targetValue == null) return null;
 
-    final weeklyRate = _calculateWeeklyChangeRate();
+    // Since we're removing weekly rate calculation, we need to calculate it directly here
+    // Get earliest and latest weight entries
+    final firstEntry = _weightHistory.first;
+    final lastEntry = _weightHistory.last;
 
-    // If no progress or going in wrong direction
-    if (weeklyRate == 0 ||
-        ((_goalDetails?['isWeightLoss'] ?? false) && weeklyRate >= 0) ||
-        ((_goalDetails?['isWeightGain'] ?? false) && weeklyRate <= 0)) {
+    final firstWeight = firstEntry['weight'] as double;
+    final lastWeight = lastEntry['weight'] as double;
+
+    // Calculate weight change
+    final weightChange = lastWeight - firstWeight;
+
+    // Calculate time difference in days
+    final firstDate = firstEntry['date'] as DateTime;
+    final lastDate = lastEntry['date'] as DateTime;
+    final daysDifference = lastDate.difference(firstDate).inDays;
+
+    // Avoid division by zero or no change
+    if (daysDifference == 0 || weightChange == 0) return null;
+
+    // Calculate daily rate of change
+    final dailyRate = weightChange / daysDifference;
+
+    // Check if progress is in the right direction
+    if (((_goalDetails?['isWeightLoss'] ?? false) && dailyRate >= 0) ||
+        ((_goalDetails?['isWeightGain'] ?? false) && dailyRate <= 0)) {
       return null;
     }
 
-    final currentWeight = _weightHistory.last['weight'] as double;
+    final currentWeight = lastWeight;
     final targetWeight = _goal!.targetValue!;
 
     // Calculate remaining change needed
     final remainingChange = (targetWeight - currentWeight).abs();
 
-    // Calculate weeks needed
-    final weeksNeeded = remainingChange / weeklyRate.abs();
+    // Calculate days needed
+    final daysNeeded = remainingChange / dailyRate.abs();
 
     // Calculate projected completion date
-    final lastDate = _weightHistory.last['date'] as DateTime;
-    final projectedDate =
-        lastDate.add(Duration(days: (weeksNeeded * 7).round()));
+    final projectedDate = lastDate.add(Duration(days: daysNeeded.round()));
 
     return projectedDate;
   }

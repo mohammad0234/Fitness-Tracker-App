@@ -21,15 +21,6 @@ class _LogWorkoutFlowState extends State<LogWorkoutFlow> {
   Timer? _workoutTimer;
 
   @override
-  void initState() {
-    super.initState();
-    // Initialize timer for workout duration tracking
-    _workoutTimer = Timer.periodic(const Duration(seconds: 60), (timer) {
-      // Empty - duration will be calculated when saving
-    });
-  }
-
-  @override
   void dispose() {
     _workoutTimer?.cancel();
     super.dispose();
@@ -260,16 +251,6 @@ class ExerciseInfoDialog extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Container(
-                height: 180,
-                color: Colors.grey.shade300,
-                alignment: Alignment.center,
-                child: const Icon(Icons.image, size: 50, color: Colors.grey),
-              ),
-            ),
-            const SizedBox(height: 16),
             const Text(
               'How to perform:',
               style: TextStyle(

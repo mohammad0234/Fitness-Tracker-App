@@ -28,7 +28,7 @@ To run this  project, ensure the following are installed:
 
 Flutter SDK: Download and install from the official Flutter installation guide: https://docs.flutter.dev/get-started/install
 
-Dart SDK: The Dart SDK is bundled with the Flutter SDK. No separate installation is required.​
+Dart SDK: The Dart SDK is bundled with the Flutter SDK. No separate installation is required (Dart SDK version 3.7 was used for this project).​
 
 Android SDK: Install via the official Android Studio download page: https://developer.android.com/studio
 
@@ -156,6 +156,7 @@ To double-check your environment setup, run:
 
 This command will highlight any missing dependencies or configuration issues. Ignore the Visual Studio warning - it’s only needed for Windows desktop apps, not Android.
 
+Potential issues are further detailed in the Flutter installation help guide: https://docs.flutter.dev/get-started/install/help
 
 **Guide on how to run test cases as well provided below:**
 
@@ -166,7 +167,6 @@ Once project is open and configured, on the left-hand sidebar, click the Testing
 In the testing panel that appears, click the "Run Tests" button to run all available test files as shown below:
 
 ![run test files screenshot](fitjourney/installation/run_tests.png)
-
 
 **Testing FitJourney App**
 
