@@ -232,4 +232,4 @@ Backend: Firebase Authentication, Firestore
 Database: SQLite (for local workout storage)
 Data Visualisation: fl_chart
 
-Test push
+Test push 2
